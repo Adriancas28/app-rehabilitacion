@@ -16,6 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.findStartDestination
 import com.sanna.rehabapp.domain.model.Rol
+import com.sanna.rehabapp.feature.auth.ConsentimientoScreen
 import com.sanna.rehabapp.feature.auth.LoginScreen
 
 @Composable
@@ -33,6 +34,11 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
                 },
             )
         }
+        composable(Rutas.CONSENTIMIENTO) {
+            ConsentimientoScreen(
+                onAceptado = { rol -> navegarAGrafo(navController, rol) },
+            )
+        }
         fisioterapeutaDestinos(navController)
         pacienteDestinos(navController)
     }
@@ -47,6 +53,9 @@ private fun PantallaDecisorInicial(navController: NavHostController) {
         when (val actual = destino) {
             DestinoInicial.Cargando -> Unit
             DestinoInicial.Login -> navController.navigate(Rutas.LOGIN) {
+                popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+            }
+            is DestinoInicial.Consentimiento -> navController.navigate(Rutas.CONSENTIMIENTO) {
                 popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
             }
             is DestinoInicial.Grafo -> navegarAGrafo(navController, actual.rol)
