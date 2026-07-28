@@ -30,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,7 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.sanna.rehabapp.core.navigation.FisioterapeutaBottomBar
+import com.sanna.rehabapp.core.navigation.FisioterapeutaScaffold
 import com.sanna.rehabapp.core.navigation.PestanaFisioterapeuta
 import com.sanna.rehabapp.domain.model.Ejercicio
 
@@ -61,7 +60,11 @@ fun EjerciciosListScreen(
     val uiState by viewModel.uiState.collectAsState()
     var ejercicioAEliminar by remember { mutableStateOf<Ejercicio?>(null) }
 
-    Scaffold(
+    FisioterapeutaScaffold(
+        pestanaActual = PestanaFisioterapeuta.EJERCICIOS,
+        onCambiarPestana = { pestana ->
+            if (pestana == PestanaFisioterapeuta.PACIENTES) onNavegarAPacientes()
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Ejercicios") },
@@ -74,14 +77,6 @@ fun EjerciciosListScreen(
                     IconButton(onClick = onRegistrarEjercicio) {
                         Icon(Icons.Filled.Add, contentDescription = "Registrar ejercicio")
                     }
-                },
-            )
-        },
-        bottomBar = {
-            FisioterapeutaBottomBar(
-                pestanaActual = PestanaFisioterapeuta.EJERCICIOS,
-                onCambiarPestana = { pestana ->
-                    if (pestana == PestanaFisioterapeuta.PACIENTES) onNavegarAPacientes()
                 },
             )
         },

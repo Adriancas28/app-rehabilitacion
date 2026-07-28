@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Search
@@ -27,7 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -39,7 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
-import com.sanna.rehabapp.core.navigation.FisioterapeutaBottomBar
+import com.sanna.rehabapp.core.navigation.FisioterapeutaScaffold
 import com.sanna.rehabapp.core.navigation.PestanaFisioterapeuta
 import com.sanna.rehabapp.domain.model.Usuario
 
@@ -54,7 +54,11 @@ fun PacientesListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
+    FisioterapeutaScaffold(
+        pestanaActual = PestanaFisioterapeuta.PACIENTES,
+        onCambiarPestana = { pestana ->
+            if (pestana == PestanaFisioterapeuta.EJERCICIOS) onNavegarAEjercicios()
+        },
         topBar = {
             TopAppBar(
                 title = { Text("Pacientes") },
@@ -70,14 +74,6 @@ fun PacientesListScreen(
                     }) {
                         Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
-                },
-            )
-        },
-        bottomBar = {
-            FisioterapeutaBottomBar(
-                pestanaActual = PestanaFisioterapeuta.PACIENTES,
-                onCambiarPestana = { pestana ->
-                    if (pestana == PestanaFisioterapeuta.EJERCICIOS) onNavegarAEjercicios()
                 },
             )
         },
@@ -176,14 +172,26 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
                 )
             }
             Spacer(modifier = Modifier.width(14.dp))
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(text = paciente.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
                     text = paciente.email,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                paciente.fechaRegistro?.let { fecha ->
+                    Text(
+                        text = "Registrado: ${formatearFecha(fecha)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -195,3 +203,6 @@ private fun obtenerIniciales(nombre: String): String =
         .take(2)
         .mapNotNull { it.firstOrNull()?.uppercaseChar() }
         .joinToString("")
+
+private fun formatearFecha(fecha: java.util.Date): String =
+    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale("es", "PE")).format(fecha)
