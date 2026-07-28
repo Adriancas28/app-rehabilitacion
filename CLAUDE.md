@@ -170,8 +170,8 @@ usuarios/{uid}
     - fechaAsignacion, fechaEjecucion
     - estado                  ("pendiente" | "completada")
     - resultado: {
-        angulosDetectados, desviacionPromedio,
-        porcentajeEjecucion, tipoError
+        angulosDetectados, desviacionPromedio, porcentajeEjecucion,
+        erroresDetectados: [{ articulacion, tipo, repeticiones }]
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -323,6 +323,20 @@ y priorizados en 6 sprints.
 - CA03: Dado que continúe ejecutando el ejercicio, entonces la retroalimentación se actualiza de forma continua.
 - CA04: Dado que el sistema procese el movimiento, entonces el tiempo de respuesta no debe superar los **500 ms**.
 - CA05: Dado que finalice el ejercicio, entonces el sistema detiene la retroalimentación inmediata.
+- CA06 *(ampliación acordada, no en la versión original de la tesis)*: Dado
+  que el sistema detecte una desviación, entonces además de la señal visual
+  reproduce una indicación por voz (texto a voz nativo de Android, en el
+  dispositivo, sin conexión) describiendo la corrección — ej. "levanta más
+  el brazo derecho" — usando frases plantilla mapeadas al tipo de error
+  detectado, nunca un texto generado en el momento ni un servicio de voz en
+  la nube (para no romper RNF01 y RNF06).
+- CA07 *(ampliación acordada)*: Dado que un mismo tipo de error se repita
+  varias veces durante la ejecución, entonces el sistema lo acumula como
+  parte del resultado consolidado de la sesión (ver `erroresDetectados` en
+  la sección 5), para que el fisioterapeuta lo vea como evidencia en HU01/
+  HU18 y decida qué indicarle al paciente (por sesión guardada o, más
+  adelante, por un canal de comunicación aparte — HU de chat aún sin
+  definir, fuera del alcance de las 19 HU actuales).
 
 #### HU11 — Visualizar resultados y porcentaje de ejecución
 **Rol:** Paciente

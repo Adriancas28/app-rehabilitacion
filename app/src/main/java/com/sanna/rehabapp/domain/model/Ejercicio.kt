@@ -8,7 +8,7 @@ data class Ejercicio(
     val descripcion: String,
     val categoria: String,
     val materialUrl: String = "",
-    val patronReferencia: PatronReferencia? = null,
+    val patronesReferencia: List<PatronReferencia> = emptyList(),
     val creadoPor: String,
     val fechaCreacion: Date? = null,
     val activo: Boolean = true,

@@ -85,23 +85,24 @@ fun EjercicioFormScreen(
                 label = { Text("Categoría") },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = uiState.anguloMin,
-                    onValueChange = viewModel::onAnguloMinCambiado,
-                    label = { Text("Ángulo mín. (°)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Ángulos de referencia por articulación (opcional)",
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            uiState.patronesReferencia.forEach { fila ->
+                FilaPatronReferencia(
+                    fila = fila,
+                    onArticulacionCambiada = { viewModel.onArticulacionCambiada(fila.idFila, it) },
+                    onAnguloMinCambiado = { viewModel.onAnguloMinCambiado(fila.idFila, it) },
+                    onAnguloMaxCambiado = { viewModel.onAnguloMaxCambiado(fila.idFila, it) },
+                    onEliminar = { viewModel.eliminarArticulacion(fila.idFila) },
                 )
-                Spacer(modifier = Modifier.width(12.dp))
-                OutlinedTextField(
-                    value = uiState.anguloMax,
-                    onValueChange = viewModel::onAnguloMaxCambiado,
-                    label = { Text("Ángulo máx. (°)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            TextButton(onClick = viewModel::agregarArticulacion) {
+                Text("+ Agregar articulación")
             }
             Spacer(modifier = Modifier.height(16.dp))
             Text(
@@ -137,5 +138,42 @@ fun EjercicioFormScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun FilaPatronReferencia(
+    fila: PatronReferenciaFila,
+    onArticulacionCambiada: (String) -> Unit,
+    onAnguloMinCambiado: (String) -> Unit,
+    onAnguloMaxCambiado: (String) -> Unit,
+    onEliminar: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            value = fila.articulacion,
+            onValueChange = onArticulacionCambiada,
+            label = { Text("Articulación (ej. rodilla derecha)") },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = fila.anguloMin,
+                onValueChange = onAnguloMinCambiado,
+                label = { Text("Mín. (°)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            OutlinedTextField(
+                value = fila.anguloMax,
+                onValueChange = onAnguloMaxCambiado,
+                label = { Text("Máx. (°)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.weight(1f),
+            )
+        }
+        TextButton(onClick = onEliminar) { Text("Quitar articulación") }
     }
 }

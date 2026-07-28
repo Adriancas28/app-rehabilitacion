@@ -57,8 +57,12 @@ class EjercicioRepositoryImpl @Inject constructor(
             "descripcion" to ejercicio.descripcion,
             "categoria" to ejercicio.categoria,
             "materialUrl" to materialUrl,
-            "patronReferencia" to ejercicio.patronReferencia?.let {
-                mapOf("anguloMin" to it.anguloMin, "anguloMax" to it.anguloMax)
+            "patronesReferencia" to ejercicio.patronesReferencia.map {
+                mapOf(
+                    "articulacion" to it.articulacion,
+                    "anguloMin" to it.anguloMin,
+                    "anguloMax" to it.anguloMax,
+                )
             },
             "creadoPor" to ejercicio.creadoPor,
             "fechaCreacion" to (ejercicio.fechaCreacion ?: FieldValue.serverTimestamp()),
@@ -83,22 +87,27 @@ class EjercicioRepositoryImpl @Inject constructor(
 
 private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
     if (!exists()) return null
-    val patronMap = get("patronReferencia") as? Map<*, *>
-    val patron = patronMap?.let {
-        PatronReferencia(
-            anguloMin = (it["anguloMin"] as? Number)?.toFloat() ?: 0f,
-            anguloMax = (it["anguloMax"] as? Number)?.toFloat() ?: 0f,
-        )
-    }
+    val patrones = (get("patronesReferencia") as? List<*>)
+        ?.mapNotNull { (it as? Map<*, *>)?.toPatronReferencia() }
+        ?: emptyList()
     return Ejercicio(
         id = id,
         nombre = getString("nombre") ?: "",
         descripcion = getString("descripcion") ?: "",
         categoria = getString("categoria") ?: "",
         materialUrl = getString("materialUrl") ?: "",
-        patronReferencia = patron,
+        patronesReferencia = patrones,
         creadoPor = getString("creadoPor") ?: "",
         fechaCreacion = getDate("fechaCreacion"),
         activo = getBoolean("activo") ?: true,
+    )
+}
+
+private fun Map<*, *>.toPatronReferencia(): PatronReferencia? {
+    val articulacion = this["articulacion"] as? String ?: return null
+    return PatronReferencia(
+        articulacion = articulacion,
+        anguloMin = (this["anguloMin"] as? Number)?.toFloat() ?: 0f,
+        anguloMax = (this["anguloMax"] as? Number)?.toFloat() ?: 0f,
     )
 }
