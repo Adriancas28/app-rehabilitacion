@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -59,14 +60,20 @@ fun PacientesListScreen(
         onCambiarPestana = { pestana ->
             if (pestana == PestanaFisioterapeuta.EJERCICIOS) onNavegarAEjercicios()
         },
-        topBar = {
+        topBar = { onAlternarMenu ->
             TopAppBar(
                 title = { Text("Pacientes") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
+                navigationIcon = {
+                    IconButton(onClick = onAlternarMenu) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
+                    }
+                },
                 actions = {
                     IconButton(onClick = {
                         cerrarSesionViewModel.cerrarSesion()
@@ -179,13 +186,6 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                paciente.fechaRegistro?.let { fecha ->
-                    Text(
-                        text = "Registrado: ${formatearFecha(fecha)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
             }
             Icon(
                 Icons.Filled.ChevronRight,
@@ -203,6 +203,3 @@ private fun obtenerIniciales(nombre: String): String =
         .take(2)
         .mapNotNull { it.firstOrNull()?.uppercaseChar() }
         .joinToString("")
-
-private fun formatearFecha(fecha: java.util.Date): String =
-    java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale("es", "PE")).format(fecha)

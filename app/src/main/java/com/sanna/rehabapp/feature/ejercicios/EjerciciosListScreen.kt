@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.AlertDialog
@@ -65,14 +66,20 @@ fun EjerciciosListScreen(
         onCambiarPestana = { pestana ->
             if (pestana == PestanaFisioterapeuta.PACIENTES) onNavegarAPacientes()
         },
-        topBar = {
+        topBar = { onAlternarMenu ->
             TopAppBar(
                 title = { Text("Ejercicios") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
+                navigationIcon = {
+                    IconButton(onClick = onAlternarMenu) {
+                        Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onRegistrarEjercicio) {
                         Icon(Icons.Filled.Add, contentDescription = "Registrar ejercicio")
