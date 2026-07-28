@@ -7,10 +7,10 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val EsquemaClaro = lightColorScheme(
-    primary = TealPrimario,
+    primary = VerdePrimario,
     onPrimary = GrisSuperficie,
-    primaryContainer = TealContenedorClaro,
-    onPrimaryContainer = TealOnContenedorClaro,
+    primaryContainer = VerdeContenedorClaro,
+    onPrimaryContainer = VerdeOnContenedorClaro,
     background = GrisFondo,
     surface = GrisSuperficie,
     onSurface = GrisTextoPrincipal,
@@ -18,10 +18,10 @@ private val EsquemaClaro = lightColorScheme(
 )
 
 private val EsquemaOscuro = darkColorScheme(
-    primary = TealContenedorClaro,
-    onPrimary = TealOnContenedorClaro,
-    primaryContainer = TealPrimarioOscuro,
-    onPrimaryContainer = TealContenedorClaro,
+    primary = VerdeContenedorClaro,
+    onPrimary = VerdeOnContenedorClaro,
+    primaryContainer = VerdePrimarioOscuro,
+    onPrimaryContainer = VerdeContenedorClaro,
 )
 
 @Composable

@@ -4,7 +4,7 @@
     <!-- Splash screen (androidx.core:core-splashscreen): se ve mientras la
          app arranca; postSplashScreenTheme es al que se pasa apenas termina. -->
     <style name="Theme.AppRehabilitacion.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenBackground">@color/teal_primario</item>
+        <item name="windowSplashScreenBackground">@color/verde_primario</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.AppRehabilitacion</item>
     </style>
