@@ -67,6 +67,10 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // DataStore (RNF06 — persistencia local del consentimiento informado)
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")
