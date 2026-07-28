@@ -1,0 +1,5 @@
+<resources>
+    <!-- Mismo teal que core/theme/Color.kt (Compose) — usado en recursos XML
+         clásicos como el icono adaptable y el splash screen. -->
+    <color name="teal_primario">#FF03999D</color>
+</resources>
