@@ -2,6 +2,7 @@ package com.sanna.rehabapp.feature.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,8 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -27,6 +30,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -57,31 +62,50 @@ fun LoginScreen(
         if (uiState.loginExitoso) onLoginExitoso()
     }
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.Center,
+            .verticalScroll(rememberScrollState()),
     ) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        // Encabezado con peso visual, como el mockup (ahí es una foto; acá
+        // usamos el verde de marca ya que no tenemos una foto real todavía).
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primary,
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
+                        ),
+                    ),
+                    shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp),
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            Image(
-                painter = painterResource(id = R.drawable.ic_sanna_logo_completo),
-                contentDescription = "Clínica SANNA",
-                modifier = Modifier
-                    .size(132.dp)
-                    .clip(RoundedCornerShape(30.dp)),
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = "Rehabilitación en casa",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(36.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Image(
+                    painter = painterResource(id = R.drawable.ic_sanna_logo_completo),
+                    contentDescription = "Clínica SANNA",
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(28.dp)),
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Rehabilitación en casa",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
 
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+        ) {
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = viewModel::onEmailChange,
@@ -116,8 +140,23 @@ fun LoginScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = viewModel::recuperarContrasena) {
+                    Text("¿Olvidaste tu contraseña?")
+                }
+            }
+
+            uiState.mensaje?.let { mensaje ->
+                Text(
+                    text = mensaje,
+                    color = MaterialTheme.colorScheme.primary,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+
             uiState.error?.let { mensaje ->
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,7 +182,7 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = viewModel::iniciarSesion,
                 enabled = !uiState.cargando,
