@@ -5,7 +5,7 @@
          app arranca; postSplashScreenTheme es al que se pasa apenas termina. -->
     <style name="Theme.AppRehabilitacion.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/verde_primario</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_sanna_logo_completo</item>
         <item name="postSplashScreenTheme">@style/Theme.AppRehabilitacion</item>
     </style>
 </resources>
