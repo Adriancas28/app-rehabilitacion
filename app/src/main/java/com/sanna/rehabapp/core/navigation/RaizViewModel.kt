@@ -50,6 +50,12 @@ class RaizViewModel @Inject constructor(
                 _destino.value = DestinoInicial.Login
                 return@launch
             }
+            // RNF06 trata sobre el tratamiento de los datos biométricos del
+            // PACIENTE (cámara/pose); al fisioterapeuta no le aplica ese aviso.
+            if (usuario.rol == Rol.FISIOTERAPEUTA) {
+                _destino.value = DestinoInicial.Grafo(usuario.rol)
+                return@launch
+            }
             val yaAcepto = consentimientoLocalStore.consentimientoAceptado.first()
             _destino.value = if (yaAcepto) {
                 DestinoInicial.Grafo(usuario.rol)
