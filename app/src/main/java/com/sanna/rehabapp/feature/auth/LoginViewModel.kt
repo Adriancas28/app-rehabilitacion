@@ -15,7 +15,6 @@ data class LoginUiState(
     val password: String = "",
     val cargando: Boolean = false,
     val error: String? = null,
-    val mensaje: String? = null,
     val loginExitoso: Boolean = false,
 )
 
@@ -29,7 +28,7 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState
 
     fun onEmailChange(valor: String) {
-        _uiState.update { it.copy(email = valor, error = null, mensaje = null) }
+        _uiState.update { it.copy(email = valor, error = null) }
     }
 
     fun onPasswordChange(valor: String) {
@@ -43,7 +42,7 @@ class LoginViewModel @Inject constructor(
             return
         }
         viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null, mensaje = null) }
+            _uiState.update { it.copy(cargando = true, error = null) }
             authRepository.login(estado.email.trim(), estado.password).fold(
                 onSuccess = {
                     _uiState.update { it.copy(cargando = false, loginExitoso = true) }
@@ -53,35 +52,6 @@ class LoginViewModel @Inject constructor(
                         it.copy(
                             cargando = false,
                             error = "No se pudo iniciar sesión. Verifica tus credenciales.",
-                        )
-                    }
-                },
-            )
-        }
-    }
-
-    fun recuperarContrasena() {
-        val email = _uiState.value.email.trim()
-        if (email.isBlank()) {
-            _uiState.update { it.copy(error = "Ingresa tu correo para recuperar tu contraseña.") }
-            return
-        }
-        viewModelScope.launch {
-            _uiState.update { it.copy(cargando = true, error = null, mensaje = null) }
-            authRepository.enviarCorreoRecuperacion(email).fold(
-                onSuccess = {
-                    _uiState.update {
-                        it.copy(
-                            cargando = false,
-                            mensaje = "Te enviamos un correo a $email para restablecer tu contraseña.",
-                        )
-                    }
-                },
-                onFailure = {
-                    _uiState.update {
-                        it.copy(
-                            cargando = false,
-                            error = "No se pudo enviar el correo. Verifica que sea el correo correcto.",
                         )
                     }
                 },
