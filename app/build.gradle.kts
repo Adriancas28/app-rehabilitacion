@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
     kotlin("kapt")
@@ -39,6 +38,12 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    composeOptions {
+        // Compatible con Kotlin 1.9.24 (ver tabla de compatibilidad de
+        // AndroidX Compose Compiler).
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     packaging {
