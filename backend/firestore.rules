@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // RNF02 — Seguridad de acceso a la información terapéutica.
-// Roles: "paciente" | "fisioterapeuta", definidos en usuarios/{uid}.rol
+// Roles: "paciente" | "fisioterapeuta" | "admin", definidos en usuarios/{uid}.rol
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -21,10 +21,17 @@ service cloud.firestore {
       return estaAutenticado() && rolDe(request.auth.uid) == 'fisioterapeuta';
     }
 
+    // HU20/HU21 — el administrador gestiona cuentas de pacientes y
+    // fisioterapeutas (crear/editar/eliminar su documento en Firestore,
+    // asignar fisioterapeutaId).
+    function esAdmin() {
+      return estaAutenticado() && rolDe(request.auth.uid) == 'admin';
+    }
+
     // usuarios/{uid}
     match /usuarios/{uid} {
-      allow read: if esDueno(uid) || esFisioterapeuta();
-      allow write: if esDueno(uid);
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
+      allow write: if esDueno(uid) || esAdmin();
 
       // usuarios/{pacienteId}/sesiones/{sesionId}
       match /sesiones/{sesionId} {
