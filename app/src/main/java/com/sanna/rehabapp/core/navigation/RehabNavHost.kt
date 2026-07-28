@@ -14,7 +14,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.findStartDestination
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.feature.auth.ConsentimientoScreen
 import com.sanna.rehabapp.feature.auth.LoginScreen
