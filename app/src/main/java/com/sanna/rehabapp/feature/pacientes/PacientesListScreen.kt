@@ -31,12 +31,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
+import com.sanna.rehabapp.core.navigation.FisioterapeutaBottomBar
+import com.sanna.rehabapp.core.navigation.PestanaFisioterapeuta
 import com.sanna.rehabapp.domain.model.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PacientesListScreen(
     onPacienteSeleccionado: (String) -> Unit,
+    onNavegarAEjercicios: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: PacientesViewModel = hiltViewModel(),
     cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
@@ -54,6 +57,14 @@ fun PacientesListScreen(
                     }) {
                         Text("Salir")
                     }
+                },
+            )
+        },
+        bottomBar = {
+            FisioterapeutaBottomBar(
+                pestanaActual = PestanaFisioterapeuta.PACIENTES,
+                onCambiarPestana = { pestana ->
+                    if (pestana == PestanaFisioterapeuta.EJERCICIOS) onNavegarAEjercicios()
                 },
             )
         },
