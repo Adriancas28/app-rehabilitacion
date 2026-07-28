@@ -160,7 +160,7 @@ Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 
 ```
 usuarios/{uid}
-  - nombre, email, rol ("paciente" | "fisioterapeuta")
+  - nombre, email, rol ("paciente" | "fisioterapeuta" | "admin")
   - fisioterapeutaId          (solo si rol = paciente; a quién está asignado)
   - fechaRegistro
 
@@ -204,8 +204,10 @@ ejercicios/{ejercicioId}
 
 ### Pendiente de validar con el equipo
 
-- ¿Un paciente puede tener más de un fisioterapeuta a la vez? (el modelo
-  actual asume uno solo, campo `fisioterapeutaId` singular).
+- ~~¿Un paciente puede tener más de un fisioterapeuta a la vez?~~ Resuelto
+  (HU20-CA05): no, el modelo asume uno solo — una vez asignado, la opción
+  de asignar deja de estar disponible para ese paciente en el panel de
+  administrador.
 - ¿Se necesita versionar `patronReferencia` de un ejercicio si cambia con el
   tiempo, o basta con el valor vigente?
 -e 
@@ -430,6 +432,33 @@ y priorizados en 6 sprints.
 
 ---
 
+### ÉPICA 07: Administrar cuentas del sistema
+
+*(Ampliación acordada, no en la versión original de la tesis: no existía un
+rol Administrador ni una forma de crear cuentas dentro de la propia app —
+antes solo era posible mediante el script `crear-usuario.ts`.)*
+
+#### HU20 — Gestionar cuentas de pacientes
+**Rol:** Administrador
+**Deseo:** Registrar, editar y eliminar cuentas de pacientes, y asignarles su fisioterapeuta correspondiente
+**Propósito:** Administrar a los pacientes atendidos por la clínica sin depender de herramientas de línea de comandos.
+- CA01: Dado que el administrador acceda al sistema, cuando seleccione "Pacientes" en el panel de administración, entonces el sistema muestra la lista de pacientes registrados.
+- CA02: Dado que desee registrar un paciente, cuando complete nombre, correo y contraseña, entonces el sistema crea la cuenta y la muestra en la lista.
+- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes, entonces el sistema guarda los cambios.
+- CA04: Dado que desee eliminar la cuenta de un paciente, cuando confirme la eliminación, entonces el sistema la elimina.
+- CA05: Dado que un paciente no tenga fisioterapeuta asignado, cuando el administrador seleccione uno desde la lista, entonces el sistema se lo asigna y la opción de asignar deja de estar disponible para ese paciente.
+
+#### HU21 — Gestionar cuentas de fisioterapeutas
+**Rol:** Administrador
+**Deseo:** Registrar, editar y eliminar cuentas de fisioterapeutas
+**Propósito:** Administrar al personal que atiende a los pacientes.
+- CA01: Dado que el administrador acceda al sistema, cuando seleccione "Fisioterapeutas" en el panel de administración, entonces el sistema muestra la lista de fisioterapeutas registrados.
+- CA02: Dado que desee registrar un fisioterapeuta, cuando complete nombre, correo y contraseña, entonces el sistema crea la cuenta y la muestra en la lista.
+- CA03: Dado que desee actualizar la información de un fisioterapeuta, cuando modifique los datos correspondientes, entonces el sistema guarda los cambios.
+- CA04: Dado que desee eliminar la cuenta de un fisioterapeuta, cuando confirme la eliminación, entonces el sistema la elimina.
+
+---
+
 ### Requisitos No Funcionales
 
 #### RNF01 — Disponibilidad operativa del sistema
@@ -480,6 +509,8 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 | 1 | E06 | HU17 | Almacenar información terapéutica | Crítica |
 | 1 | E01 | HU01 | Gestionar pacientes terapéuticos | Crítica |
 | 1 | E01 | HU02 | Gestionar ejercicios terapéuticos | Crítica |
+| 1 | E07 | HU20 | Gestionar cuentas de pacientes | Crítica |
+| 1 | E07 | HU21 | Gestionar cuentas de fisioterapeutas | Crítica |
 | 2 | E01 | HU03 | Asignar sesiones terapéuticas | Alta |
 | 2 | E01 | HU04 | Visualizar ejercicios asignados | Crítica |
 | 2 | E01 | HU05 | Consultar material terapéutico | Crítica |
