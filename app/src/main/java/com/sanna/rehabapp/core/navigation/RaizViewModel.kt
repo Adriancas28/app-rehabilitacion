@@ -51,8 +51,9 @@ class RaizViewModel @Inject constructor(
                 return@launch
             }
             // RNF06 trata sobre el tratamiento de los datos biométricos del
-            // PACIENTE (cámara/pose); al fisioterapeuta no le aplica ese aviso.
-            if (usuario.rol == Rol.FISIOTERAPEUTA) {
+            // PACIENTE (cámara/pose); ni al fisioterapeuta ni al admin les
+            // aplica ese aviso.
+            if (usuario.rol != Rol.PACIENTE) {
                 _destino.value = DestinoInicial.Grafo(usuario.rol)
                 return@launch
             }

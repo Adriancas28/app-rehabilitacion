@@ -5,12 +5,13 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 
-fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
-    composable(Rutas.INICIO_PACIENTE) {
+// Placeholder temporal — HU20/HU21 lo reemplazan en el siguiente commit
+// por las pantallas reales de gestión de pacientes/fisioterapeutas.
+fun NavGraphBuilder.adminDestinos(navController: NavHostController) {
+    composable(Rutas.ADMIN_PACIENTES) {
         val cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel()
         PantallaInicioPlaceholder(
-            titulo = "Bienvenido",
-            mensaje = "Tus ejercicios asignados van a aparecer aquí muy pronto.",
+            titulo = "Panel de administrador",
             onCerrarSesion = {
                 cerrarSesionViewModel.cerrarSesion()
                 navController.navigate(Rutas.LOGIN) {

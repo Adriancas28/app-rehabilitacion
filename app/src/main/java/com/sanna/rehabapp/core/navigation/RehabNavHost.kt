@@ -41,6 +41,7 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
         }
         fisioterapeutaDestinos(navController)
         pacienteDestinos(navController)
+        adminDestinos(navController)
     }
 }
 
@@ -68,7 +69,11 @@ private fun PantallaDecisorInicial(navController: NavHostController) {
 }
 
 internal fun navegarAGrafo(navController: NavHostController, rol: Rol) {
-    val destino = if (rol == Rol.FISIOTERAPEUTA) Rutas.PACIENTES else Rutas.INICIO_PACIENTE
+    val destino = when (rol) {
+        Rol.FISIOTERAPEUTA -> Rutas.PACIENTES
+        Rol.ADMIN -> Rutas.ADMIN_PACIENTES
+        Rol.PACIENTE -> Rutas.INICIO_PACIENTE
+    }
     navController.navigate(destino) {
         popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
     }

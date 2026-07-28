@@ -18,7 +18,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -40,8 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
-import com.sanna.rehabapp.core.navigation.FisioterapeutaScaffold
-import com.sanna.rehabapp.core.navigation.PestanaFisioterapeuta
+import com.sanna.rehabapp.core.navigation.ItemBarraLateral
+import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.domain.model.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,11 +57,16 @@ fun PacientesListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    FisioterapeutaScaffold(
-        pestanaActual = PestanaFisioterapeuta.PACIENTES,
-        onCambiarPestana = { pestana ->
-            if (pestana == PestanaFisioterapeuta.EJERCICIOS) onNavegarAEjercicios()
-        },
+    ScaffoldConBarraLateral(
+        items = listOf(
+            ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = true, onClick = {}),
+            ItemBarraLateral(
+                "Ejercicios",
+                Icons.Filled.FitnessCenter,
+                seleccionado = false,
+                onClick = onNavegarAEjercicios,
+            ),
+        ),
         topBar = { onAlternarMenu ->
             TopAppBar(
                 title = { Text("Pacientes") },

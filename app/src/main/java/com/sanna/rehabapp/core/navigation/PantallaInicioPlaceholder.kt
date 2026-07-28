@@ -21,10 +21,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-// Placeholder temporal para el home del paciente hasta HU04 (Sprint 2),
-// que traerá sus ejercicios asignados de verdad.
+// Placeholder genérico para un home todavía sin construir (hoy: paciente
+// hasta HU04 en Sprint 2; admin hasta que HU20/HU21 reemplacen esta
+// pantalla en el siguiente commit).
 @Composable
-internal fun PantallaInicioPlaceholder(titulo: String, onCerrarSesion: () -> Unit) {
+internal fun PantallaInicioPlaceholder(
+    titulo: String,
+    mensaje: String = "Esta sección va a estar disponible muy pronto.",
+    onCerrarSesion: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -49,7 +54,7 @@ internal fun PantallaInicioPlaceholder(titulo: String, onCerrarSesion: () -> Uni
         Text(text = titulo, style = MaterialTheme.typography.headlineSmall)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Tus ejercicios asignados van a aparecer aquí muy pronto.",
+            text = mensaje,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
