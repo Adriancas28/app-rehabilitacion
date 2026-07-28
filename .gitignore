@@ -1,0 +1,38 @@
+# === Android / Gradle ===
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Keystores (nunca versionar)
+*.jks
+*.keystore
+
+# === Firebase ===
+/backend/.firebase/
+/backend/firebase-debug.log
+/backend/firestore-debug.log
+/backend/ui-debug.log
+**/google-services.json
+**/GoogleService-Info.plist
+
+# === Node (por si /backend usa herramientas de Firebase con npm) ===
+node_modules/
+npm-debug.log*
+
+# === General ===
+*.log
+.env
+.env.local
+
+# === Claude Code (config local, no compartir) ===
+.claude/

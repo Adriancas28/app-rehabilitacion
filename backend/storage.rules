@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// RNF06 — Solo material terapéutico (video/imagen de ejercicios) vive en
+// Storage. Nunca se sube video/imagen del monitoreo del paciente (Edge AI).
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function esFisioterapeuta() {
+      return estaAutenticado() &&
+        firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.rol == 'fisioterapeuta';
+    }
+
+    // material de apoyo de un ejercicio (HU02, HU05)
+    match /ejercicios/{ejercicioId}/{archivo} {
+      allow read: if estaAutenticado();
+      allow write: if esFisioterapeuta();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

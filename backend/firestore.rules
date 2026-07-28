@@ -1,0 +1,54 @@
+rules_version = '2';
+
+// RNF02 — Seguridad de acceso a la información terapéutica.
+// Roles: "paciente" | "fisioterapeuta", definidos en usuarios/{uid}.rol
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function esDueno(uid) {
+      return estaAutenticado() && request.auth.uid == uid;
+    }
+
+    function rolDe(uid) {
+      return get(/databases/$(database)/documents/usuarios/$(uid)).data.rol;
+    }
+
+    function esFisioterapeuta() {
+      return estaAutenticado() && rolDe(request.auth.uid) == 'fisioterapeuta';
+    }
+
+    // usuarios/{uid}
+    match /usuarios/{uid} {
+      allow read: if esDueno(uid) || esFisioterapeuta();
+      allow write: if esDueno(uid);
+
+      // usuarios/{pacienteId}/sesiones/{sesionId}
+      match /sesiones/{sesionId} {
+        allow read: if esDueno(uid) ||
+                       (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
+        allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
+        allow update: if esDueno(uid) ||
+                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
+        allow delete: if false;
+
+        // usuarios/{pacienteId}/sesiones/{sesionId}/recomendaciones/{recomendacionId}
+        match /recomendaciones/{recomendacionId} {
+          allow read: if esDueno(uid) ||
+                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
+          allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
+          allow update, delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
+        }
+      }
+    }
+
+    // ejercicios/{ejercicioId} — catálogo, gestionado por fisioterapeutas
+    match /ejercicios/{ejercicioId} {
+      allow read: if estaAutenticado();
+      allow create, update, delete: if esFisioterapeuta();
+    }
+  }
+}

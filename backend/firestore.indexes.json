@@ -1,0 +1,21 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "sesiones",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "fisioterapeutaId", "order": "ASCENDING" },
+        { "fieldPath": "fechaAsignacion", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sesiones",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "fisioterapeutaId", "order": "ASCENDING" },
+        { "fieldPath": "estado", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
