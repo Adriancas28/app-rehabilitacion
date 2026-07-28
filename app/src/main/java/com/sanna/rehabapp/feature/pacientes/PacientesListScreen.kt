@@ -14,15 +14,23 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,12 +58,17 @@ fun PacientesListScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Pacientes") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
                 actions = {
-                    TextButton(onClick = {
+                    IconButton(onClick = {
                         cerrarSesionViewModel.cerrarSesion()
                         onCerrarSesion()
                     }) {
-                        Text("Salir")
+                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                     }
                 },
             )
@@ -78,8 +91,11 @@ fun PacientesListScreen(
             OutlinedTextField(
                 value = uiState.consultaBusqueda,
                 onValueChange = viewModel::onConsultaCambiada,
-                label = { Text("Buscar paciente...") },
+                placeholder = { Text("Buscar paciente...") },
                 singleLine = true,
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                trailingIcon = { Icon(Icons.Filled.FilterList, contentDescription = null) },
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -116,7 +132,20 @@ fun PacientesListScreen(
 @Composable
 private fun MensajeEstadoVacio(mensaje: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(text = mensaje, style = MaterialTheme.typography.bodyMedium)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                Icons.Filled.PersonOff,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(40.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = mensaje,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
@@ -124,6 +153,8 @@ private fun MensajeEstadoVacio(mensaje: String) {
 private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
     Card(
         onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
@@ -134,19 +165,24 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(44.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = obtenerIniciales(paciente.nombre),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(14.dp))
             Column {
                 Text(text = paciente.nombre, style = MaterialTheme.typography.titleMedium)
-                Text(text = paciente.email, style = MaterialTheme.typography.bodySmall)
+                Text(
+                    text = paciente.email,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
