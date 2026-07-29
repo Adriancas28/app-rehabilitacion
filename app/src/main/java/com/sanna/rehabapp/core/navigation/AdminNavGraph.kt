@@ -1,5 +1,8 @@
 package com.sanna.rehabapp.core.navigation
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -12,13 +15,13 @@ import com.sanna.rehabapp.feature.admin.AdminPacientesScreen
 
 fun NavGraphBuilder.adminDestinos(
     navController: NavHostController,
-    menuVisible: Boolean,
-    onCambiarMenuVisible: (Boolean) -> Unit,
+    menuBarraLateralVisible: MutableState<Boolean>,
 ) {
     composable(Rutas.ADMIN_PACIENTES) {
+        var menuVisible by menuBarraLateralVisible
         AdminPacientesScreen(
             menuVisible = menuVisible,
-            onCambiarMenuVisible = onCambiarMenuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
             onRegistrarPaciente = {
                 navController.navigate(Rutas.adminPacienteFormulario())
             },
@@ -52,9 +55,10 @@ fun NavGraphBuilder.adminDestinos(
     }
 
     composable(Rutas.ADMIN_FISIOTERAPEUTAS) {
+        var menuVisible by menuBarraLateralVisible
         AdminFisioterapeutasScreen(
             menuVisible = menuVisible,
-            onCambiarMenuVisible = onCambiarMenuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
             onRegistrarFisioterapeuta = {
                 navController.navigate(Rutas.adminFisioterapeutaFormulario())
             },

@@ -9,7 +9,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -26,8 +25,12 @@ import com.sanna.rehabapp.feature.auth.LoginScreen
 fun RehabNavHost(navController: NavHostController = rememberNavController()) {
     // Se conserva aquí arriba (fuera de las pantallas individuales) para
     // que la barra lateral siga colapsada al navegar entre sus propias
-    // pestañas — ver el comentario en ScaffoldConBarraLateral.kt.
-    var menuBarraLateralVisible by rememberSaveable { mutableStateOf(true) }
+    // pestañas. Se pasa el MutableState en sí (no un Boolean ya resuelto)
+    // porque el bloque `builder` de NavHost solo se ejecuta una vez para
+    // construir el grafo (su `remember` interno no depende de este
+    // estado) — leer `.value` recién dentro de cada composable(ruta) {}
+    // es lo que permite que esa pantalla se recomponga cuando cambia.
+    val menuBarraLateralVisible = rememberSaveable { mutableStateOf(true) }
 
     NavHost(navController = navController, startDestination = Rutas.RAIZ) {
         composable(Rutas.RAIZ) {
@@ -49,14 +52,12 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
         }
         fisioterapeutaDestinos(
             navController = navController,
-            menuVisible = menuBarraLateralVisible,
-            onCambiarMenuVisible = { menuBarraLateralVisible = it },
+            menuBarraLateralVisible = menuBarraLateralVisible,
         )
         pacienteDestinos(navController)
         adminDestinos(
             navController = navController,
-            menuVisible = menuBarraLateralVisible,
-            onCambiarMenuVisible = { menuBarraLateralVisible = it },
+            menuBarraLateralVisible = menuBarraLateralVisible,
         )
     }
 }
