@@ -10,9 +10,15 @@ import com.sanna.rehabapp.feature.admin.AdminFisioterapeutasScreen
 import com.sanna.rehabapp.feature.admin.AdminPacienteFormScreen
 import com.sanna.rehabapp.feature.admin.AdminPacientesScreen
 
-fun NavGraphBuilder.adminDestinos(navController: NavHostController) {
+fun NavGraphBuilder.adminDestinos(
+    navController: NavHostController,
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
+) {
     composable(Rutas.ADMIN_PACIENTES) {
         AdminPacientesScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
             onRegistrarPaciente = {
                 navController.navigate(Rutas.adminPacienteFormulario())
             },
@@ -47,6 +53,8 @@ fun NavGraphBuilder.adminDestinos(navController: NavHostController) {
 
     composable(Rutas.ADMIN_FISIOTERAPEUTAS) {
         AdminFisioterapeutasScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
             onRegistrarFisioterapeuta = {
                 navController.navigate(Rutas.adminFisioterapeutaFormulario())
             },

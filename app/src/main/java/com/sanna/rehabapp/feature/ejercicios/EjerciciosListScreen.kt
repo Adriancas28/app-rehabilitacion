@@ -54,6 +54,8 @@ import com.sanna.rehabapp.domain.model.Ejercicio
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EjerciciosListScreen(
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
     onRegistrarEjercicio: () -> Unit,
     onEditarEjercicio: (String) -> Unit,
     onNavegarAPacientes: () -> Unit,
@@ -63,6 +65,8 @@ fun EjerciciosListScreen(
     var ejercicioAEliminar by remember { mutableStateOf<Ejercicio?>(null) }
 
     ScaffoldConBarraLateral(
+        menuVisible = menuVisible,
+        onCambiarMenuVisible = onCambiarMenuVisible,
         items = listOf(
             ItemBarraLateral(
                 "Pacientes",

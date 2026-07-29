@@ -42,6 +42,8 @@ import com.sanna.rehabapp.domain.model.Usuario
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminFisioterapeutasScreen(
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
     onRegistrarFisioterapeuta: () -> Unit,
     onEditarFisioterapeuta: (String) -> Unit,
     onNavegarAPacientes: () -> Unit,
@@ -53,6 +55,8 @@ fun AdminFisioterapeutasScreen(
     var fisioAEliminar by remember { mutableStateOf<Usuario?>(null) }
 
     ScaffoldConBarraLateral(
+        menuVisible = menuVisible,
+        onCambiarMenuVisible = onCambiarMenuVisible,
         items = listOf(
             ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = false, onClick = onNavegarAPacientes),
             ItemBarraLateral(

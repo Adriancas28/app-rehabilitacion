@@ -9,10 +9,6 @@ import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 
@@ -25,16 +21,20 @@ data class ItemBarraLateral(
 
 // Barra lateral izquierda plegable (como el mockup de referencia),
 // compartida por fisioterapeuta y administrador — cada uno con sus
-// propias pestañas. Se pliega sola después de elegir una, o con el
-// ícono de menú (☰) que cada pantalla agrega en su propio topBar.
+// propias pestañas. `menuVisible` se recibe desde afuera (hoisted en
+// RehabNavHost) en vez de manejarse aquí con `remember`, porque cada
+// pantalla de la barra es un destino de navegación distinto: si el
+// estado viviera dentro de este composable, se reiniciaría a "visible"
+// cada vez que Compose monta la pantalla destino, y la barra se vería
+// siempre abierta pese a haberse plegado antes de navegar.
 @Composable
 fun ScaffoldConBarraLateral(
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
     items: List<ItemBarraLateral>,
     topBar: @Composable (onAlternarMenu: () -> Unit) -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    var menuVisible by remember { mutableStateOf(true) }
-
     Row(modifier = Modifier.fillMaxSize()) {
         if (menuVisible) {
             NavigationRail {
@@ -43,7 +43,7 @@ fun ScaffoldConBarraLateral(
                         selected = item.seleccionado,
                         onClick = {
                             item.onClick()
-                            menuVisible = false
+                            onCambiarMenuVisible(false)
                         },
                         icon = { Icon(item.icono, contentDescription = null) },
                         label = { Text(item.etiqueta) },
@@ -53,7 +53,7 @@ fun ScaffoldConBarraLateral(
         }
         Scaffold(
             modifier = Modifier.weight(1f),
-            topBar = { topBar { menuVisible = !menuVisible } },
+            topBar = { topBar { onCambiarMenuVisible(!menuVisible) } },
         ) { padding -> content(padding) }
     }
 }

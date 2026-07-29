@@ -49,6 +49,8 @@ import com.sanna.rehabapp.domain.model.Usuario
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PacientesListScreen(
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
     onPacienteSeleccionado: (String) -> Unit,
     onNavegarAEjercicios: () -> Unit,
     onCerrarSesion: () -> Unit,
@@ -58,6 +60,8 @@ fun PacientesListScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     ScaffoldConBarraLateral(
+        menuVisible = menuVisible,
+        onCambiarMenuVisible = onCambiarMenuVisible,
         items = listOf(
             ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = true, onClick = {}),
             ItemBarraLateral(

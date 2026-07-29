@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,6 +24,11 @@ import com.sanna.rehabapp.feature.auth.LoginScreen
 
 @Composable
 fun RehabNavHost(navController: NavHostController = rememberNavController()) {
+    // Se conserva aquí arriba (fuera de las pantallas individuales) para
+    // que la barra lateral siga colapsada al navegar entre sus propias
+    // pestañas — ver el comentario en ScaffoldConBarraLateral.kt.
+    var menuBarraLateralVisible by rememberSaveable { mutableStateOf(true) }
+
     NavHost(navController = navController, startDestination = Rutas.RAIZ) {
         composable(Rutas.RAIZ) {
             PantallaDecisorInicial(navController)
@@ -39,9 +47,17 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
                 onAceptado = { rol -> navegarAGrafo(navController, rol) },
             )
         }
-        fisioterapeutaDestinos(navController)
+        fisioterapeutaDestinos(
+            navController = navController,
+            menuVisible = menuBarraLateralVisible,
+            onCambiarMenuVisible = { menuBarraLateralVisible = it },
+        )
         pacienteDestinos(navController)
-        adminDestinos(navController)
+        adminDestinos(
+            navController = navController,
+            menuVisible = menuBarraLateralVisible,
+            onCambiarMenuVisible = { menuBarraLateralVisible = it },
+        )
     }
 }
 

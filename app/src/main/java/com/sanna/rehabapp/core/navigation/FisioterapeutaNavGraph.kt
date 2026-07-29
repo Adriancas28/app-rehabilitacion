@@ -10,9 +10,15 @@ import com.sanna.rehabapp.feature.ejercicios.EjerciciosListScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
 
-fun NavGraphBuilder.fisioterapeutaDestinos(navController: NavHostController) {
+fun NavGraphBuilder.fisioterapeutaDestinos(
+    navController: NavHostController,
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
+) {
     composable(Rutas.PACIENTES) {
         PacientesListScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
             onPacienteSeleccionado = { pacienteId ->
                 navController.navigate(Rutas.pacienteDetalle(pacienteId))
             },
@@ -34,6 +40,8 @@ fun NavGraphBuilder.fisioterapeutaDestinos(navController: NavHostController) {
     }
     composable(Rutas.EJERCICIOS) {
         EjerciciosListScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
             onRegistrarEjercicio = {
                 navController.navigate(Rutas.ejercicioFormulario())
             },
