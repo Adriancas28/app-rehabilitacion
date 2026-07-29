@@ -11,6 +11,7 @@ import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
 import com.sanna.rehabapp.domain.repository.SesionRepository
+import java.util.Date
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -75,6 +76,46 @@ class SesionRepositoryImpl @Inject constructor(
                 trySend(snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList())
             }
         awaitClose { registro.remove() }
+    }
+
+    override suspend fun asignarSesion(
+        pacienteId: String,
+        ejercicioId: String,
+        fisioterapeutaId: String,
+        fechaAsignacion: Date,
+    ): Result<Unit> = runCatching {
+        val datos = mapOf(
+            "ejercicioId" to ejercicioId,
+            "fisioterapeutaId" to fisioterapeutaId,
+            "fechaAsignacion" to fechaAsignacion,
+            "estado" to EstadoSesion.PENDIENTE.aFirestore(),
+            "sincronizado" to true,
+        )
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .add(datos)
+            .await()
+        Unit
+    }
+
+    override suspend fun actualizarSesion(
+        pacienteId: String,
+        sesionId: String,
+        ejercicioId: String,
+        fechaAsignacion: Date,
+    ): Result<Unit> = runCatching {
+        val datos = mapOf(
+            "ejercicioId" to ejercicioId,
+            "fechaAsignacion" to fechaAsignacion,
+        )
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .document(sesionId)
+            .set(datos, SetOptions.merge())
+            .await()
+        Unit
     }
 }
 
