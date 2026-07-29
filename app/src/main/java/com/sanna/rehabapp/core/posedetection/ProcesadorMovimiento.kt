@@ -38,12 +38,23 @@ class ProcesadorMovimiento(private val ejercicio: Ejercicio) {
     // HU06-CA07: repeticionesCompletadas puede ser menor a las asignadas si
     // el paciente finalizó antes de tiempo — solo se cuentan como
     // "correctas" las repeticiones que sí llegaron a completarse.
-    fun generarResultado(repeticionesCompletadas: Int, repeticionesAsignadas: Int): ResultadoSesion =
-        construirResultadoSesion(
-            medicionesPorRepeticion = medicionesPorRepeticion.take(repeticionesCompletadas),
+    // HU06-CA09: numeroRepeticionInicial es distinto de 1 cuando se está
+    // reanudando una sesión ya finalizada antes — así el detalle por
+    // repetición numera las repeticiones nuevas con su número real (ej.
+    // 2, 3), no reinicia desde 1 como si fueran las primeras.
+    fun generarResultado(
+        repeticionesCompletadas: Int,
+        repeticionesAsignadas: Int,
+        numeroRepeticionInicial: Int = 1,
+    ): ResultadoSesion {
+        val repeticionesMedidasEnEstaEjecucion = repeticionesCompletadas - numeroRepeticionInicial + 1
+        return construirResultadoSesion(
+            medicionesPorRepeticion = medicionesPorRepeticion.take(repeticionesMedidasEnEstaEjecucion.coerceAtLeast(0)),
             repeticionesCompletadas = repeticionesCompletadas,
             repeticionesAsignadas = repeticionesAsignadas,
+            numeroRepeticionInicial = numeroRepeticionInicial,
         )
+    }
 
     private fun medirArticulacion(
         patron: PatronReferencia,

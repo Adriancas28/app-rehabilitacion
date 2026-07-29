@@ -41,6 +41,7 @@ fun construirResultadoSesion(
     medicionesPorRepeticion: List<List<List<MedicionArticulacion>>>,
     repeticionesCompletadas: Int,
     repeticionesAsignadas: Int,
+    numeroRepeticionInicial: Int = 1,
 ): ResultadoSesion {
     val medicionesPorFrame = medicionesPorRepeticion.flatten()
     val todasLasMediciones = medicionesPorFrame.flatten()
@@ -95,7 +96,10 @@ fun construirResultadoSesion(
                 ErrorDetectado(articulacion = clave.first.etiqueta, tipo = clave.second, repeticiones = mediciones.size)
             }
         DetalleRepeticion(
-            numero = indice + 1,
+            // HU06-CA09: numeroRepeticionInicial > 1 cuando se reanuda una
+            // sesión — la numeración refleja la repetición real, no el
+            // índice dentro de esta ejecución puntual.
+            numero = indice + numeroRepeticionInicial,
             dentroDeRango = medicionesRepeticion.isNotEmpty() && erroresRepeticion.isEmpty(),
             errores = erroresRepeticion,
         )
