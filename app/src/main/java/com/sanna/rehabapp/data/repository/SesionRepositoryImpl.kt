@@ -6,6 +6,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.sanna.rehabapp.domain.model.AnguloDetectado
+import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ErrorDetectado
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
@@ -54,6 +55,19 @@ class SesionRepositoryImpl @Inject constructor(
                 "repeticionesCompletadas" to resultado.repeticionesCompletadas,
                 "repeticionesAsignadas" to resultado.repeticionesAsignadas,
                 "repeticionesCorrectas" to resultado.repeticionesCorrectas,
+                "detallePorRepeticion" to resultado.detallePorRepeticion.map { detalle ->
+                    mapOf(
+                        "numero" to detalle.numero,
+                        "dentroDeRango" to detalle.dentroDeRango,
+                        "errores" to detalle.errores.map {
+                            mapOf(
+                                "articulacion" to it.articulacion,
+                                "tipo" to it.tipo,
+                                "repeticiones" to it.repeticiones,
+                            )
+                        },
+                    )
+                },
             ),
             "sincronizado" to true,
         )
@@ -167,6 +181,9 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
             repeticionesCompletadas = (it["repeticionesCompletadas"] as? Number)?.toInt() ?: 0,
             repeticionesAsignadas = (it["repeticionesAsignadas"] as? Number)?.toInt() ?: 0,
             repeticionesCorrectas = (it["repeticionesCorrectas"] as? Number)?.toInt() ?: 0,
+            detallePorRepeticion = (it["detallePorRepeticion"] as? List<*>)
+                ?.mapNotNull { entrada -> (entrada as? Map<*, *>)?.toDetalleRepeticion() }
+                ?: emptyList(),
         )
     }
     return Sesion(
@@ -188,6 +205,17 @@ private fun Map<*, *>.toErrorDetectado(): ErrorDetectado? {
     val tipo = this["tipo"] as? String ?: return null
     val repeticiones = (this["repeticiones"] as? Number)?.toInt() ?: 1
     return ErrorDetectado(articulacion = articulacion, tipo = tipo, repeticiones = repeticiones)
+}
+
+private fun Map<*, *>.toDetalleRepeticion(): DetalleRepeticion? {
+    val numero = (this["numero"] as? Number)?.toInt() ?: return null
+    return DetalleRepeticion(
+        numero = numero,
+        dentroDeRango = this["dentroDeRango"] as? Boolean ?: false,
+        errores = (this["errores"] as? List<*>)
+            ?.mapNotNull { entrada -> (entrada as? Map<*, *>)?.toErrorDetectado() }
+            ?: emptyList(),
+    )
 }
 
 private fun Map<*, *>.toAnguloDetectado(): AnguloDetectado? {

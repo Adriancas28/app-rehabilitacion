@@ -187,13 +187,12 @@ usuarios/{uid}
                               menor a asignadas si se finalizó antes de
                               tiempo, HU06-CA07; correctas cuenta las
                               repeticiones sin ningún error detectado),
-        detallePorRepeticion: [{ numero, dentroDeRango, erroresDetectados }]
-                             (HU18-CA04, Sprint 4/5 — PENDIENTE DE
-                              CONSTRUIR, no existe todavía. Es el desglose
-                              por repetición que ve el fisioterapeuta antes
-                              de recomendar, HU15. `erroresDetectados` aquí
-                              es el mismo tipo que el de arriba pero acotado
-                              a esa repetición puntual, no agregado)
+        detallePorRepeticion: [{ numero, dentroDeRango, errores }]
+                             (HU18-CA04, Sprint 4: desglose por repetición
+                              que ve el fisioterapeuta antes de
+                              recomendar, HU15. `errores` es el mismo tipo
+                              que `erroresDetectados` de arriba pero
+                              acotado a esa repetición puntual, no agregado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -542,9 +541,10 @@ y priorizados en 5 sprints.
 - CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
 - CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
 - CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
-- CA04 *(ampliación acordada, no en la versión original de la tesis; pendiente
-  de construir — ver nota de dependencia con HU15 más abajo)*: Dado que
-  acceda al detalle de una sesión completada, entonces el sistema
+- CA04 *(ampliación acordada, no en la versión original de la tesis;
+  construida en Sprint 4 junto con la versión mínima de CA02 — ver nota
+  de dependencia con HU15 más abajo)*: Dado que acceda al detalle de una
+  sesión completada, entonces el sistema
   desglosa el resultado **por repetición** (no solo agregado): para cada
   repetición muestra si estuvo dentro de rango y, si no, qué error se
   detectó y en qué articulación (ej. "Repetición 5: hombro derecho, rango

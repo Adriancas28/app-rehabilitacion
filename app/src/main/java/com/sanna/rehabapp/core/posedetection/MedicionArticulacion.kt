@@ -2,6 +2,7 @@ package com.sanna.rehabapp.core.posedetection
 
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.AnguloDetectado
+import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ErrorDetectado
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
@@ -23,8 +24,8 @@ data class MedicionArticulacion(
             else -> 0f
         }
 
-    // HU09-CA02 (Sprint 4) hará una clasificación más completa; esta es la
-    // mínima necesaria para poblar erroresDetectados al cerrar la sesión.
+    // HU09-CA02: clasifica el tipo de error (ya satisface la CA tal cual
+    // está redactada — "rango incompleto, desviación angular, etc.").
     val tipoDeError: String
         get() = when {
             angulo < anguloMin -> "Rango incompleto"
@@ -82,6 +83,24 @@ fun construirResultadoSesion(
         frames.isNotEmpty() && frames.all { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
     }
 
+    // HU18-CA04: el mismo agrupamiento de erroresDetectados, pero acotado
+    // a cada repetición en vez de global — lo que ve el fisioterapeuta al
+    // revisar el detalle de la sesión.
+    val detallePorRepeticion = medicionesPorRepeticion.mapIndexed { indice, frames ->
+        val medicionesRepeticion = frames.flatten()
+        val erroresRepeticion = medicionesRepeticion
+            .filterNot { it.dentroDeRango }
+            .groupBy { it.articulacion to it.tipoDeError }
+            .map { (clave, mediciones) ->
+                ErrorDetectado(articulacion = clave.first.etiqueta, tipo = clave.second, repeticiones = mediciones.size)
+            }
+        DetalleRepeticion(
+            numero = indice + 1,
+            dentroDeRango = medicionesRepeticion.isNotEmpty() && erroresRepeticion.isEmpty(),
+            errores = erroresRepeticion,
+        )
+    }
+
     return ResultadoSesion(
         angulosDetectados = angulosDetectados,
         desviacionPromedio = desviacionPromedio,
@@ -90,5 +109,6 @@ fun construirResultadoSesion(
         repeticionesCompletadas = repeticionesCompletadas,
         repeticionesAsignadas = repeticionesAsignadas,
         repeticionesCorrectas = repeticionesCorrectas,
+        detallePorRepeticion = detallePorRepeticion,
     )
 }
