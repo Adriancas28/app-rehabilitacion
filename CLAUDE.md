@@ -162,6 +162,9 @@ Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 usuarios/{uid}
   - nombre, email, rol ("paciente" | "fisioterapeuta" | "admin")
   - fisioterapeutaId          (solo si rol = paciente; a quién está asignado)
+  - diagnostico               (solo si rol = paciente; texto libre que
+                                redacta el fisioterapeuta — HU01-CA06,
+                                Sprint 3)
   - fechaRegistro
 
   usuarios/{pacienteId}/sesiones/{sesionId}
@@ -169,6 +172,8 @@ usuarios/{uid}
     - fisioterapeutaId
     - fechaAsignacion, fechaEjecucion
     - estado                  ("pendiente" | "completada")
+    - notas                   (texto libre opcional del fisioterapeuta al
+                                asignar la sesión — HU03-CA05, Sprint 3)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
         erroresDetectados: [{ articulacion, tipo, repeticiones }]
@@ -239,6 +244,12 @@ y priorizados en 5 sprints.
 - CA03: Dado que consulta un paciente, cuando acceda a su detalle, entonces el sistema muestra progreso y sesiones registradas.
 - CA04: Dado que desee ubicar un paciente, cuando ingrese un criterio de búsqueda, entonces el sistema filtra la lista mostrada.
 - CA05: Dado que no tenga pacientes asignados, cuando acceda al módulo, entonces el sistema muestra un mensaje de ausencia de pacientes.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que consulte el detalle de un paciente, cuando registre o actualice
+  su diagnóstico, entonces el sistema guarda ese texto y lo muestra junto
+  al resto de su información terapéutica (incluida la lista de
+  pacientes). Es un campo clínico de texto libre que redacta el propio
+  fisioterapeuta; no se deriva de ninguna otra historia.
 
 #### HU02 — Gestionar ejercicios terapéuticos
 **Rol:** Fisioterapeuta
@@ -268,6 +279,13 @@ y priorizados en 5 sprints.
 - CA02: Dado que selecciona ejercicios y confirma, entonces el sistema almacena la sesión con la fecha de asignación.
 - CA03: Dado que desea modificar una sesión ya asignada, cuando actualice ejercicios o fecha, entonces el sistema guarda los cambios.
 - CA04: Dado que el paciente consulta sus actividades, entonces el sistema muestra las sesiones asignadas.
+- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que esté asignando o editando una sesión, cuando agregue una nota
+  (texto libre, opcional), entonces el sistema la guarda junto con la
+  sesión. Sirve para indicaciones puntuales del fisioterapeuta sobre esa
+  sesión en particular (ej. "hacerlo con apoyo"); no reemplaza a las
+  recomendaciones de HU15/HU16, que se registran sobre una sesión ya
+  realizada, no al momento de asignarla.
 
 #### HU04 — Visualizar ejercicios asignados
 **Rol:** Paciente
