@@ -30,6 +30,26 @@ Monorepo con dos carpetas raíz independientes:
 3. Descargar `google-services.json` desde la consola de Firebase y colocarlo
    en `/app` (no se versiona, ver `.gitignore`).
 
+## Alta de usuarios (pacientes y fisioterapeutas)
+
+La app **no tiene pantalla de auto-registro**: las cuentas ya deben existir
+en Firebase Auth + Firestore antes de que alguien pueda iniciar sesión. Se
+crean con un script administrativo en `/backend`, nunca desde el propio
+dispositivo del paciente o fisioterapeuta:
+
+```bash
+cd backend
+npm install
+GOOGLE_APPLICATION_CREDENTIALS=./service-account.json \
+  npx ts-node seed/crear-usuario.ts \
+  --nombre "Juan Pérez" --email juan.perez@correo.com \
+  --rol paciente --fisioterapeutaId <uid-del-fisioterapeuta>
+```
+
+El script imprime la contraseña generada por consola; se entrega al
+usuario por correo o WhatsApp. Para un fisioterapeuta se omite
+`--fisioterapeutaId` y se usa `--rol fisioterapeuta`.
+
 ## Roles
 
 - **Paciente:** ejecuta ejercicios asignados y recibe retroalimentación en tiempo real.

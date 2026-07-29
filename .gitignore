@@ -4,7 +4,7 @@
 /local.properties
 /.idea/
 .DS_Store
-/build/
+build/
 /captures/
 .externalNativeBuild/
 .cxx/
@@ -24,6 +24,9 @@
 /backend/ui-debug.log
 **/google-services.json
 **/GoogleService-Info.plist
+# Claves de cuenta de servicio (Admin SDK) - nunca versionar
+**/*firebase-adminsdk*.json
+/backend/service-account*.json
 
 # === Node (por si /backend usa herramientas de Firebase con npm) ===
 node_modules/

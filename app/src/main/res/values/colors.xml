@@ -1,0 +1,6 @@
+<resources>
+    <!-- Mismo verde que core/theme/Color.kt (Compose) — extraído del logo
+         real de la clínica (sanna.png). Usado en recursos XML clásicos
+         como el icono adaptable y el splash screen. -->
+    <color name="verde_primario">#FF00B011</color>
+</resources>
