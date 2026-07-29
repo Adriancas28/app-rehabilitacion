@@ -18,6 +18,9 @@ interface SesionRepository {
     // tanto el detalle del fisioterapeuta como el home del propio paciente.
     fun observarSesionesDe(pacienteId: String): Flow<List<Sesion>>
 
+    // HU03-CA03 — cargar una sesión puntual para editarla.
+    suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
+
     // HU03-CA02 — el fisioterapeuta asigna una nueva sesión a un paciente.
     suspend fun asignarSesion(
         pacienteId: String,

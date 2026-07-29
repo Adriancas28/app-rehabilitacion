@@ -78,6 +78,16 @@ class SesionRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
+    override suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion? {
+        val snapshot = firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .document(sesionId)
+            .get()
+            .await()
+        return snapshot.toSesion()
+    }
+
     override suspend fun asignarSesion(
         pacienteId: String,
         ejercicioId: String,
