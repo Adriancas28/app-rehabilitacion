@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.ejercicios.EjercicioFormScreen
 import com.sanna.rehabapp.feature.ejercicios.EjerciciosListScreen
 import com.sanna.rehabapp.feature.pacientes.AsignarSesionScreen
+import com.sanna.rehabapp.feature.pacientes.FisioResultadoSesionScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
 
@@ -48,6 +49,23 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onEditarSesion = { pacienteId, sesionId ->
                 navController.navigate(Rutas.sesionFormulario(pacienteId, sesionId))
             },
+            onVerResultado = { pacienteId, sesionId ->
+                navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
+            },
+        )
+    }
+    composable(
+        route = Rutas.FISIO_RESULTADO_SESION,
+        arguments = listOf(
+            navArgument(Rutas.ARG_PACIENTE_ID) {},
+            navArgument(Rutas.ARG_SESION_ID) {},
+        ),
+    ) {
+        FisioResultadoSesionScreen(
+            onVolver = { navController.popBackStack() },
+            // HU15 (próximo commit) conecta esto a la pantalla de registrar
+            // recomendación; todavía no existe.
+            onRegistrarRecomendacion = { _, _ -> },
         )
     }
     composable(

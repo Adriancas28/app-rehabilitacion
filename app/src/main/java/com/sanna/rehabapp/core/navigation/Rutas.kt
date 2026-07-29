@@ -15,6 +15,11 @@ object Rutas {
     const val SESION_FORMULARIO = "fisioterapeuta/pacientes/{pacienteId}/sesiones/formulario?sesionId={sesionId}"
     const val ARG_SESION_ID = "sesionId"
 
+    // HU18-CA02/CA04 — el fisioterapeuta ve el detalle de una sesión ya
+    // completada (a diferencia de la ruta del paciente, necesita el
+    // pacienteId explícito: no hay un "dueño autenticado" implícito).
+    const val FISIO_RESULTADO_SESION = "fisioterapeuta/pacientes/{pacienteId}/sesiones/{sesionId}/resultado"
+
     const val INICIO_PACIENTE = "paciente/inicio"
     const val DETALLE_EJERCICIO_ASIGNADO = "paciente/ejercicios/{sesionId}"
     const val EJECUTAR_SESION = "paciente/ejercicios/{sesionId}/ejecutar"
@@ -35,6 +40,9 @@ object Rutas {
     fun sesionFormulario(pacienteId: String, sesionId: String? = null): String =
         "fisioterapeuta/pacientes/$pacienteId/sesiones/formulario" +
             if (sesionId != null) "?sesionId=$sesionId" else ""
+
+    fun fisioResultadoSesion(pacienteId: String, sesionId: String): String =
+        "fisioterapeuta/pacientes/$pacienteId/sesiones/$sesionId/resultado"
 
     fun detalleEjercicioAsignado(sesionId: String): String = "paciente/ejercicios/$sesionId"
 

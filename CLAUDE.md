@@ -555,16 +555,18 @@ y priorizados en 5 sprints.
   base con la que el fisioterapeuta decide qué recomendación registrar
   (HU15).
 
-> **Nota de dependencia (Sprint 4/5):** HU15 (registrar recomendaciones,
-> Sprint 4) requiere que el fisioterapeuta pueda ver el resultado de una
-> sesión completada antes de recomendar algo — pero esa vista es HU18-CA02,
-> planeada recién para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas
-> a Sprint 3 por la misma razón de dependencia), en Sprint 4 habrá que
-> construir al menos una versión mínima de HU18-CA02 (y probablemente CA04)
-> junto con HU15, no esperar al Sprint 5 completo. Hoy (Sprint 3) esta
-> vista NO existe todavía: en `PacienteDetalleScreen` las tarjetas de
-> sesiones completadas no son clickeables (solo las pendientes, para
-> editarlas) — es una limitación conocida, no un bug.
+> **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
+> recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de
+> una sesión completada antes de recomendar algo — esa vista era HU18-CA02,
+> planeada para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas a
+> Sprint 3 por la misma razón de dependencia), en Sprint 4 se construyó una
+> versión mínima de HU18-CA02 + CA04 junto con HU15: en
+> `PacienteDetalleScreen` las tarjetas de sesión ahora son clickeables
+> también cuando están completadas (antes solo las pendientes), y abren
+> `FisioResultadoSesionScreen` (porcentaje, ángulos, detalle por
+> repetición). Sigue pendiente para Sprint 5 el resto de HU18 (CA01/CA03:
+> vista agregada de todas las sesiones con filtro por fecha/tipo de
+> ejercicio) — esto solo cubre el detalle de una sesión puntual.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
