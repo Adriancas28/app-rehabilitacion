@@ -4,7 +4,10 @@
     <!-- RNF06 / CA03: solo los permisos estrictamente necesarios -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <!-- required="false" (RNF03-CA03): el dispositivo sin camara debe poder
+         instalar la app y recibir un mensaje explicito de incompatibilidad,
+         no quedar filtrado silenciosamente por Google Play. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:name=".RehabApplication"
