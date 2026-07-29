@@ -23,6 +23,9 @@ private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 
 data class EjecutarSesionUiState(
     val ejercicio: Ejercicio? = null,
+    // HU03-CA06: override de repeticiones para esta sesión puntual; si es
+    // null, se usa el valor por defecto del ejercicio.
+    val repeticionesOverride: Int? = null,
     val cargando: Boolean = true,
     val sesionIniciada: Boolean = false,
     val repeticionActual: Int = 1,
@@ -33,7 +36,7 @@ data class EjecutarSesionUiState(
     val sesionCompletada: Boolean = false,
     val error: String? = null,
 ) {
-    val totalRepeticiones: Int get() = ejercicio?.repeticiones ?: 1
+    val totalRepeticiones: Int get() = repeticionesOverride ?: ejercicio?.repeticiones ?: 1
 }
 
 // HU06 — ejecutar una sesión terapéutica: cargar el ejercicio asignado
@@ -72,7 +75,12 @@ class EjecutarSesionViewModel @Inject constructor(
             if (ejercicio != null) {
                 procesadorMovimiento = ProcesadorMovimiento(ejercicio)
                 _uiState.update {
-                    it.copy(ejercicio = ejercicio, segundosRestantes = ejercicio.duracionSegundos, cargando = false)
+                    it.copy(
+                        ejercicio = ejercicio,
+                        repeticionesOverride = sesion?.repeticiones,
+                        segundosRestantes = ejercicio.duracionSegundos,
+                        cargando = false,
+                    )
                 }
             } else {
                 _uiState.update { it.copy(cargando = false, error = "No se encontró el ejercicio asignado.") }
