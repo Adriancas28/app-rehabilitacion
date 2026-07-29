@@ -4,6 +4,10 @@ import java.util.Date
 
 data class Sesion(
     val id: String = "",
+    // HU18-CA01 (Sprint 5): solo se completa cuando la sesión viene de una
+    // consulta agregada entre pacientes (collection group) — las consultas
+    // de un paciente puntual ya lo conocen por fuera, no lo necesitan aquí.
+    val pacienteId: String? = null,
     val ejercicioId: String,
     val fisioterapeutaId: String,
     val fechaAsignacion: Date? = null,

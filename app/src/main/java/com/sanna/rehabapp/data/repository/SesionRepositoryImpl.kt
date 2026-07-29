@@ -105,6 +105,23 @@ class SesionRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
+    // HU18-CA01/CA03 — todas las sesiones de todos los pacientes de este
+    // fisioterapeuta. Necesita el índice compuesto (fisioterapeutaId asc +
+    // fechaAsignacion desc) ya declarado en firestore.indexes.json.
+    override fun observarTodasLasSesionesDe(fisioterapeutaId: String): Flow<List<Sesion>> = callbackFlow {
+        val registro = firestore.collectionGroup(SUBCOLECCION_SESIONES)
+            .whereEqualTo("fisioterapeutaId", fisioterapeutaId)
+            .orderBy("fechaAsignacion", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList())
+            }
+        awaitClose { registro.remove() }
+    }
+
     override suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion? {
         val snapshot = firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -188,6 +205,10 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
     }
     return Sesion(
         id = id,
+        // HU18-CA01: el documento padre de la subcolección sesiones es
+        // siempre usuarios/{pacienteId}, tanto en consultas de un paciente
+        // puntual como en la collection group query agregada.
+        pacienteId = reference.parent.parent?.id,
         ejercicioId = getString("ejercicioId") ?: "",
         fisioterapeutaId = getString("fisioterapeutaId") ?: "",
         fechaAsignacion = getDate("fechaAsignacion"),

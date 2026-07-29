@@ -19,6 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.People
@@ -56,6 +57,7 @@ fun PacientesListScreen(
     onCambiarMenuVisible: (Boolean) -> Unit,
     onPacienteSeleccionado: (String) -> Unit,
     onNavegarAEjercicios: () -> Unit,
+    onNavegarAResultados: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: PacientesViewModel = hiltViewModel(),
     cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
@@ -72,6 +74,12 @@ fun PacientesListScreen(
                 Icons.Filled.FitnessCenter,
                 seleccionado = false,
                 onClick = onNavegarAEjercicios,
+            ),
+            ItemBarraLateral(
+                "Resultados",
+                Icons.Filled.Assessment,
+                seleccionado = false,
+                onClick = onNavegarAResultados,
             ),
         ),
         topBar = { onAlternarMenu ->

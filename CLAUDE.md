@@ -589,6 +589,16 @@ y priorizados en 5 sprints.
 > vista agregada de todas las sesiones con filtro por fecha/tipo de
 > ejercicio) — esto solo cubre el detalle de una sesión puntual.
 
+> **CA01/CA03 completados en Sprint 5:** nueva pantalla "Resultados"
+> (`ResultadosScreen`, tercera pestaña de la barra lateral del
+> fisioterapeuta) con la lista agregada de sesiones completadas de
+> **todos** sus pacientes — via `collectionGroup("sesiones")` filtrado
+> por `fisioterapeutaId` (el índice compuesto ya estaba declarado en
+> `firestore.indexes.json` desde etapas tempranas del proyecto, solo
+> hubo que desplegarlo). Filtro por ejercicio (dropdown) y por período
+> (Todos/Última semana/Último mes) — CA03 pide "fecha o tipo de
+> ejercicio", se cubre con ambos.
+
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
 **Deseo:** Sincronizar la información terapéutica generada de forma local
