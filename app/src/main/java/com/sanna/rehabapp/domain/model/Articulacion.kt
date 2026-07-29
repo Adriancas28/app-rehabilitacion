@@ -19,7 +19,13 @@ enum class Articulacion(
     HOMBRO_IZQUIERDO("Hombro izquierdo", puntoInicial = 13, vertice = 11, puntoFinal = 23),
     HOMBRO_DERECHO("Hombro derecho", puntoInicial = 14, vertice = 12, puntoFinal = 24),
     CADERA_IZQUIERDA("Cadera izquierda", puntoInicial = 11, vertice = 23, puntoFinal = 25),
-    CADERA_DERECHA("Cadera derecha", puntoInicial = 12, vertice = 24, puntoFinal = 26);
+    CADERA_DERECHA("Cadera derecha", puntoInicial = 12, vertice = 24, puntoFinal = 26),
+
+    // Ángulo cadera-hombro-nariz (24-12-0): se abre al levantar el rostro
+    // (mirar hacia arriba) y se cierra al bajarlo (mentón al pecho). Más
+    // fácil de ejecutar solo frente a la cámara que los ejercicios de
+    // pierna/brazo — útil para pruebas rápidas de HU06/07/08/10.
+    CUELLO("Cuello", puntoInicial = 24, vertice = 12, puntoFinal = 0);
 
     fun aFirestore(): String = name
 

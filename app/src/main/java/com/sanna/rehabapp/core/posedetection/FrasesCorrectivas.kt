@@ -22,5 +22,6 @@ private fun articuloDe(articulacion: Articulacion): String = when (articulacion)
     -> "la"
     Articulacion.CODO_IZQUIERDO, Articulacion.CODO_DERECHO,
     Articulacion.HOMBRO_IZQUIERDO, Articulacion.HOMBRO_DERECHO,
+    Articulacion.CUELLO,
     -> "el"
 }
