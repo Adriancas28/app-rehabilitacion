@@ -7,6 +7,7 @@ import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
@@ -59,11 +60,14 @@ class PacienteDetalleViewModel @Inject constructor(
         }
     }
 
-    // HU01-CA06 — el fisioterapeuta registra/edita el diagnóstico del paciente.
-    fun actualizarDiagnostico(diagnostico: String) {
+    // HU01-CA06 — el fisioterapeuta elige el diagnóstico del paciente de un
+    // catálogo cerrado (TipoDiagnostico).
+    fun actualizarDiagnostico(tipoDiagnostico: TipoDiagnostico) {
         viewModelScope.launch {
-            usuarioRepository.actualizarDiagnostico(pacienteId, diagnostico).onSuccess {
-                _uiState.update { estado -> estado.copy(paciente = estado.paciente?.copy(diagnostico = diagnostico)) }
+            usuarioRepository.actualizarDiagnostico(pacienteId, tipoDiagnostico).onSuccess {
+                _uiState.update { estado ->
+                    estado.copy(paciente = estado.paciente?.copy(tipoDiagnostico = tipoDiagnostico))
+                }
             }
         }
     }

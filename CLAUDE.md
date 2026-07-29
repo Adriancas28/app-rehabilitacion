@@ -162,9 +162,10 @@ Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 usuarios/{uid}
   - nombre, email, rol ("paciente" | "fisioterapeuta" | "admin")
   - fisioterapeutaId          (solo si rol = paciente; a quién está asignado)
-  - diagnostico               (solo si rol = paciente; texto libre que
-                                redacta el fisioterapeuta — HU01-CA06,
-                                Sprint 3)
+  - tipoDiagnostico           (solo si rol = paciente; valor del enum
+                                TipoDiagnostico que elige el fisioterapeuta
+                                de un catálogo cerrado — HU01-CA06, revisado
+                                en Sprint 3 de texto libre a catálogo)
   - fechaRegistro
 
   usuarios/{pacienteId}/sesiones/{sesionId}
@@ -251,12 +252,16 @@ y priorizados en 5 sprints.
 - CA03: Dado que consulta un paciente, cuando acceda a su detalle, entonces el sistema muestra progreso y sesiones registradas.
 - CA04: Dado que desee ubicar un paciente, cuando ingrese un criterio de búsqueda, entonces el sistema filtra la lista mostrada.
 - CA05: Dado que no tenga pacientes asignados, cuando acceda al módulo, entonces el sistema muestra un mensaje de ausencia de pacientes.
-- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que consulte el detalle de un paciente, cuando registre o actualice
-  su diagnóstico, entonces el sistema guarda ese texto y lo muestra junto
-  al resto de su información terapéutica (incluida la lista de
-  pacientes). Es un campo clínico de texto libre que redacta el propio
-  fisioterapeuta; no se deriva de ninguna otra historia.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis;
+  revisada durante el propio Sprint 3: pasó de texto libre a catálogo
+  cerrado)*: Dado que consulte el detalle de un paciente, cuando elija su
+  diagnóstico de un catálogo cerrado de tipos frecuentes en rehabilitación
+  (ej. tendinitis de hombro, lesión de rodilla, lumbalgia, post-operatorio,
+  esguince de tobillo, fortalecimiento lumbar, otro), entonces el sistema
+  guarda ese valor y lo muestra junto al resto de su información
+  terapéutica (incluida la lista de pacientes). No es texto libre: el
+  fisioterapeuta selecciona de la lista, no redacta; esto permite
+  consistencia entre pacientes. No se deriva de ninguna otra historia.
 
 #### HU02 — Gestionar ejercicios terapéuticos
 **Rol:** Fisioterapeuta

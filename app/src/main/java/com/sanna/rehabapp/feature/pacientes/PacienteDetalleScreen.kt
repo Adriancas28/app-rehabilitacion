@@ -1,6 +1,7 @@
 package com.sanna.rehabapp.feature.pacientes
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,12 +17,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +53,7 @@ import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,11 +140,13 @@ fun PacienteDetalleScreen(
     }
 }
 
-// HU01-CA06 — el fisioterapeuta registra/edita el diagnóstico del paciente.
+// HU01-CA06 — el fisioterapeuta elige el diagnóstico del paciente de un
+// catálogo cerrado (TipoDiagnostico), no texto libre.
 @Composable
-private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (String) -> Unit) {
+private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (TipoDiagnostico) -> Unit) {
     var editando by remember { mutableStateOf(false) }
-    var texto by remember(paciente.diagnostico) { mutableStateOf(paciente.diagnostico ?: "") }
+    var menuAbierto by remember { mutableStateOf(false) }
+    var seleccionado by remember(paciente.tipoDiagnostico) { mutableStateOf(paciente.tipoDiagnostico) }
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -167,28 +174,54 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (String) -> Unit) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             if (editando) {
-                OutlinedTextField(
-                    value = texto,
-                    onValueChange = { texto = it },
-                    placeholder = { Text("Ej. Tendinitis de hombro") },
-                    minLines = 2,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = seleccionado?.etiqueta ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        placeholder = { Text("Selecciona un diagnóstico") },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { menuAbierto = true },
+                    )
+                    DropdownMenu(
+                        expanded = menuAbierto,
+                        onDismissRequest = { menuAbierto = false },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        TipoDiagnostico.entries.forEach { tipo ->
+                            DropdownMenuItem(
+                                text = { Text(tipo.etiqueta) },
+                                onClick = {
+                                    seleccionado = tipo
+                                    menuAbierto = false
+                                },
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
                     TextButton(onClick = {
-                        texto = paciente.diagnostico ?: ""
+                        seleccionado = paciente.tipoDiagnostico
                         editando = false
                     }) { Text("Cancelar") }
                     Spacer(modifier = Modifier.width(8.dp))
-                    TextButton(onClick = {
-                        onGuardar(texto.trim())
-                        editando = false
-                    }) { Text("Guardar") }
+                    TextButton(
+                        enabled = seleccionado != null,
+                        onClick = {
+                            seleccionado?.let(onGuardar)
+                            editando = false
+                        },
+                    ) { Text("Guardar") }
                 }
             } else {
                 Text(
-                    text = paciente.diagnostico?.takeIf { it.isNotBlank() } ?: "Sin diagnóstico registrado.",
+                    text = paciente.tipoDiagnostico?.etiqueta ?: "Sin diagnóstico registrado.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

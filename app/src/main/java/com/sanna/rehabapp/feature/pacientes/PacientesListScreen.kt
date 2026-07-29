@@ -247,7 +247,7 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = paciente.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = paciente.diagnostico?.takeIf { it.isNotBlank() } ?: paciente.email,
+                    text = paciente.tipoDiagnostico?.etiqueta ?: paciente.email,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

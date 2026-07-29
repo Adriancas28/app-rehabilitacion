@@ -7,6 +7,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.sanna.rehabapp.domain.model.Rol
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.AdminRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -117,7 +118,7 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
-        diagnostico = getString("diagnostico"),
+        tipoDiagnostico = TipoDiagnostico.desdeFirestoreOrNull(getString("tipoDiagnostico")),
         fechaRegistro = getDate("fechaRegistro"),
     )
 }
