@@ -9,6 +9,7 @@ import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +19,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 // HU04-CA02 — el ejercicio ya resuelto (no solo su id) junto a la sesión
-// que lo asignó, para poder abrir su detalle (HU04-CA03).
-data class EjercicioAsignado(val sesionId: String, val ejercicio: Ejercicio)
+// que lo asignó, para poder abrir su detalle (HU04-CA03). fechaAsignacion y
+// repeticiones vienen de la sesión (con el override de HU03-CA06 ya
+// resuelto), para mostrarlos en la tarjeta de "próxima sesión".
+data class EjercicioAsignado(
+    val sesionId: String,
+    val ejercicio: Ejercicio,
+    val fechaAsignacion: Date?,
+    val repeticiones: Int,
+)
 
 data class EjerciciosAsignadosUiState(
     val nombrePaciente: String = "",
@@ -68,7 +76,12 @@ class EjerciciosAsignadosViewModel @Inject constructor(
                     .filter { it.estado == EstadoSesion.PENDIENTE }
                     .mapNotNull { sesion ->
                         ejerciciosPorId[sesion.ejercicioId]?.let { ejercicio ->
-                            EjercicioAsignado(sesionId = sesion.id, ejercicio = ejercicio)
+                            EjercicioAsignado(
+                                sesionId = sesion.id,
+                                ejercicio = ejercicio,
+                                fechaAsignacion = sesion.fechaAsignacion,
+                                repeticiones = sesion.repeticiones ?: ejercicio.repeticiones,
+                            )
                         }
                     }
             }
