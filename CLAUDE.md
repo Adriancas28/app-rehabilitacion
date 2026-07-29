@@ -186,7 +186,14 @@ usuarios/{uid}
                              (HU11-CA05, Sprint 3: completadas puede ser
                               menor a asignadas si se finalizó antes de
                               tiempo, HU06-CA07; correctas cuenta las
-                              repeticiones sin ningún error detectado)
+                              repeticiones sin ningún error detectado),
+        detallePorRepeticion: [{ numero, dentroDeRango, erroresDetectados }]
+                             (HU18-CA04, Sprint 4/5 — PENDIENTE DE
+                              CONSTRUIR, no existe todavía. Es el desglose
+                              por repetición que ve el fisioterapeuta antes
+                              de recomendar, HU15. `erroresDetectados` aquí
+                              es el mismo tipo que el de arriba pero acotado
+                              a esa repetición puntual, no agregado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -522,6 +529,29 @@ y priorizados en 5 sprints.
 - CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
 - CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
 - CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
+- CA04 *(ampliación acordada, no en la versión original de la tesis; pendiente
+  de construir — ver nota de dependencia con HU15 más abajo)*: Dado que
+  acceda al detalle de una sesión completada, entonces el sistema
+  desglosa el resultado **por repetición** (no solo agregado): para cada
+  repetición muestra si estuvo dentro de rango y, si no, qué error se
+  detectó y en qué articulación (ej. "Repetición 5: hombro derecho, rango
+  incompleto"). Esto es más granular que `erroresDetectados` (HU08-CA04),
+  que hoy agrupa por tipo de error con un conteo total, sin registrar en
+  qué repetición ocurrió cada uno — requiere una estructura nueva
+  (`detallePorRepeticion`, ver sección 5) para poder mostrarlo así. Es la
+  base con la que el fisioterapeuta decide qué recomendación registrar
+  (HU15).
+
+> **Nota de dependencia (Sprint 4/5):** HU15 (registrar recomendaciones,
+> Sprint 4) requiere que el fisioterapeuta pueda ver el resultado de una
+> sesión completada antes de recomendar algo — pero esa vista es HU18-CA02,
+> planeada recién para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas
+> a Sprint 3 por la misma razón de dependencia), en Sprint 4 habrá que
+> construir al menos una versión mínima de HU18-CA02 (y probablemente CA04)
+> junto con HU15, no esperar al Sprint 5 completo. Hoy (Sprint 3) esta
+> vista NO existe todavía: en `PacienteDetalleScreen` las tarjetas de
+> sesiones completadas no son clickeables (solo las pendientes, para
+> editarlas) — es una limitación conocida, no un bug.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
