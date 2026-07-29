@@ -29,9 +29,19 @@ data class EjercicioAsignado(
     val repeticiones: Int,
 )
 
+// HU06-CA09 — una sesión que se finalizó antes de tiempo (no completó
+// todas sus repeticiones asignadas) y todavía se puede reanudar.
+data class SesionReanudable(
+    val sesionId: String,
+    val ejercicio: Ejercicio,
+    val repeticionesCompletadas: Int,
+    val repeticionesAsignadas: Int,
+)
+
 data class EjerciciosAsignadosUiState(
     val nombrePaciente: String = "",
     val ejerciciosAsignados: List<EjercicioAsignado> = emptyList(),
+    val sesionesReanudables: List<SesionReanudable> = emptyList(),
     val cargando: Boolean = true,
 )
 
@@ -72,7 +82,7 @@ class EjerciciosAsignadosViewModel @Inject constructor(
                 ejercicioRepository.observarEjercicios(),
             ) { sesiones, ejercicios ->
                 val ejerciciosPorId = ejercicios.associateBy { it.id }
-                sesiones
+                val asignados = sesiones
                     .filter { it.estado == EstadoSesion.PENDIENTE }
                     .mapNotNull { sesion ->
                         ejerciciosPorId[sesion.ejercicioId]?.let { ejercicio ->
@@ -84,12 +94,31 @@ class EjerciciosAsignadosViewModel @Inject constructor(
                             )
                         }
                     }
+                // HU06-CA09 — sesiones finalizadas antes de tiempo que no
+                // llegaron a completar todas las repeticiones asignadas.
+                val reanudables = sesiones
+                    .filter { it.estado == EstadoSesion.COMPLETADA }
+                    .mapNotNull { sesion ->
+                        val resultado = sesion.resultado ?: return@mapNotNull null
+                        if (resultado.repeticionesCompletadas >= resultado.repeticionesAsignadas) return@mapNotNull null
+                        ejerciciosPorId[sesion.ejercicioId]?.let { ejercicio ->
+                            SesionReanudable(
+                                sesionId = sesion.id,
+                                ejercicio = ejercicio,
+                                repeticionesCompletadas = resultado.repeticionesCompletadas,
+                                repeticionesAsignadas = resultado.repeticionesAsignadas,
+                            )
+                        }
+                    }
+                asignados to reanudables
             }
                 // Evita que un PERMISSION_DENIED por cierre de sesión mientras
                 // esta pantalla sigue activa tumbe la app (excepción no atrapada).
                 .catch { }
-                .collect { lista ->
-                    _uiState.update { it.copy(ejerciciosAsignados = lista, cargando = false) }
+                .collect { (asignados, reanudables) ->
+                    _uiState.update {
+                        it.copy(ejerciciosAsignados = asignados, sesionesReanudables = reanudables, cargando = false)
+                    }
                 }
         }
     }

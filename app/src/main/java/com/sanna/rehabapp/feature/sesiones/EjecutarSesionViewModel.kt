@@ -8,8 +8,10 @@ import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.core.posedetection.MedicionArticulacion
 import com.sanna.rehabapp.core.posedetection.ProcesadorMovimiento
 import com.sanna.rehabapp.core.posedetection.fraseCorrectiva
+import com.sanna.rehabapp.core.posedetection.mergearResultados
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
+import com.sanna.rehabapp.domain.model.ResultadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
@@ -85,6 +87,12 @@ class EjecutarSesionViewModel @Inject constructor(
     private var ultimaCorreccionHablada: Pair<Articulacion, String>? = null
     private var instanteUltimaVoz = 0L
 
+    // HU06-CA09 — si la sesión ya tenía un resultado parcial (se finalizó
+    // antes de tiempo previamente), se reanuda desde la siguiente
+    // repetición en vez de repetir lo ya medido.
+    private var numeroRepeticionInicial = 1
+    private var resultadoPrevio: ResultadoSesion? = null
+
     init {
         cargarEjercicio()
     }
@@ -100,10 +108,18 @@ class EjecutarSesionViewModel @Inject constructor(
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
             if (ejercicio != null) {
                 procesadorMovimiento = ProcesadorMovimiento(ejercicio)
+                val totalRepeticiones = sesion?.repeticiones ?: ejercicio.repeticiones
+                val resultadoAnterior = sesion?.resultado
+                if (resultadoAnterior != null && resultadoAnterior.repeticionesCompletadas < totalRepeticiones) {
+                    resultadoPrevio = resultadoAnterior
+                    numeroRepeticionInicial = resultadoAnterior.repeticionesCompletadas + 1
+                }
                 _uiState.update {
                     it.copy(
                         ejercicio = ejercicio,
                         repeticionesOverride = sesion?.repeticiones,
+                        repeticionActual = numeroRepeticionInicial,
+                        repeticionesCompletadas = resultadoAnterior?.repeticionesCompletadas ?: 0,
                         segundosRestantes = ejercicio.duracionSegundos,
                         cargando = false,
                     )
@@ -123,7 +139,7 @@ class EjecutarSesionViewModel @Inject constructor(
         val totalRepeticiones = _uiState.value.totalRepeticiones
         _uiState.update { it.copy(sesionIniciada = true) }
         jobCicloRepeticiones = viewModelScope.launch {
-            for (repeticion in 1..totalRepeticiones) {
+            for (repeticion in numeroRepeticionInicial..totalRepeticiones) {
                 _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
                 procesadorMovimiento?.marcarNuevaRepeticion()
                 while (_uiState.value.segundosRestantes > 0) {
@@ -194,15 +210,19 @@ class EjecutarSesionViewModel @Inject constructor(
     }
 
     // HU06-CA04/CA05: finaliza el tiempo establecido y registra el resultado.
+    // HU06-CA09: si venía de una reanudación, combina lo nuevo con lo que
+    // ya estaba guardado en vez de sobrescribirlo.
     private fun finalizarSesion() {
         val idPaciente = pacienteId ?: return
         val estado = _uiState.value
-        val resultado = procesadorMovimiento?.generarResultado(
+        val resultadoNuevo = procesadorMovimiento?.generarResultado(
             repeticionesCompletadas = estado.repeticionesCompletadas,
             repeticionesAsignadas = estado.totalRepeticiones,
+            numeroRepeticionInicial = numeroRepeticionInicial,
         ) ?: return
+        val resultadoFinal = resultadoPrevio?.let { mergearResultados(it, resultadoNuevo) } ?: resultadoNuevo
         viewModelScope.launch {
-            sesionRepository.guardarResultado(idPaciente, sesionId, resultado)
+            sesionRepository.guardarResultado(idPaciente, sesionId, resultadoFinal)
             _uiState.update { it.copy(sesionCompletada = true) }
         }
     }

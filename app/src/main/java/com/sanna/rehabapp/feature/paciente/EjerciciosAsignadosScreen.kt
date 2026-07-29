@@ -20,6 +20,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.Button
@@ -42,6 +43,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
+import com.sanna.rehabapp.core.theme.AmbarAlertaContenedor
+import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.domain.model.Ejercicio
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -111,31 +114,49 @@ fun EjerciciosAsignadosScreen(
                         CircularProgressIndicator()
                     }
 
-                    uiState.ejerciciosAsignados.isEmpty() -> MensajeSinEjercicios()
+                    uiState.ejerciciosAsignados.isEmpty() && uiState.sesionesReanudables.isEmpty() ->
+                        MensajeSinEjercicios()
 
                     else -> {
-                        val proxima = uiState.ejerciciosAsignados.first()
-                        val resto = uiState.ejerciciosAsignados.drop(1)
-
                         Column {
-                            Text(text = "Próxima sesión", style = MaterialTheme.typography.titleSmall)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            TarjetaProximaSesion(
-                                item = proxima,
-                                onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
-                                onClick = { onEjercicioSeleccionado(proxima.sesionId) },
-                            )
-
-                            if (resto.isNotEmpty()) {
-                                Spacer(modifier = Modifier.height(20.dp))
-                                Text(text = "Todos mis ejercicios", style = MaterialTheme.typography.titleSmall)
+                            // HU06-CA09 — sesiones finalizadas antes de tiempo:
+                            // se pueden reanudar desde la repetición siguiente.
+                            if (uiState.sesionesReanudables.isNotEmpty()) {
+                                Text(text = "Reanudar sesión", style = MaterialTheme.typography.titleSmall)
                                 Spacer(modifier = Modifier.height(8.dp))
-                                LazyColumn {
-                                    items(resto, key = { it.sesionId }) { item ->
-                                        TarjetaEjercicioAsignado(
-                                            ejercicio = item.ejercicio,
-                                            onClick = { onEjercicioSeleccionado(item.sesionId) },
-                                        )
+                                uiState.sesionesReanudables.forEach { reanudable ->
+                                    TarjetaReanudable(
+                                        item = reanudable,
+                                        onReanudar = { onIniciarSesionDirecta(reanudable.sesionId) },
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                }
+                                Spacer(modifier = Modifier.height(12.dp))
+                            }
+
+                            if (uiState.ejerciciosAsignados.isNotEmpty()) {
+                                val proxima = uiState.ejerciciosAsignados.first()
+                                val resto = uiState.ejerciciosAsignados.drop(1)
+
+                                Text(text = "Próxima sesión", style = MaterialTheme.typography.titleSmall)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                TarjetaProximaSesion(
+                                    item = proxima,
+                                    onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
+                                    onClick = { onEjercicioSeleccionado(proxima.sesionId) },
+                                )
+
+                                if (resto.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(20.dp))
+                                    Text(text = "Todos mis ejercicios", style = MaterialTheme.typography.titleSmall)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    LazyColumn {
+                                        items(resto, key = { it.sesionId }) { item ->
+                                            TarjetaEjercicioAsignado(
+                                                ejercicio = item.ejercicio,
+                                                onClick = { onEjercicioSeleccionado(item.sesionId) },
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -228,6 +249,51 @@ private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit,
                 Icon(Icons.Filled.PlayArrow, contentDescription = null)
                 Spacer(modifier = Modifier.width(6.dp))
                 Text("Iniciar sesión")
+            }
+        }
+    }
+}
+
+// HU06-CA09: distinta a la tarjeta de "próxima sesión" (color ámbar) para
+// que se note que es un ejercicio interrumpido, no uno nuevo.
+@Composable
+private fun TarjetaReanudable(item: SesionReanudable, onReanudar: () -> Unit) {
+    Card(
+        onClick = onReanudar,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(AmbarAlertaContenedor, shape = CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Replay, contentDescription = null, tint = AmbarAlertaTexto)
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = item.ejercicio.nombre, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = "${item.repeticionesCompletadas}/${item.repeticionesAsignadas} repeticiones completadas",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onReanudar,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Icon(Icons.Filled.Replay, contentDescription = null)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Reanudar sesión")
             }
         }
     }
