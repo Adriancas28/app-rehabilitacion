@@ -1,6 +1,8 @@
 package com.sanna.rehabapp.data.repository
 
+import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -8,6 +10,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,6 +21,7 @@ import javax.inject.Inject
 private const val COLECCION_EJERCICIOS = "ejercicios"
 
 class EjercicioRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
 ) : EjercicioRepository {
@@ -78,7 +82,13 @@ class EjercicioRepositoryImpl @Inject constructor(
     }
 
     private suspend fun subirMaterial(ejercicioId: String, archivo: Uri): String {
-        val nombreArchivo = UUID.randomUUID().toString()
+        // HU05-CA02 necesita distinguir imagen de video al reproducir el
+        // material; sin la extensión en el nombre no hay forma de saberlo
+        // a partir de la sola downloadUrl (son URLs firmadas, no el path
+        // original del archivo).
+        val extension = MimeTypeMap.getSingleton()
+            .getExtensionFromMimeType(context.contentResolver.getType(archivo))
+        val nombreArchivo = UUID.randomUUID().toString() + if (extension != null) ".$extension" else ""
         val referencia = storage.reference.child("ejercicios/$ejercicioId/$nombreArchivo")
         referencia.putFile(archivo).await()
         return referencia.downloadUrl.await().toString()
