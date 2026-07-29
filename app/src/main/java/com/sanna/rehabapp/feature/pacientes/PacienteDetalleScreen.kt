@@ -62,6 +62,8 @@ fun PacienteDetalleScreen(
     onVolver: () -> Unit,
     onAsignarSesion: (pacienteId: String) -> Unit,
     onEditarSesion: (pacienteId: String, sesionId: String) -> Unit,
+    // HU18-CA02: ver el detalle de una sesión ya completada.
+    onVerResultado: (pacienteId: String, sesionId: String) -> Unit,
     viewModel: PacienteDetalleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -130,6 +132,8 @@ fun PacienteDetalleScreen(
                             onClick = {
                                 if (sesion.estado == EstadoSesion.PENDIENTE) {
                                     onEditarSesion(viewModel.pacienteId, sesion.id)
+                                } else {
+                                    onVerResultado(viewModel.pacienteId, sesion.id)
                                 }
                             },
                         )
@@ -269,10 +273,10 @@ private fun TarjetaProgreso(completadas: Int, total: Int) {
 
 @Composable
 private fun TarjetaSesion(sesion: Sesion, ejercicio: Ejercicio?, onClick: () -> Unit) {
-    val esPendiente = sesion.estado == EstadoSesion.PENDIENTE
+    // HU18-CA02: ahora ambos estados son clickeables — pendiente va a
+    // editar, completada va al detalle de resultado.
     Card(
         onClick = onClick,
-        enabled = esPendiente,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.large,
         modifier = Modifier

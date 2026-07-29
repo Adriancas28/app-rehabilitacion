@@ -21,24 +21,40 @@ class ProcesadorMovimiento(private val ejercicio: Ejercicio) {
         medicionesPorRepeticion.add(mutableListOf())
     }
 
-    fun procesarResultado(resultado: PoseLandmarkerResult) {
-        val bucketRepeticionActual = medicionesPorRepeticion.lastOrNull() ?: return
+    // HU10 — devuelve las mediciones de ESTE frame (además de seguir
+    // acumulándolas internamente) para que quien la llama pueda reaccionar
+    // en vivo (retroalimentación visual/por voz), sin duplicar la lógica
+    // de medición.
+    fun procesarResultado(resultado: PoseLandmarkerResult): List<MedicionArticulacion> {
+        val bucketRepeticionActual = medicionesPorRepeticion.lastOrNull() ?: return emptyList()
         // Sin persona detectada en este frame: se ignora sin interrumpir el
         // procesamiento (RNF05-CA02/CA03), no se cuenta como frame medido.
-        val landmarks = resultado.landmarks().firstOrNull() ?: return
+        val landmarks = resultado.landmarks().firstOrNull() ?: return emptyList()
         val mediciones = ejercicio.patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
         bucketRepeticionActual.add(mediciones)
+        return mediciones
     }
 
     // HU06-CA07: repeticionesCompletadas puede ser menor a las asignadas si
     // el paciente finalizó antes de tiempo — solo se cuentan como
     // "correctas" las repeticiones que sí llegaron a completarse.
-    fun generarResultado(repeticionesCompletadas: Int, repeticionesAsignadas: Int): ResultadoSesion =
-        construirResultadoSesion(
-            medicionesPorRepeticion = medicionesPorRepeticion.take(repeticionesCompletadas),
+    // HU06-CA09: numeroRepeticionInicial es distinto de 1 cuando se está
+    // reanudando una sesión ya finalizada antes — así el detalle por
+    // repetición numera las repeticiones nuevas con su número real (ej.
+    // 2, 3), no reinicia desde 1 como si fueran las primeras.
+    fun generarResultado(
+        repeticionesCompletadas: Int,
+        repeticionesAsignadas: Int,
+        numeroRepeticionInicial: Int = 1,
+    ): ResultadoSesion {
+        val repeticionesMedidasEnEstaEjecucion = repeticionesCompletadas - numeroRepeticionInicial + 1
+        return construirResultadoSesion(
+            medicionesPorRepeticion = medicionesPorRepeticion.take(repeticionesMedidasEnEstaEjecucion.coerceAtLeast(0)),
             repeticionesCompletadas = repeticionesCompletadas,
             repeticionesAsignadas = repeticionesAsignadas,
+            numeroRepeticionInicial = numeroRepeticionInicial,
         )
+    }
 
     private fun medirArticulacion(
         patron: PatronReferencia,

@@ -19,6 +19,15 @@ data class ErrorDetectado(
     val repeticiones: Int = 1,
 )
 
+// HU18-CA04 (Sprint 4): el mismo error que ErrorDetectado, pero acotado a
+// una repetición puntual — es lo que el fisioterapeuta revisa antes de
+// registrar una recomendación (HU15), en vez de solo ver un agregado.
+data class DetalleRepeticion(
+    val numero: Int,
+    val dentroDeRango: Boolean,
+    val errores: List<ErrorDetectado> = emptyList(),
+)
+
 // HU17-CA02 / RNF06-CA02: únicamente datos numéricos (ángulos, métricas).
 // Nunca debe agregarse aquí una referencia a imagen o video.
 // HU11-CA01/CA02 (revisión Sprint 3): además del % global, se guarda cuántas
@@ -33,4 +42,5 @@ data class ResultadoSesion(
     val repeticionesCompletadas: Int = 0,
     val repeticionesAsignadas: Int = 0,
     val repeticionesCorrectas: Int = 0,
+    val detallePorRepeticion: List<DetalleRepeticion> = emptyList(),
 )

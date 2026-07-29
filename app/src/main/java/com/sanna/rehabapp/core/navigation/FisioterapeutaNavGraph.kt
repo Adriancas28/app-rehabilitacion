@@ -8,9 +8,11 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.sanna.rehabapp.feature.comunicacion.RegistrarRecomendacionScreen
 import com.sanna.rehabapp.feature.ejercicios.EjercicioFormScreen
 import com.sanna.rehabapp.feature.ejercicios.EjerciciosListScreen
 import com.sanna.rehabapp.feature.pacientes.AsignarSesionScreen
+import com.sanna.rehabapp.feature.pacientes.FisioResultadoSesionScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
 
@@ -48,7 +50,33 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onEditarSesion = { pacienteId, sesionId ->
                 navController.navigate(Rutas.sesionFormulario(pacienteId, sesionId))
             },
+            onVerResultado = { pacienteId, sesionId ->
+                navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
+            },
         )
+    }
+    composable(
+        route = Rutas.FISIO_RESULTADO_SESION,
+        arguments = listOf(
+            navArgument(Rutas.ARG_PACIENTE_ID) {},
+            navArgument(Rutas.ARG_SESION_ID) {},
+        ),
+    ) {
+        FisioResultadoSesionScreen(
+            onVolver = { navController.popBackStack() },
+            onRegistrarRecomendacion = { pacienteId, sesionId ->
+                navController.navigate(Rutas.recomendaciones(pacienteId, sesionId))
+            },
+        )
+    }
+    composable(
+        route = Rutas.RECOMENDACIONES,
+        arguments = listOf(
+            navArgument(Rutas.ARG_PACIENTE_ID) {},
+            navArgument(Rutas.ARG_SESION_ID) {},
+        ),
+    ) {
+        RegistrarRecomendacionScreen(onVolver = { navController.popBackStack() })
     }
     composable(
         route = Rutas.SESION_FORMULARIO,

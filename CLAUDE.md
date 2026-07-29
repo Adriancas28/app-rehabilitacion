@@ -187,13 +187,12 @@ usuarios/{uid}
                               menor a asignadas si se finalizó antes de
                               tiempo, HU06-CA07; correctas cuenta las
                               repeticiones sin ningún error detectado),
-        detallePorRepeticion: [{ numero, dentroDeRango, erroresDetectados }]
-                             (HU18-CA04, Sprint 4/5 — PENDIENTE DE
-                              CONSTRUIR, no existe todavía. Es el desglose
-                              por repetición que ve el fisioterapeuta antes
-                              de recomendar, HU15. `erroresDetectados` aquí
-                              es el mismo tipo que el de arriba pero acotado
-                              a esa repetición puntual, no agregado)
+        detallePorRepeticion: [{ numero, dentroDeRango, errores }]
+                             (HU18-CA04, Sprint 4: desglose por repetición
+                              que ve el fisioterapeuta antes de
+                              recomendar, HU15. `errores` es el mismo tipo
+                              que `erroresDetectados` de arriba pero
+                              acotado a esa repetición puntual, no agregado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -381,6 +380,19 @@ y priorizados en 5 sprints.
   (Sprint 4): esto lee la instrucción estática del ejercicio
   (`Ejercicio.descripcion`), no genera frases de corrección en tiempo real
   según el error detectado.
+- CA09 *(ampliación acordada, Sprint 4, no en la versión original de la
+  tesis)*: Dado que una sesión se haya finalizado antes de tiempo
+  (CA07) sin completar todas las repeticiones asignadas, entonces el
+  sistema la muestra en "Mis ejercicios" como **reanudable** (tarjeta
+  "Reanudar sesión" con "X/Y repeticiones completadas"), distinta de una
+  sesión pendiente nueva. Al reanudarla, el monitoreo continúa desde la
+  repetición siguiente a la última completada — no repite lo ya medido —
+  y el resultado final combina lo guardado antes con lo nuevo medido
+  (repeticiones correctas se suman, el detalle por repetición se
+  concatena con la numeración real, y los promedios/porcentajes globales
+  se recalculan ponderados por cuántas repeticiones aportó cada tramo).
+  Una sesión deja de ser reanudable en cuanto completa todas sus
+  repeticiones asignadas (`repeticionesCompletadas == repeticionesAsignadas`).
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
@@ -409,6 +421,13 @@ y priorizados en 5 sprints.
 - CA02: Dado que detecte una desviación relevante, entonces el sistema clasifica el tipo de error (rango incompleto, desviación angular, etc.).
 - CA03: Dado que el análisis concluya, entonces el sistema genera un resultado consolidado (% de acierto o desviación promedio).
 
+> Nota (Sprint 4): esta HU **ya se cumple desde Sprint 3**, sin código
+> nuevo — `MedicionArticulacion.tipoDeError` ya clasifica "Rango
+> incompleto"/"Desviación angular" (CA02), `medirArticulacion` ya compara
+> contra `patronReferencia` (CA01), y `porcentajeEjecucion`/
+> `desviacionPromedio` ya son el resultado consolidado (CA03). Se deja
+> constancia aquí para no repetir trabajo ya hecho.
+
 ---
 
 ### ÉPICA 03: Generar retroalimentación terapéutica
@@ -419,6 +438,12 @@ y priorizados en 5 sprints.
 **Propósito:** Corregir mi ejecución terapéutica mientras la realizo.
 - CA01: Dado que el sistema detecte una desviación, entonces muestra retroalimentación visual con la corrección sugerida.
 - CA02: Dado que no se detecten desviaciones relevantes, entonces el sistema indica visualmente que la ejecución es correcta.
+  > Nota (Sprint 4, confirmado con el usuario): el paciente no puede leer
+  > texto en pantalla mientras se mueve, así que "retroalimentación
+  > visual" se resuelve con un **ícono mínimo** (check verde / alerta
+  > ámbar), sin texto de corrección en pantalla — la corrección en sí la
+  > lleva la voz (CA06). No se construye el esqueleto con checks por
+  > articulación del mockup de referencia (decisión explícita).
 - CA03: Dado que continúe ejecutando el ejercicio, entonces la retroalimentación se actualiza de forma continua.
 - CA04: Dado que el sistema procese el movimiento, entonces el tiempo de respuesta no debe superar los **500 ms**.
 - CA05: Dado que finalice el ejercicio, entonces el sistema detiene la retroalimentación inmediata.
@@ -529,9 +554,10 @@ y priorizados en 5 sprints.
 - CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
 - CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
 - CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
-- CA04 *(ampliación acordada, no en la versión original de la tesis; pendiente
-  de construir — ver nota de dependencia con HU15 más abajo)*: Dado que
-  acceda al detalle de una sesión completada, entonces el sistema
+- CA04 *(ampliación acordada, no en la versión original de la tesis;
+  construida en Sprint 4 junto con la versión mínima de CA02 — ver nota
+  de dependencia con HU15 más abajo)*: Dado que acceda al detalle de una
+  sesión completada, entonces el sistema
   desglosa el resultado **por repetición** (no solo agregado): para cada
   repetición muestra si estuvo dentro de rango y, si no, qué error se
   detectó y en qué articulación (ej. "Repetición 5: hombro derecho, rango
@@ -542,16 +568,18 @@ y priorizados en 5 sprints.
   base con la que el fisioterapeuta decide qué recomendación registrar
   (HU15).
 
-> **Nota de dependencia (Sprint 4/5):** HU15 (registrar recomendaciones,
-> Sprint 4) requiere que el fisioterapeuta pueda ver el resultado de una
-> sesión completada antes de recomendar algo — pero esa vista es HU18-CA02,
-> planeada recién para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas
-> a Sprint 3 por la misma razón de dependencia), en Sprint 4 habrá que
-> construir al menos una versión mínima de HU18-CA02 (y probablemente CA04)
-> junto con HU15, no esperar al Sprint 5 completo. Hoy (Sprint 3) esta
-> vista NO existe todavía: en `PacienteDetalleScreen` las tarjetas de
-> sesiones completadas no son clickeables (solo las pendientes, para
-> editarlas) — es una limitación conocida, no un bug.
+> **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
+> recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de
+> una sesión completada antes de recomendar algo — esa vista era HU18-CA02,
+> planeada para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas a
+> Sprint 3 por la misma razón de dependencia), en Sprint 4 se construyó una
+> versión mínima de HU18-CA02 + CA04 junto con HU15: en
+> `PacienteDetalleScreen` las tarjetas de sesión ahora son clickeables
+> también cuando están completadas (antes solo las pendientes), y abren
+> `FisioResultadoSesionScreen` (porcentaje, ángulos, detalle por
+> repetición). Sigue pendiente para Sprint 5 el resto de HU18 (CA01/CA03:
+> vista agregada de todas las sesiones con filtro por fecha/tipo de
+> ejercicio) — esto solo cubre el detalle de una sesión puntual.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema

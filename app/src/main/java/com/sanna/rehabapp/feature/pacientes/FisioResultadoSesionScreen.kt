@@ -1,4 +1,4 @@
-package com.sanna.rehabapp.feature.paciente
+package com.sanna.rehabapp.feature.pacientes
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -24,7 +25,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -36,18 +36,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.AnguloDetectado
-import com.sanna.rehabapp.domain.model.ErrorDetectado
-import com.sanna.rehabapp.domain.model.Recomendacion
+import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ResultadoSesionScreen(
+fun FisioResultadoSesionScreen(
     onVolver: () -> Unit,
-    onVerProgreso: () -> Unit,
-    onVolverAlInicio: () -> Unit,
-    viewModel: ResultadoSesionViewModel = hiltViewModel(),
+    onRegistrarRecomendacion: (pacienteId: String, sesionId: String) -> Unit,
+    viewModel: FisioResultadoSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -95,8 +95,18 @@ fun ResultadoSesionScreen(
                         .padding(16.dp)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    TarjetaPorcentaje(resultado)
+                    TarjetaResumen(resultado)
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    if (resultado.detallePorRepeticion.isNotEmpty()) {
+                        Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        resultado.detallePorRepeticion.forEach { detalle ->
+                            TarjetaDetalleRepeticion(detalle)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
 
                     if (resultado.angulosDetectados.isNotEmpty()) {
                         Text(text = "Ángulos por articulación", style = MaterialTheme.typography.titleSmall)
@@ -108,50 +118,16 @@ fun ResultadoSesionScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
-                    if (resultado.erroresDetectados.isNotEmpty()) {
-                        Text(text = "Observaciones", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        resultado.erroresDetectados.forEach { error ->
-                            TarjetaError(error)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-
-                    // HU16-CA01/CA02/CA04 — a diferencia de "Observaciones",
-                    // esta sección siempre se muestra, con un mensaje de
-                    // ausencia si todavía no hay recomendaciones (CA04).
-                    Text(text = "Recomendaciones de tu fisioterapeuta", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(8.dp))
-                    if (uiState.recomendaciones.isEmpty()) {
-                        Text(
-                            text = "Tu fisioterapeuta aún no registró recomendaciones para esta sesión.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        uiState.recomendaciones.forEach { recomendacion ->
-                            TarjetaRecomendacion(recomendacion)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(20.dp))
                     Button(
-                        onClick = onVerProgreso,
+                        onClick = { onRegistrarRecomendacion(viewModel.pacienteId, viewModel.sesionId) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
                     ) {
-                        Text("Ver mi progreso")
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedButton(
-                        onClick = onVolverAlInicio,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Text("Volver al inicio")
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Registrar recomendación")
                     }
                 }
             }
@@ -160,7 +136,7 @@ fun ResultadoSesionScreen(
 }
 
 @Composable
-private fun TarjetaPorcentaje(resultado: ResultadoSesion) {
+private fun TarjetaResumen(resultado: ResultadoSesion) {
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.large,
@@ -184,8 +160,6 @@ private fun TarjetaPorcentaje(resultado: ResultadoSesion) {
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                // HU06-CA07: si se finalizó antes de tiempo, repeticionesCompletadas
-                // es menor a repeticionesAsignadas — se ve reflejado aquí.
                 Text(
                     text = "Repeticiones ${resultado.repeticionesCompletadas}/${resultado.repeticionesAsignadas}",
                     style = MaterialTheme.typography.titleMedium,
@@ -201,6 +175,47 @@ private fun TarjetaPorcentaje(resultado: ResultadoSesion) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+// HU18-CA04: lo que el fisioterapeuta usa para decidir qué recomendar —
+// por cada repetición, si estuvo bien o qué error puntual tuvo.
+@Composable
+private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = if (detalle.dentroDeRango) Icons.Filled.Check else Icons.Filled.Warning,
+                contentDescription = null,
+                tint = if (detalle.dentroDeRango) VerdeExitoTexto else AmbarAlertaTexto,
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Repetición ${detalle.numero}", style = MaterialTheme.typography.bodyMedium)
+                if (detalle.dentroDeRango) {
+                    Text(
+                        text = "Dentro de rango",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    detalle.errores.forEach { error ->
+                        Text(
+                            text = "${error.articulacion} — ${error.tipo}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }
@@ -232,49 +247,6 @@ private fun TarjetaAngulo(angulo: AnguloDetectado) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
-        }
-    }
-}
-
-@Composable
-private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Icon(Icons.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
-private fun TarjetaError(error: ErrorDetectado) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "${error.articulacion} — ${error.tipo}", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "Detectado ${error.repeticiones} ${if (error.repeticiones == 1) "vez" else "veces"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
         }
     }
 }
