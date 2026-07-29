@@ -174,6 +174,10 @@ usuarios/{uid}
     - estado                  ("pendiente" | "completada")
     - notas                   (texto libre opcional del fisioterapeuta al
                                 asignar la sesión — HU03-CA05, Sprint 3)
+    - repeticiones             (opcional; override de las repeticiones del
+                                ejercicio SOLO para esta sesión puntual —
+                                HU03-CA06, Sprint 3. Si es null, se usa el
+                                valor por defecto de `ejercicios.repeticiones`)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
         erroresDetectados: [{ articulacion, tipo, repeticiones }]
@@ -295,6 +299,15 @@ y priorizados en 5 sprints.
   sesión en particular (ej. "hacerlo con apoyo"); no reemplaza a las
   recomendaciones de HU15/HU16, que se registran sobre una sesión ya
   realizada, no al momento de asignarla.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que esté asignando o editando una sesión, el sistema precarga el
+  número de repeticiones configurado por defecto en el ejercicio
+  (HU02-CA08), pero permite que el fisioterapeuta lo cambie solo para
+  esa sesión puntual (ej. reducirlo para un paciente que recién empieza),
+  sin alterar el valor por defecto del ejercicio ni el de otras sesiones
+  ya asignadas o futuras. El sistema también muestra la duración total
+  estimada de la sesión (repeticiones × duración por repetición) como
+  referencia antes de guardar.
 
 #### HU04 — Visualizar ejercicios asignados
 **Rol:** Paciente
@@ -527,6 +540,12 @@ El sistema deberá garantizar disponibilidad operativa, incluyendo funcionamient
 - CA03: La disponibilidad debe mantenerse durante la operación del fisioterapeuta.
 
 #### RNF02 — Seguridad de acceso a la información terapéutica
+> Nota: no existe una HU propia de "Iniciar/cerrar sesión" — la pantalla de
+> Login y el botón de Logout que aparecen en toda la app implementan
+> directamente los CA de este RNF (CA01 login, CA02 redirección por rol,
+> CA04 logout), no una historia de usuario aparte. No hay pantalla de
+> auto-registro ni recuperación de contraseña: las cuentas se crean por el
+> Administrador (HU20/HU21) o el script `crear-usuario.ts`.
 - CA01: El sistema valida correctamente la autenticación.
 - CA02: El sistema restringe el acceso según el tipo de usuario (rol).
 - CA03: La información almacenada debe mantenerse protegida.
