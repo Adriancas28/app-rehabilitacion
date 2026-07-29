@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Button
@@ -142,6 +143,28 @@ fun EjercicioFormScreen(
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.width(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Agregar articulación")
+                }
+
+                // HU02-CA07: si el material es un video y ya hay al menos
+                // una articulación elegida, se puede calcular el rango
+                // automáticamente en vez de escribirlo a mano.
+                if (uiState.esVideoSeleccionado && uiState.patronesReferencia.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = viewModel::calcularRomDesdeVideo,
+                        enabled = !uiState.calculandoRom,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (uiState.calculandoRom) {
+                            CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Analizando video…")
+                        } else {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.width(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Calcular rango automáticamente desde el video")
+                        }
+                    }
                 }
             }
 

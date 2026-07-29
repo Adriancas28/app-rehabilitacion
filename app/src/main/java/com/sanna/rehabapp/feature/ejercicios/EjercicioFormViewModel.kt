@@ -1,16 +1,19 @@
 package com.sanna.rehabapp.feature.ejercicios
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.core.posedetection.AnalizadorVideoReferencia
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -35,6 +38,8 @@ data class EjercicioFormUiState(
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
     val materialUrlActual: String = "",
     val archivoSeleccionado: Uri? = null,
+    val esVideoSeleccionado: Boolean = false,
+    val calculandoRom: Boolean = false,
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
@@ -47,9 +52,12 @@ data class EjercicioFormUiState(
 @HiltViewModel
 class EjercicioFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val ejercicioRepository: EjercicioRepository,
 ) : ViewModel() {
+
+    private val analizadorVideoReferencia = AnalizadorVideoReferencia(context)
 
     private val ejercicioIdArg: String? = savedStateHandle[Rutas.ARG_EJERCICIO_ID]
     val esEdicion: Boolean get() = !ejercicioIdArg.isNullOrBlank()
@@ -98,7 +106,58 @@ class EjercicioFormViewModel @Inject constructor(
     fun onDescripcionCambiada(valor: String) = _uiState.update { it.copy(descripcion = valor, error = null) }
     fun onCategoriaCambiada(valor: String) = _uiState.update { it.copy(categoria = valor, error = null) }
     fun onDuracionCambiada(valor: String) = _uiState.update { it.copy(duracionSegundos = valor, error = null) }
-    fun onArchivoSeleccionado(uri: Uri?) = _uiState.update { it.copy(archivoSeleccionado = uri) }
+    fun onArchivoSeleccionado(uri: Uri?) {
+        val esVideo = uri != null && context.contentResolver.getType(uri)?.startsWith("video/") == true
+        _uiState.update { it.copy(archivoSeleccionado = uri, esVideoSeleccionado = esVideo, error = null) }
+    }
+
+    // HU02-CA07 — calcula automáticamente el anguloMin/anguloMax de cada
+    // articulación ya seleccionada, analizando el video elegido como
+    // material. El fisioterapeuta puede seguir editando los valores a mano
+    // después si lo considera necesario.
+    fun calcularRomDesdeVideo() {
+        val estado = _uiState.value
+        val video = estado.archivoSeleccionado
+        val articulaciones = estado.patronesReferencia.mapNotNull { it.articulacion }
+        if (video == null) {
+            _uiState.update { it.copy(error = "Selecciona primero un video de material.") }
+            return
+        }
+        if (articulaciones.isEmpty()) {
+            _uiState.update { it.copy(error = "Agrega al menos una articulación antes de calcular el rango.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(calculandoRom = true, error = null) }
+            val rangos = analizadorVideoReferencia.calcularRangosDeAngulo(video, articulaciones)
+            if (rangos.isEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        calculandoRom = false,
+                        error = "No se pudo detectar el cuerpo en el video, intenta con otro.",
+                    )
+                }
+                return@launch
+            }
+            _uiState.update { estadoActual ->
+                estadoActual.copy(
+                    calculandoRom = false,
+                    patronesReferencia = estadoActual.patronesReferencia.map { fila ->
+                        val rango = fila.articulacion?.let { rangos[it] }
+                        if (rango != null) {
+                            fila.copy(
+                                anguloMin = rango.min.toInt().toString(),
+                                anguloMax = rango.max.toInt().toString(),
+                            )
+                        } else {
+                            fila
+                        }
+                    },
+                )
+            }
+        }
+    }
 
     fun agregarArticulacion() {
         _uiState.update { it.copy(patronesReferencia = it.patronesReferencia + PatronReferenciaFila()) }
