@@ -513,6 +513,14 @@ y priorizados en 5 sprints.
 - CA03: Dado que el sistema calcule sesiones completadas vs. asignadas, entonces muestra el **% de adherencia terapéutica**.
 - CA04: Dado que existan sesiones pendientes, entonces el sistema distingue visualmente pendientes de completadas.
 
+> Nota (Sprint 5): esta HU **ya se cumple desde Sprint 2/3**, sin código
+> nuevo — `PacienteDetalleScreen` (detalle de un paciente puntual) ya
+> muestra "TarjetaProgreso" con el % de sesiones completadas sobre el
+> total (CA03), la lista completa de sesiones con su `EstadoPill`
+> verde/ámbar (CA01/CA04), y todo vía un listener de Firestore en vivo
+> que se actualiza solo al completarse una sesión (CA02). Se deja
+> constancia aquí para no repetir trabajo ya hecho.
+
 ---
 
 ### ÉPICA 05: Gestionar comunicación terapéutica
@@ -589,6 +597,20 @@ y priorizados en 5 sprints.
 - CA02: Dado que existan datos sincronizados recientemente, entonces el sistema muestra la información actualizada al fisioterapeuta.
 - CA03: Dado que ocurra un conflicto entre datos locales y ya sincronizados, entonces el sistema prioriza la información más reciente sin duplicar.
 
+> Nota (Sprint 5): esta HU **ya se cumple desde Sprint 1**, sin código
+> nuevo — Firestore para Android trae persistencia offline activada por
+> defecto (`FirebaseModule.kt` usa `FirebaseFirestore.getInstance()` sin
+> deshabilitarla): las escrituras hechas sin conexión (ej.
+> `guardarResultado` al finalizar una sesión) quedan en una cola local y
+> se sincronizan solas al reconectar (CA01), sin intervención de la app.
+> Como todas las pantallas usan listeners en vivo (`addSnapshotListener`/
+> `Flow`), el fisioterapeuta ve los datos actualizados apenas sincronizan
+> (CA02). No hay ediciones concurrentes reales sobre un mismo documento
+> en este modelo (una sesión la escribe o el fisio al asignarla o el
+> paciente al ejecutarla, nunca ambos a la vez), así que el
+> "last write wins" por defecto de Firestore ya cubre CA03 sin lógica de
+> resolución de conflictos a medida.
+
 ---
 
 ### ÉPICA 07: Administrar cuentas del sistema
@@ -626,6 +648,12 @@ El sistema deberá garantizar disponibilidad operativa, incluyendo funcionamient
 - CA02: Sin conexión a internet, el sistema debe permitir ejecutar y monitorear una sesión localmente, sincronizando al reconectar.
 - CA03: La disponibilidad debe mantenerse durante la operación del fisioterapeuta.
 
+> Nota (Sprint 5): al igual que HU19, esta RNF **ya se cumple desde
+> Sprint 1** gracias a la persistencia offline por defecto de Firestore
+> (lecturas desde caché local + cola de escritura offline) — el
+> procesamiento de cámara/MediaPipe (HU06/07/08) de por sí ya corre 100%
+> en el dispositivo, sin red. No se agrega código nuevo.
+
 #### RNF02 — Seguridad de acceso a la información terapéutica
 > Nota: no existe una HU propia de "Iniciar/cerrar sesión" — la pantalla de
 > Login y el botón de Logout que aparecen en toda la app implementan
@@ -649,6 +677,15 @@ El sistema debe garantizar compatibilidad con dispositivos Android que cumplan l
 - CA02: El sistema debe recuperar correctamente los datos almacenados al consultarlos.
 - CA03: La información debe mantenerse consistente entre usuarios tras sincronizar.
 - CA04: Ante una interrupción durante el guardado, el sistema debe evitar pérdida o duplicación de datos.
+
+> Nota (Sprint 5): esta RNF **ya se cumple** con lo construido en sprints
+> anteriores, sin código nuevo — cada escritura (`guardarResultado`,
+> `asignarSesion`, `crear` de recomendación, etc.) es un único
+> `.set()`/`.add()` de Firestore, atómico por documento (no hay
+> transacciones multi-documento que puedan quedar a medias), y todos los
+> mappers (`toSesion()`, `toUsuario()`, etc.) usan valores por defecto
+> ante campos ausentes en vez de lanzar excepciones (CA01/CA02). CA03 se
+> cubre igual que HU19 (listeners en vivo + Firestore offline).
 
 #### RNF05 — Consistencia del monitoreo corporal
 El sistema debe garantizar consistencia del monitoreo corporal ante condiciones adversas del entorno domiciliario.
