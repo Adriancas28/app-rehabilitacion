@@ -17,6 +17,7 @@ object Rutas {
 
     const val INICIO_PACIENTE = "paciente/inicio"
     const val DETALLE_EJERCICIO_ASIGNADO = "paciente/ejercicios/{sesionId}"
+    const val EJECUTAR_SESION = "paciente/ejercicios/{sesionId}/ejecutar"
 
     const val ADMIN_PACIENTES = "admin/pacientes"
     const val ADMIN_PACIENTE_FORMULARIO = "admin/pacientes/formulario?usuarioId={usuarioId}"
@@ -34,6 +35,8 @@ object Rutas {
             if (sesionId != null) "?sesionId=$sesionId" else ""
 
     fun detalleEjercicioAsignado(sesionId: String): String = "paciente/ejercicios/$sesionId"
+
+    fun ejecutarSesion(sesionId: String): String = "paciente/ejercicios/$sesionId/ejecutar"
 
     fun adminPacienteFormulario(usuarioId: String? = null): String =
         "admin/pacientes/formulario" + if (usuarioId != null) "?usuarioId=$usuarioId" else ""

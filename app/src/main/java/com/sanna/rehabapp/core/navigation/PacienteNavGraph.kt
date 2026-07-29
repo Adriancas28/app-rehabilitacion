@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.paciente.DetalleEjercicioAsignadoScreen
 import com.sanna.rehabapp.feature.paciente.EjerciciosAsignadosScreen
+import com.sanna.rehabapp.feature.sesiones.EjecutarSesionScreen
 
 fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
     composable(Rutas.INICIO_PACIENTE) {
@@ -27,6 +28,15 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
         route = Rutas.DETALLE_EJERCICIO_ASIGNADO,
         arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
     ) {
-        DetalleEjercicioAsignadoScreen(onVolver = { navController.popBackStack() })
+        DetalleEjercicioAsignadoScreen(
+            onVolver = { navController.popBackStack() },
+            onIniciarSesion = { sesionId -> navController.navigate(Rutas.ejecutarSesion(sesionId)) },
+        )
+    }
+    composable(
+        route = Rutas.EJECUTAR_SESION,
+        arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
+    ) {
+        EjecutarSesionScreen(onVolver = { navController.popBackStack() })
     }
 }
