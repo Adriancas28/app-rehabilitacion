@@ -25,6 +25,13 @@ interface SesionRepository {
     // aunque el fisioterapeuta sí tenga acceso a esos documentos.
     fun observarSesionesDe(pacienteId: String, fisioterapeutaId: String? = null): Flow<List<Sesion>>
 
+    // HU18-CA01/CA03 (Sprint 5) — todas las sesiones de todos los
+    // pacientes de este fisioterapeuta (collection group query), para la
+    // vista agregada de resultados con filtros. Cada Sesion trae su
+    // pacienteId resuelto (a diferencia de observarSesionesDe, que ya lo
+    // conoce por fuera y no lo necesita).
+    fun observarTodasLasSesionesDe(fisioterapeutaId: String): Flow<List<Sesion>>
+
     // HU03-CA03 — cargar una sesión puntual para editarla.
     suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
 

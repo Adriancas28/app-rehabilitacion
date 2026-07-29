@@ -15,6 +15,7 @@ import com.sanna.rehabapp.feature.pacientes.AsignarSesionScreen
 import com.sanna.rehabapp.feature.pacientes.FisioResultadoSesionScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
+import com.sanna.rehabapp.feature.pacientes.ResultadosScreen
 
 fun NavGraphBuilder.fisioterapeutaDestinos(
     navController: NavHostController,
@@ -30,6 +31,9 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             },
             onNavegarAEjercicios = {
                 navController.navigate(Rutas.EJERCICIOS) { launchSingleTop = true }
+            },
+            onNavegarAResultados = {
+                navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
             },
             onCerrarSesion = {
                 navController.navigate(Rutas.LOGIN) {
@@ -107,6 +111,25 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             },
             onNavegarAPacientes = {
                 navController.navigate(Rutas.PACIENTES) { launchSingleTop = true }
+            },
+            onNavegarAResultados = {
+                navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
+            },
+        )
+    }
+    composable(Rutas.RESULTADOS) {
+        var menuVisible by menuBarraLateralVisible
+        ResultadosScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
+            onNavegarAPacientes = {
+                navController.navigate(Rutas.PACIENTES) { launchSingleTop = true }
+            },
+            onNavegarAEjercicios = {
+                navController.navigate(Rutas.EJERCICIOS) { launchSingleTop = true }
+            },
+            onVerResultado = { pacienteId, sesionId ->
+                navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
             },
         )
     }

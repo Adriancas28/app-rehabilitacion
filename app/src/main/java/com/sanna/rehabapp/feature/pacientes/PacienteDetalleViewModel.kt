@@ -25,14 +25,31 @@ data class PacienteDetalleUiState(
     val paciente: Usuario? = null,
     val sesiones: List<Sesion> = emptyList(),
     val ejerciciosPorId: Map<String, Ejercicio> = emptyMap(),
+    // HU12-CA03: filtra tanto la lista de sesiones como el resumen de abajo.
+    val filtroPeriodo: PeriodoFiltro = PeriodoFiltro.TODOS,
     val cargando: Boolean = true,
 ) {
+    val sesionesFiltradas: List<Sesion>
+        get() = sesiones.filter { cumplePeriodo(it.fechaAsignacion, filtroPeriodo) }
+
     val sesionesCompletadas: Int
-        get() = sesiones.count { it.estado == EstadoSesion.COMPLETADA }
+        get() = sesionesFiltradas.count { it.estado == EstadoSesion.COMPLETADA }
+
+    // HU12-CA01/CA02: progreso general (promedio del % de ejecución) sobre
+    // las sesiones completadas que cumplen el filtro — la evolución
+    // comparativa entre sesiones ya se ve en la lista de abajo, cada una
+    // con su propio %.
+    val porcentajePromedio: Float
+        get() = sesionesFiltradas
+            .mapNotNull { it.resultado?.porcentajeEjecucion }
+            .let { valores -> if (valores.isEmpty()) 0f else valores.average().toFloat() }
 }
 
 // HU01-CA02/CA03 — detalle de un paciente: su información y sus sesiones.
 // HU03 — desde aquí también se asigna/edita una sesión (ver pacienteId).
+// HU12 — el fisioterapeuta visualiza el progreso y la evolución del
+// paciente (CA01-CA03); se actualiza sola con cada sesión nueva por ser
+// un Flow en vivo (CA04).
 @HiltViewModel
 class PacienteDetalleViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -61,7 +78,7 @@ class PacienteDetalleViewModel @Inject constructor(
     }
 
     // HU01-CA06 — el fisioterapeuta elige el diagnóstico del paciente de un
-    // catálogo cerrado (TipoDiagnostico).
+    // catálogo cerrado (TipoDiagnostico), no texto libre.
     fun actualizarDiagnostico(tipoDiagnostico: TipoDiagnostico) {
         viewModelScope.launch {
             usuarioRepository.actualizarDiagnostico(pacienteId, tipoDiagnostico).onSuccess {
@@ -70,6 +87,10 @@ class PacienteDetalleViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun onFiltroPeriodoCambiado(periodo: PeriodoFiltro) {
+        _uiState.update { it.copy(filtroPeriodo = periodo) }
     }
 
     private fun observarSesiones() {

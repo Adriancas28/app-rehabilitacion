@@ -27,6 +27,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -109,23 +111,49 @@ fun PacienteDetalleScreen(
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
+
+            // HU12-CA01/CA02: progreso general del paciente (% de sesiones
+            // completadas + promedio de calidad de ejecución).
             TarjetaProgreso(
                 completadas = uiState.sesionesCompletadas,
-                total = uiState.sesiones.size,
+                total = uiState.sesionesFiltradas.size,
+                porcentajePromedio = uiState.porcentajePromedio,
             )
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // HU12-CA03: filtro por período — afecta tanto el resumen de
+            // arriba como la lista de sesiones de abajo.
+            Row {
+                PeriodoFiltro.entries.forEach { periodo ->
+                    FilterChip(
+                        selected = uiState.filtroPeriodo == periodo,
+                        onClick = { viewModel.onFiltroPeriodoCambiado(periodo) },
+                        label = { Text(periodo.etiqueta) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(text = "Sesiones registradas", style = MaterialTheme.typography.titleSmall)
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (uiState.sesiones.isEmpty()) {
+            if (uiState.sesionesFiltradas.isEmpty()) {
                 Text(
-                    text = "Este paciente aún no tiene sesiones registradas.",
+                    text = if (uiState.filtroPeriodo == PeriodoFiltro.TODOS) {
+                        "Este paciente aún no tiene sesiones registradas."
+                    } else {
+                        "No hay sesiones en este período."
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 LazyColumn {
-                    items(uiState.sesiones, key = { it.id }) { sesion ->
+                    items(uiState.sesionesFiltradas, key = { it.id }) { sesion ->
                         TarjetaSesion(
                             sesion = sesion,
                             ejercicio = uiState.ejerciciosPorId[sesion.ejercicioId],
@@ -235,7 +263,7 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (TipoDiagnostico) -
 }
 
 @Composable
-private fun TarjetaProgreso(completadas: Int, total: Int) {
+private fun TarjetaProgreso(completadas: Int, total: Int, porcentajePromedio: Float) {
     val porcentaje = if (total == 0) 0f else completadas.toFloat() / total.toFloat()
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -266,6 +294,13 @@ private fun TarjetaProgreso(completadas: Int, total: Int) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                // HU12-CA01/CA02: promedio de calidad de ejecución, distinto
+                // del % de arriba (que es tasa de cumplimiento, no calidad).
+                Text(
+                    text = "Progreso general: ${porcentajePromedio.toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -273,8 +308,6 @@ private fun TarjetaProgreso(completadas: Int, total: Int) {
 
 @Composable
 private fun TarjetaSesion(sesion: Sesion, ejercicio: Ejercicio?, onClick: () -> Unit) {
-    // HU18-CA02: ahora ambos estados son clickeables — pendiente va a
-    // editar, completada va al detalle de resultado.
     Card(
         onClick = onClick,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),

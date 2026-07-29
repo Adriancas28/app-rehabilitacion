@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -61,6 +62,7 @@ fun EjerciciosListScreen(
     onRegistrarEjercicio: () -> Unit,
     onEditarEjercicio: (String) -> Unit,
     onNavegarAPacientes: () -> Unit,
+    onNavegarAResultados: () -> Unit,
     viewModel: EjerciciosViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -77,6 +79,12 @@ fun EjerciciosListScreen(
                 onClick = onNavegarAPacientes,
             ),
             ItemBarraLateral("Ejercicios", Icons.Filled.FitnessCenter, seleccionado = true, onClick = {}),
+            ItemBarraLateral(
+                "Resultados",
+                Icons.Filled.Assessment,
+                seleccionado = false,
+                onClick = onNavegarAResultados,
+            ),
         ),
         topBar = { onAlternarMenu ->
             TopAppBar(

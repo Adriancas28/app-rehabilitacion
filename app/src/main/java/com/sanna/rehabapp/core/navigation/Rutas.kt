@@ -8,6 +8,10 @@ object Rutas {
     const val PACIENTE_DETALLE = "fisioterapeuta/pacientes/{pacienteId}"
     const val ARG_PACIENTE_ID = "pacienteId"
 
+    // HU18-CA01/CA03 (Sprint 5) — vista agregada de sesiones/resultados de
+    // todos los pacientes del fisioterapeuta, con filtros.
+    const val RESULTADOS = "fisioterapeuta/resultados"
+
     const val EJERCICIOS = "fisioterapeuta/ejercicios"
     const val EJERCICIO_FORMULARIO = "fisioterapeuta/ejercicios/formulario?ejercicioId={ejercicioId}"
     const val ARG_EJERCICIO_ID = "ejercicioId"

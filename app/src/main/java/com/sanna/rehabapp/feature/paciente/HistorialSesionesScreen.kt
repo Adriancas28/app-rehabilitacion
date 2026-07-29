@@ -17,10 +17,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
@@ -51,7 +57,7 @@ fun HistorialSesionesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Historial") },
+                title = { Text("Mi progreso") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
@@ -71,6 +77,48 @@ fun HistorialSesionesScreen(
                 .padding(padding)
                 .padding(16.dp),
         ) {
+            // HU12-CA01/CA02: resumen agregado — % general, sesiones
+            // completadas y racha de días consecutivos.
+            Row(modifier = Modifier.fillMaxWidth()) {
+                TarjetaEstadistica(
+                    icono = Icons.Filled.TrendingUp,
+                    valor = "${uiState.resumen.porcentajeGeneral.toInt()}%",
+                    etiqueta = "Progreso general",
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                TarjetaEstadistica(
+                    icono = Icons.Filled.TaskAlt,
+                    valor = "${uiState.resumen.sesionesCompletadas}",
+                    etiqueta = "Completadas",
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                TarjetaEstadistica(
+                    icono = Icons.Filled.LocalFireDepartment,
+                    valor = "${uiState.resumen.rachaActual}",
+                    etiqueta = "Racha (días)",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // HU12-CA03: filtro por período.
+            Row {
+                PeriodoProgreso.entries.forEach { periodo ->
+                    FilterChip(
+                        selected = uiState.filtroPeriodo == periodo,
+                        onClick = { viewModel.onFiltroPeriodoCambiado(periodo) },
+                        label = { Text(periodo.etiqueta) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
             when {
                 uiState.cargando -> Box(
                     modifier = Modifier.fillMaxSize(),
@@ -93,7 +141,11 @@ fun HistorialSesionesScreen(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Aún no has completado ninguna sesión.",
+                            text = if (uiState.filtroPeriodo == PeriodoProgreso.TODOS) {
+                                "Aún no has completado ninguna sesión."
+                            } else {
+                                "No completaste sesiones en este período."
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -109,6 +161,32 @@ fun HistorialSesionesScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaEstadistica(icono: ImageVector, valor: String, etiqueta: String, modifier: Modifier = Modifier) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Icon(
+                icono,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = valor, style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = etiqueta,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
         }
     }
 }
