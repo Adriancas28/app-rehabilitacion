@@ -409,6 +409,13 @@ y priorizados en 5 sprints.
 - CA02: Dado que detecte una desviación relevante, entonces el sistema clasifica el tipo de error (rango incompleto, desviación angular, etc.).
 - CA03: Dado que el análisis concluya, entonces el sistema genera un resultado consolidado (% de acierto o desviación promedio).
 
+> Nota (Sprint 4): esta HU **ya se cumple desde Sprint 3**, sin código
+> nuevo — `MedicionArticulacion.tipoDeError` ya clasifica "Rango
+> incompleto"/"Desviación angular" (CA02), `medirArticulacion` ya compara
+> contra `patronReferencia` (CA01), y `porcentajeEjecucion`/
+> `desviacionPromedio` ya son el resultado consolidado (CA03). Se deja
+> constancia aquí para no repetir trabajo ya hecho.
+
 ---
 
 ### ÉPICA 03: Generar retroalimentación terapéutica
@@ -419,6 +426,12 @@ y priorizados en 5 sprints.
 **Propósito:** Corregir mi ejecución terapéutica mientras la realizo.
 - CA01: Dado que el sistema detecte una desviación, entonces muestra retroalimentación visual con la corrección sugerida.
 - CA02: Dado que no se detecten desviaciones relevantes, entonces el sistema indica visualmente que la ejecución es correcta.
+  > Nota (Sprint 4, confirmado con el usuario): el paciente no puede leer
+  > texto en pantalla mientras se mueve, así que "retroalimentación
+  > visual" se resuelve con un **ícono mínimo** (check verde / alerta
+  > ámbar), sin texto de corrección en pantalla — la corrección en sí la
+  > lleva la voz (CA06). No se construye el esqueleto con checks por
+  > articulación del mockup de referencia (decisión explícita).
 - CA03: Dado que continúe ejecutando el ejercicio, entonces la retroalimentación se actualiza de forma continua.
 - CA04: Dado que el sistema procese el movimiento, entonces el tiempo de respuesta no debe superar los **500 ms**.
 - CA05: Dado que finalice el ejercicio, entonces el sistema detiene la retroalimentación inmediata.
