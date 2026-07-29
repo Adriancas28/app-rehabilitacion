@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.repository.AuthRepository
@@ -21,7 +22,7 @@ import javax.inject.Inject
 // Fila editable del formulario — una por articulación con su ROM esperado.
 data class PatronReferenciaFila(
     val idFila: String = UUID.randomUUID().toString(),
-    val articulacion: String = "",
+    val articulacion: Articulacion? = null,
     val anguloMin: String = "",
     val anguloMax: String = "",
 )
@@ -30,6 +31,7 @@ data class EjercicioFormUiState(
     val nombre: String = "",
     val descripcion: String = "",
     val categoria: String = "",
+    val duracionSegundos: String = "30",
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
     val materialUrlActual: String = "",
     val archivoSeleccionado: Uri? = null,
@@ -74,6 +76,7 @@ class EjercicioFormViewModel @Inject constructor(
                         nombre = ejercicio.nombre,
                         descripcion = ejercicio.descripcion,
                         categoria = ejercicio.categoria,
+                        duracionSegundos = ejercicio.duracionSegundos.toString(),
                         patronesReferencia = ejercicio.patronesReferencia.map { patron ->
                             PatronReferenciaFila(
                                 articulacion = patron.articulacion,
@@ -94,6 +97,7 @@ class EjercicioFormViewModel @Inject constructor(
     fun onNombreCambiado(valor: String) = _uiState.update { it.copy(nombre = valor, error = null) }
     fun onDescripcionCambiada(valor: String) = _uiState.update { it.copy(descripcion = valor, error = null) }
     fun onCategoriaCambiada(valor: String) = _uiState.update { it.copy(categoria = valor, error = null) }
+    fun onDuracionCambiada(valor: String) = _uiState.update { it.copy(duracionSegundos = valor, error = null) }
     fun onArchivoSeleccionado(uri: Uri?) = _uiState.update { it.copy(archivoSeleccionado = uri) }
 
     fun agregarArticulacion() {
@@ -104,7 +108,7 @@ class EjercicioFormViewModel @Inject constructor(
         _uiState.update { it.copy(patronesReferencia = it.patronesReferencia.filterNot { fila -> fila.idFila == idFila }) }
     }
 
-    fun onArticulacionCambiada(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(articulacion = valor) }
+    fun onArticulacionCambiada(idFila: String, valor: Articulacion) = actualizarFila(idFila) { it.copy(articulacion = valor) }
     fun onAnguloMinCambiado(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(anguloMin = valor) }
     fun onAnguloMaxCambiado(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(anguloMax = valor) }
 
@@ -129,14 +133,19 @@ class EjercicioFormViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Sesión inválida, vuelve a iniciar sesión.") }
             return
         }
+        val duracion = estado.duracionSegundos.toIntOrNull()
+        if (duracion == null || duracion <= 0) {
+            _uiState.update { it.copy(error = "La duración debe ser un número de segundos mayor a cero.") }
+            return
+        }
 
         // Filas incompletas (sin articulación o sin ambos ángulos) se ignoran
         // en silencio: el ROM es opcional en HU02, se puede completar después.
         val patrones = estado.patronesReferencia.mapNotNull { fila ->
-            if (fila.articulacion.isBlank()) return@mapNotNull null
+            val articulacion = fila.articulacion ?: return@mapNotNull null
             val min = fila.anguloMin.toFloatOrNull() ?: return@mapNotNull null
             val max = fila.anguloMax.toFloatOrNull() ?: return@mapNotNull null
-            PatronReferencia(articulacion = fila.articulacion.trim(), anguloMin = min, anguloMax = max)
+            PatronReferencia(articulacion = articulacion, anguloMin = min, anguloMax = max)
         }
 
         val ejercicio = Ejercicio(
@@ -145,6 +154,7 @@ class EjercicioFormViewModel @Inject constructor(
             descripcion = estado.descripcion.trim(),
             categoria = estado.categoria.trim(),
             materialUrl = estado.materialUrlActual,
+            duracionSegundos = duracion,
             patronesReferencia = patrones,
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,

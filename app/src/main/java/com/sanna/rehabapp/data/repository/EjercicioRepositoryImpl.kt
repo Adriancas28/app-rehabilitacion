@@ -7,6 +7,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
@@ -61,9 +62,10 @@ class EjercicioRepositoryImpl @Inject constructor(
             "descripcion" to ejercicio.descripcion,
             "categoria" to ejercicio.categoria,
             "materialUrl" to materialUrl,
+            "duracionSegundos" to ejercicio.duracionSegundos,
             "patronesReferencia" to ejercicio.patronesReferencia.map {
                 mapOf(
-                    "articulacion" to it.articulacion,
+                    "articulacion" to it.articulacion.aFirestore(),
                     "anguloMin" to it.anguloMin,
                     "anguloMax" to it.anguloMax,
                 )
@@ -106,6 +108,7 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
         descripcion = getString("descripcion") ?: "",
         categoria = getString("categoria") ?: "",
         materialUrl = getString("materialUrl") ?: "",
+        duracionSegundos = getLong("duracionSegundos")?.toInt() ?: 30,
         patronesReferencia = patrones,
         creadoPor = getString("creadoPor") ?: "",
         fechaCreacion = getDate("fechaCreacion"),
@@ -114,7 +117,9 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
 }
 
 private fun Map<*, *>.toPatronReferencia(): PatronReferencia? {
-    val articulacion = this["articulacion"] as? String ?: return null
+    // Ejercicios creados antes de Sprint 3 pueden tener articulacion como
+    // texto libre; ya no son un valor valido del enum y se descartan aqui.
+    val articulacion = Articulacion.desdeFirestoreOrNull(this["articulacion"] as? String) ?: return null
     return PatronReferencia(
         articulacion = articulacion,
         anguloMin = (this["anguloMin"] as? Number)?.toFloat() ?: 0f,

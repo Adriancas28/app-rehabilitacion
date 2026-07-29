@@ -181,7 +181,14 @@ usuarios/{uid}
 ejercicios/{ejercicioId}
   - nombre, descripcion, categoria
   - materialUrl              (video/imagen en Firebase Storage)
-  - patronReferencia         (ángulos ideales / ROM esperado, usado por HU08-09)
+  - duracionSegundos         (duración de la ejecución guiada, HU06-CA04)
+  - patronesReferencia: [{ articulacion, anguloMin, anguloMax }]
+                             (ángulos ideales / ROM esperado, usado por HU08-09;
+                              `articulacion` es un valor del enum Articulacion
+                              — Sprint 3 — no texto libre, porque el sistema
+                              necesita mapear cada patrón a una tripleta de
+                              landmarks concreta de MediaPipe para calcular el
+                              ángulo automáticamente)
   - creadoPor, fechaCreacion, activo
 ```
 
