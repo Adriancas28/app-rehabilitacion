@@ -59,6 +59,15 @@ class PacienteDetalleViewModel @Inject constructor(
         }
     }
 
+    // HU01-CA06 — el fisioterapeuta registra/edita el diagnóstico del paciente.
+    fun actualizarDiagnostico(diagnostico: String) {
+        viewModelScope.launch {
+            usuarioRepository.actualizarDiagnostico(pacienteId, diagnostico).onSuccess {
+                _uiState.update { estado -> estado.copy(paciente = estado.paciente?.copy(diagnostico = diagnostico)) }
+            }
+        }
+    }
+
     private fun observarSesiones() {
         val fisioterapeutaId = authRepository.uidActual ?: return
         viewModelScope.launch {

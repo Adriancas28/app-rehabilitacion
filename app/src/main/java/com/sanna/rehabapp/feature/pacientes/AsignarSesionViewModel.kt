@@ -21,6 +21,7 @@ data class AsignarSesionUiState(
     val ejercicios: List<Ejercicio> = emptyList(),
     val ejercicioSeleccionadoId: String? = null,
     val fechaAsignacion: Date? = null,
+    val notas: String = "",
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
@@ -67,6 +68,7 @@ class AsignarSesionViewModel @Inject constructor(
                     it.copy(
                         ejercicioSeleccionadoId = sesion.ejercicioId,
                         fechaAsignacion = sesion.fechaAsignacion,
+                        notas = sesion.notas ?: "",
                         cargando = false,
                     )
                 } else {
@@ -82,6 +84,8 @@ class AsignarSesionViewModel @Inject constructor(
     fun onFechaSeleccionada(fecha: Date) =
         _uiState.update { it.copy(fechaAsignacion = fecha, error = null) }
 
+    fun onNotasCambiadas(valor: String) = _uiState.update { it.copy(notas = valor) }
+
     fun guardar() {
         val estado = _uiState.value
         val ejercicioId = estado.ejercicioSeleccionadoId
@@ -90,18 +94,19 @@ class AsignarSesionViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Selecciona un ejercicio y una fecha.") }
             return
         }
+        val notas = estado.notas.trim().ifBlank { null }
 
         viewModelScope.launch {
             _uiState.update { it.copy(guardando = true, error = null) }
             val resultado = if (esEdicion) {
-                sesionRepository.actualizarSesion(pacienteId, sesionIdArg!!, ejercicioId, fecha)
+                sesionRepository.actualizarSesion(pacienteId, sesionIdArg!!, ejercicioId, fecha, notas)
             } else {
                 val fisioterapeutaId = authRepository.uidActual
                 if (fisioterapeutaId == null) {
                     _uiState.update { it.copy(guardando = false, error = "Sesión inválida, vuelve a iniciar sesión.") }
                     return@launch
                 }
-                sesionRepository.asignarSesion(pacienteId, ejercicioId, fisioterapeutaId, fecha)
+                sesionRepository.asignarSesion(pacienteId, ejercicioId, fisioterapeutaId, fecha, notas)
             }
             resultado.fold(
                 onSuccess = { _uiState.update { it.copy(guardando = false, guardadoExitoso = true) } },

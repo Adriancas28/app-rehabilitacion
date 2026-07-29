@@ -2,6 +2,7 @@ package com.sanna.rehabapp.data.repository
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
@@ -34,6 +35,14 @@ class UsuarioRepositoryImpl @Inject constructor(
             }
         awaitClose { registro.remove() }
     }
+
+    override suspend fun actualizarDiagnostico(pacienteId: String, diagnostico: String): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .set(mapOf("diagnostico" to diagnostico), SetOptions.merge())
+            .await()
+        Unit
+    }
 }
 
 private fun DocumentSnapshot.toUsuario(): Usuario? {
@@ -45,6 +54,7 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
+        diagnostico = getString("diagnostico"),
         fechaRegistro = getDate("fechaRegistro"),
     )
 }

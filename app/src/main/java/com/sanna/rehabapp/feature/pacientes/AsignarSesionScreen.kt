@@ -153,6 +153,17 @@ fun AsignarSesionScreen(
                 Text(uiState.fechaAsignacion?.let(::formatearFecha) ?: "Seleccionar fecha")
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(text = "Notas (opcional)", style = MaterialTheme.typography.titleSmall)
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = uiState.notas,
+                onValueChange = viewModel::onNotasCambiadas,
+                placeholder = { Text("Indicaciones adicionales…") },
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             uiState.error?.let { mensaje ->
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(text = mensaje, color = MaterialTheme.colorScheme.error)

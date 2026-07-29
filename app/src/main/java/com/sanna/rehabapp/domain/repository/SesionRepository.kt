@@ -29,18 +29,21 @@ interface SesionRepository {
     suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
 
     // HU03-CA02 — el fisioterapeuta asigna una nueva sesión a un paciente.
+    // HU03-CA05: nota opcional del fisioterapeuta sobre esta sesión.
     suspend fun asignarSesion(
         pacienteId: String,
         ejercicioId: String,
         fisioterapeutaId: String,
         fechaAsignacion: Date,
+        notas: String? = null,
     ): Result<Unit>
 
-    // HU03-CA03 — modificar el ejercicio o la fecha de una sesión pendiente.
+    // HU03-CA03 — modificar el ejercicio, la fecha o la nota de una sesión pendiente.
     suspend fun actualizarSesion(
         pacienteId: String,
         sesionId: String,
         ejercicioId: String,
         fechaAsignacion: Date,
+        notas: String? = null,
     ): Result<Unit>
 }

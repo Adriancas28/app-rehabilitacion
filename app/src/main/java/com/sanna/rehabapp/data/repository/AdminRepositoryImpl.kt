@@ -117,6 +117,7 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
+        diagnostico = getString("diagnostico"),
         fechaRegistro = getDate("fechaRegistro"),
     )
 }

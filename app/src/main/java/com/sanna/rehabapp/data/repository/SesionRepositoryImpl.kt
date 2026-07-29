@@ -103,12 +103,14 @@ class SesionRepositoryImpl @Inject constructor(
         ejercicioId: String,
         fisioterapeutaId: String,
         fechaAsignacion: Date,
+        notas: String?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
             "fisioterapeutaId" to fisioterapeutaId,
             "fechaAsignacion" to fechaAsignacion,
             "estado" to EstadoSesion.PENDIENTE.aFirestore(),
+            "notas" to notas,
             "sincronizado" to true,
         )
         firestore.collection(COLECCION_USUARIOS)
@@ -124,10 +126,12 @@ class SesionRepositoryImpl @Inject constructor(
         sesionId: String,
         ejercicioId: String,
         fechaAsignacion: Date,
+        notas: String?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
             "fechaAsignacion" to fechaAsignacion,
+            "notas" to notas,
         )
         firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -162,6 +166,7 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
         fechaAsignacion = getDate("fechaAsignacion"),
         fechaEjecucion = getDate("fechaEjecucion"),
         estado = EstadoSesion.desdeFirestore(estadoStr),
+        notas = getString("notas"),
         resultado = resultado,
         sincronizado = getBoolean("sincronizado") ?: true,
     )
