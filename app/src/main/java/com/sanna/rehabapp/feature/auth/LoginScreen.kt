@@ -60,17 +60,16 @@ fun LoginScreen(
         if (uiState.loginExitoso) onLoginExitoso()
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        // Encabezado con peso visual, como el mockup (ahí es una foto; acá
-        // usamos el verde de marca ya que no tenemos una foto real todavía).
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Encabezado proporcional al alto disponible (no un valor fijo en dp):
+        // así el logo queda centrado en la franja superior, hasta más o menos
+        // la mitad de la pantalla, en vez de quedar pegado arriba en
+        // dispositivos más altos. En el mockup esa franja es una foto; acá
+        // usamos el verde de marca ya que no tenemos una foto real todavía.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(220.dp)
+                .weight(1f)
                 .background(
                     Brush.verticalGradient(
                         listOf(
@@ -87,8 +86,8 @@ fun LoginScreen(
                     painter = painterResource(id = R.drawable.ic_sanna_logo_completo),
                     contentDescription = "Clínica SANNA",
                     modifier = Modifier
-                        .size(120.dp)
-                        .clip(RoundedCornerShape(28.dp)),
+                        .size(140.dp)
+                        .clip(RoundedCornerShape(32.dp)),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
@@ -101,7 +100,9 @@ fun LoginScreen(
 
         Column(
             modifier = Modifier
+                .weight(1.2f)
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 32.dp),
         ) {
             OutlinedTextField(
