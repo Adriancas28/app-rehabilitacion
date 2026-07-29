@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -175,78 +174,85 @@ private fun TarjetaEjercicio(ejercicio: Ejercicio, onEditar: () -> Unit, onElimi
     var menuAbierto by remember { mutableStateOf(false) }
 
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
             .padding(6.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(96.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+            ) {
+                Icon(
+                    Icons.Filled.FitnessCenter,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.FitnessCenter,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-                Box(modifier = Modifier.weight(1f))
-                IconButton(onClick = { menuAbierto = true }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones")
-                }
-                DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
-                    DropdownMenuItem(
-                        text = { Text("Editar") },
-                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                        onClick = {
-                            menuAbierto = false
-                            onEditar()
-                        },
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Eliminar") },
-                        leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
-                        onClick = {
-                            menuAbierto = false
-                            onEliminar()
-                        },
-                    )
+                        .align(Alignment.Center)
+                        .size(44.dp),
+                )
+                Box(modifier = Modifier.align(Alignment.TopEnd)) {
+                    IconButton(onClick = { menuAbierto = true }) {
+                        Icon(
+                            Icons.Filled.MoreVert,
+                            contentDescription = "Más opciones",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
+                    DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Editar") },
+                            leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                            onClick = {
+                                menuAbierto = false
+                                onEditar()
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Eliminar") },
+                            leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                            onClick = {
+                                menuAbierto = false
+                                onEliminar()
+                            },
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = ejercicio.nombre,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = ejercicio.categoria,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Filled.Schedule,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(14.dp),
-                )
-                Spacer(modifier = Modifier.width(4.dp))
+            Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = "${ejercicio.repeticiones} rep. · ${formatearDuracion(ejercicio.duracionSegundos)} c/u",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = ejercicio.nombre,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = ejercicio.categoria,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${ejercicio.repeticiones} rep. · ${formatearDuracion(ejercicio.duracionSegundos)} c/u",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
