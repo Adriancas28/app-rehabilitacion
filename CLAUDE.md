@@ -181,7 +181,12 @@ usuarios/{uid}
                                 valor por defecto de `ejercicios.repeticiones`)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
-        erroresDetectados: [{ articulacion, tipo, repeticiones }]
+        erroresDetectados: [{ articulacion, tipo, repeticiones }],
+        repeticionesCompletadas, repeticionesAsignadas, repeticionesCorrectas
+                             (HU11-CA05, Sprint 3: completadas puede ser
+                              menor a asignadas si se finalizó antes de
+                              tiempo, HU06-CA07; correctas cuenta las
+                              repeticiones sin ningún error detectado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -433,6 +438,17 @@ y priorizados en 5 sprints.
 - CA02: Dado que consulte el detalle, entonces el sistema muestra métricas comprensibles (desviación promedio, % de acierto).
 - CA03: Dado que la sesión incluya más de un ejercicio, entonces el sistema diferencia el resultado por cada uno.
 - CA04: Dado que consulte una sesión anterior, entonces el sistema muestra el mismo detalle de resultados obtenido en su momento.
+- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que la sesión se haya completado o finalizado antes de tiempo
+  (HU06-CA07), entonces el sistema muestra cuántas repeticiones se
+  llegaron a completar sobre el total asignado (ej. "8/12"), y de esas
+  cuántas no tuvieron ningún error ("Correctas") frente a las que sí
+  ("Errores") — así se distingue una ejecución completa de una parcial.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que consulte el resultado de una sesión, entonces el sistema
+  ofrece acceso directo a "Ver mi progreso" (historial, HU13) y "Volver
+  al inicio" (HU04), sin tener que navegar hacia atrás pantalla por
+  pantalla.
 
 ---
 

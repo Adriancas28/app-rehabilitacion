@@ -51,6 +51,9 @@ class SesionRepositoryImpl @Inject constructor(
                         "repeticiones" to it.repeticiones,
                     )
                 },
+                "repeticionesCompletadas" to resultado.repeticionesCompletadas,
+                "repeticionesAsignadas" to resultado.repeticionesAsignadas,
+                "repeticionesCorrectas" to resultado.repeticionesCorrectas,
             ),
             "sincronizado" to true,
         )
@@ -161,6 +164,9 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
             erroresDetectados = (it["erroresDetectados"] as? List<*>)
                 ?.mapNotNull { entrada -> (entrada as? Map<*, *>)?.toErrorDetectado() }
                 ?: emptyList(),
+            repeticionesCompletadas = (it["repeticionesCompletadas"] as? Number)?.toInt() ?: 0,
+            repeticionesAsignadas = (it["repeticionesAsignadas"] as? Number)?.toInt() ?: 0,
+            repeticionesCorrectas = (it["repeticionesCorrectas"] as? Number)?.toInt() ?: 0,
         )
     }
     return Sesion(

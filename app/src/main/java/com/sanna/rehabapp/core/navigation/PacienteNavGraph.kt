@@ -42,7 +42,11 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
         route = Rutas.RESULTADO_SESION,
         arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
     ) {
-        ResultadoSesionScreen(onVolver = { navController.popBackStack() })
+        ResultadoSesionScreen(
+            onVolver = { navController.popBackStack() },
+            onVerProgreso = { navController.navigate(Rutas.HISTORIAL_SESIONES) },
+            onVolverAlInicio = { navController.popBackStack(Rutas.INICIO_PACIENTE, inclusive = false) },
+        )
     }
     composable(
         route = Rutas.DETALLE_EJERCICIO_ASIGNADO,

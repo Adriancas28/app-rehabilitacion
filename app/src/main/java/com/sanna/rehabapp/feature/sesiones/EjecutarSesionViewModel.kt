@@ -29,6 +29,9 @@ data class EjecutarSesionUiState(
     val cargando: Boolean = true,
     val sesionIniciada: Boolean = false,
     val repeticionActual: Int = 1,
+    // HU06-CA07/HU11: repeticiones que llegaron a completar su tiempo
+    // completo (puede ser menos que totalRepeticiones si se finalizó antes).
+    val repeticionesCompletadas: Int = 0,
     val segundosRestantes: Int = 0,
     // HU06-CA06: pausa breve entre repeticiones antes de que arranque la siguiente.
     val enDescanso: Boolean = false,
@@ -99,10 +102,12 @@ class EjecutarSesionViewModel @Inject constructor(
         jobCicloRepeticiones = viewModelScope.launch {
             for (repeticion in 1..totalRepeticiones) {
                 _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
+                procesadorMovimiento?.marcarNuevaRepeticion()
                 while (_uiState.value.segundosRestantes > 0) {
                     delay(1_000)
                     _uiState.update { it.copy(segundosRestantes = it.segundosRestantes - 1) }
                 }
+                _uiState.update { it.copy(repeticionesCompletadas = repeticion) }
                 if (repeticion < totalRepeticiones) {
                     _uiState.update { it.copy(enDescanso = true, segundosDescanso = SEGUNDOS_DESCANSO_ENTRE_REPETICIONES) }
                     while (_uiState.value.segundosDescanso > 0) {
@@ -142,7 +147,11 @@ class EjecutarSesionViewModel @Inject constructor(
     // HU06-CA04/CA05: finaliza el tiempo establecido y registra el resultado.
     private fun finalizarSesion() {
         val idPaciente = pacienteId ?: return
-        val resultado = procesadorMovimiento?.generarResultado() ?: return
+        val estado = _uiState.value
+        val resultado = procesadorMovimiento?.generarResultado(
+            repeticionesCompletadas = estado.repeticionesCompletadas,
+            repeticionesAsignadas = estado.totalRepeticiones,
+        ) ?: return
         viewModelScope.launch {
             sesionRepository.guardarResultado(idPaciente, sesionId, resultado)
             _uiState.update { it.copy(sesionCompletada = true) }

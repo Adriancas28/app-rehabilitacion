@@ -33,11 +33,22 @@ data class MedicionArticulacion(
         }
 }
 
-// HU08-CA04: al finalizar la sesión, agrega todas las mediciones (una lista
-// por frame procesado) en el resumen que se guarda como ResultadoSesion.
-fun construirResultadoSesion(medicionesPorFrame: List<List<MedicionArticulacion>>): ResultadoSesion {
+// HU08-CA04: al finalizar la sesión, agrega todas las mediciones (agrupadas
+// por repetición, y dentro de cada una por frame procesado) en el resumen
+// que se guarda como ResultadoSesion.
+fun construirResultadoSesion(
+    medicionesPorRepeticion: List<List<List<MedicionArticulacion>>>,
+    repeticionesCompletadas: Int,
+    repeticionesAsignadas: Int,
+): ResultadoSesion {
+    val medicionesPorFrame = medicionesPorRepeticion.flatten()
     val todasLasMediciones = medicionesPorFrame.flatten()
-    if (todasLasMediciones.isEmpty()) return ResultadoSesion()
+    if (todasLasMediciones.isEmpty()) {
+        return ResultadoSesion(
+            repeticionesCompletadas = repeticionesCompletadas,
+            repeticionesAsignadas = repeticionesAsignadas,
+        )
+    }
 
     val angulosDetectados = todasLasMediciones
         .groupBy { it.articulacion }
@@ -65,10 +76,19 @@ fun construirResultadoSesion(medicionesPorFrame: List<List<MedicionArticulacion>
     val porcentajeEjecucion = framesDentroDeRango.toFloat() / medicionesPorFrame.size * 100f
     val desviacionPromedio = todasLasMediciones.map { it.desviacion }.average().toFloat()
 
+    // HU11: una repetición cuenta como "correcta" si tuvo frames medidos y
+    // todos ellos estuvieron dentro de rango en todas las articulaciones.
+    val repeticionesCorrectas = medicionesPorRepeticion.count { frames ->
+        frames.isNotEmpty() && frames.all { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
+    }
+
     return ResultadoSesion(
         angulosDetectados = angulosDetectados,
         desviacionPromedio = desviacionPromedio,
         porcentajeEjecucion = porcentajeEjecucion,
         erroresDetectados = erroresDetectados,
+        repeticionesCompletadas = repeticionesCompletadas,
+        repeticionesAsignadas = repeticionesAsignadas,
+        repeticionesCorrectas = repeticionesCorrectas,
     )
 }

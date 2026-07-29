@@ -10,9 +10,20 @@ class MedicionArticulacionTest {
     private fun medicion(angulo: Float, min: Float = 90f, max: Float = 120f) =
         MedicionArticulacion(Articulacion.RODILLA_DERECHA, angulo, min, max)
 
+    private fun resultadoDeUnaRepeticion(frames: List<List<MedicionArticulacion>>) =
+        construirResultadoSesion(
+            medicionesPorRepeticion = listOf(frames),
+            repeticionesCompletadas = 1,
+            repeticionesAsignadas = 1,
+        )
+
     @Test
     fun `sin mediciones devuelve un resultado vacio sin lanzar excepcion`() {
-        val resultado = construirResultadoSesion(emptyList())
+        val resultado = construirResultadoSesion(
+            medicionesPorRepeticion = emptyList(),
+            repeticionesCompletadas = 0,
+            repeticionesAsignadas = 0,
+        )
         assertEquals(0f, resultado.porcentajeEjecucion, 0.01f)
         assertTrue(resultado.angulosDetectados.isEmpty())
         assertTrue(resultado.erroresDetectados.isEmpty())
@@ -24,10 +35,11 @@ class MedicionArticulacionTest {
             listOf(medicion(100f)),
             listOf(medicion(110f)),
         )
-        val resultado = construirResultadoSesion(frames)
+        val resultado = resultadoDeUnaRepeticion(frames)
         assertEquals(100f, resultado.porcentajeEjecucion, 0.01f)
         assertEquals(0f, resultado.desviacionPromedio, 0.01f)
         assertTrue(resultado.erroresDetectados.isEmpty())
+        assertEquals(1, resultado.repeticionesCorrectas)
     }
 
     @Test
@@ -36,11 +48,12 @@ class MedicionArticulacionTest {
             listOf(medicion(100f)),
             listOf(medicion(60f)), // por debajo del minimo (90)
         )
-        val resultado = construirResultadoSesion(frames)
+        val resultado = resultadoDeUnaRepeticion(frames)
         assertEquals(50f, resultado.porcentajeEjecucion, 0.01f)
         assertEquals(1, resultado.erroresDetectados.size)
         assertEquals("Rango incompleto", resultado.erroresDetectados.first().tipo)
         assertEquals(1, resultado.erroresDetectados.first().repeticiones)
+        assertEquals(0, resultado.repeticionesCorrectas)
     }
 
     @Test
@@ -49,7 +62,7 @@ class MedicionArticulacionTest {
             listOf(medicion(100f)),
             emptyList(), // toda la articulacion se ocluyo ese frame
         )
-        val resultado = construirResultadoSesion(frames)
+        val resultado = resultadoDeUnaRepeticion(frames)
         assertEquals(50f, resultado.porcentajeEjecucion, 0.01f)
     }
 
@@ -60,7 +73,7 @@ class MedicionArticulacionTest {
             listOf(medicion(200f)),
             listOf(medicion(200f)),
         )
-        val resultado = construirResultadoSesion(frames)
+        val resultado = resultadoDeUnaRepeticion(frames)
         assertEquals(1, resultado.erroresDetectados.size)
         assertEquals(3, resultado.erroresDetectados.first().repeticiones)
         assertEquals("Desviación angular", resultado.erroresDetectados.first().tipo)
