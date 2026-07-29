@@ -5,32 +5,39 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.domain.model.Ejercicio
+import com.sanna.rehabapp.domain.model.Recomendacion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
+import com.sanna.rehabapp.domain.repository.RecomendacionRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ResultadoSesionUiState(
     val ejercicio: Ejercicio? = null,
     val resultado: ResultadoSesion? = null,
+    // HU16 — recomendaciones que el fisioterapeuta registró sobre esta sesión.
+    val recomendaciones: List<Recomendacion> = emptyList(),
     val cargando: Boolean = true,
 )
 
 // HU11 — el paciente consulta el detalle de resultados de una sesión ya
 // completada: % de ejecución, desviación promedio, ángulos por
 // articulación y observaciones detectadas (CA01-CA03).
+// HU16 — también consulta las recomendaciones que le dejó su fisioterapeuta.
 @HiltViewModel
 class ResultadoSesionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val authRepository: AuthRepository,
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
+    private val recomendacionRepository: RecomendacionRepository,
 ) : ViewModel() {
 
     private val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
@@ -40,6 +47,7 @@ class ResultadoSesionViewModel @Inject constructor(
 
     init {
         cargar()
+        observarRecomendaciones()
     }
 
     private fun cargar() {
@@ -52,6 +60,18 @@ class ResultadoSesionViewModel @Inject constructor(
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
             _uiState.update { it.copy(ejercicio = ejercicio, resultado = sesion?.resultado, cargando = false) }
+        }
+    }
+
+    // HU16-CA01/CA03 — se actualiza sola si el fisio agrega una nueva
+    // recomendación mientras el paciente tiene esta pantalla abierta (es
+    // un listener en vivo, no una lectura única).
+    private fun observarRecomendaciones() {
+        val pacienteId = authRepository.uidActual ?: return
+        viewModelScope.launch {
+            recomendacionRepository.observarDe(pacienteId, sesionId)
+                .catch { }
+                .collect { lista -> _uiState.update { it.copy(recomendaciones = lista) } }
         }
     }
 }

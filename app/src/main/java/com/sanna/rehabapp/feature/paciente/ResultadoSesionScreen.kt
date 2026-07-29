@@ -14,6 +14,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.domain.model.AnguloDetectado
 import com.sanna.rehabapp.domain.model.ErrorDetectado
+import com.sanna.rehabapp.domain.model.Recomendacion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,7 +118,24 @@ fun ResultadoSesionScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
+                    // HU16-CA01/CA02/CA04 — a diferencia de "Observaciones",
+                    // esta sección siempre se muestra, con un mensaje de
+                    // ausencia si todavía no hay recomendaciones (CA04).
+                    Text(text = "Recomendaciones de tu fisioterapeuta", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(8.dp))
+                    if (uiState.recomendaciones.isEmpty()) {
+                        Text(
+                            text = "Tu fisioterapeuta aún no registró recomendaciones para esta sesión.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        uiState.recomendaciones.forEach { recomendacion ->
+                            TarjetaRecomendacion(recomendacion)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = onVerProgreso,
                         modifier = Modifier
@@ -213,6 +232,24 @@ private fun TarjetaAngulo(angulo: AnguloDetectado) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+    }
+}
+
+@Composable
+private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(Icons.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
