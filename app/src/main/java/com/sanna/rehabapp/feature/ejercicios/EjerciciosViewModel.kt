@@ -7,6 +7,7 @@ import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,9 +28,14 @@ class EjerciciosViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            ejercicioRepository.observarEjercicios().collect { lista ->
-                _uiState.update { it.copy(ejercicios = lista, cargando = false) }
-            }
+            ejercicioRepository.observarEjercicios()
+                // Si la sesión termina (logout) mientras esta pantalla sigue
+                // activa, el listener de Firestore recibe PERMISSION_DENIED;
+                // sin capturarlo, la excepción no atrapada tumba la app.
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(ejercicios = lista, cargando = false) }
+                }
         }
     }
 

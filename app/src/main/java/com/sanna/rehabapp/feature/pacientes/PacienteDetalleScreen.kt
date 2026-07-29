@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,6 +39,7 @@ import com.sanna.rehabapp.core.theme.AmbarAlertaContenedor
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.core.theme.VerdeExitoContenedor
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
+import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
 
@@ -45,6 +47,8 @@ import com.sanna.rehabapp.domain.model.Sesion
 @Composable
 fun PacienteDetalleScreen(
     onVolver: () -> Unit,
+    onAsignarSesion: (pacienteId: String) -> Unit,
+    onEditarSesion: (pacienteId: String, sesionId: String) -> Unit,
     viewModel: PacienteDetalleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -61,6 +65,11 @@ fun PacienteDetalleScreen(
                 navigationIcon = {
                     IconButton(onClick = onVolver) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { onAsignarSesion(viewModel.pacienteId) }) {
+                        Icon(Icons.Filled.Add, contentDescription = "Asignar sesión")
                     }
                 },
             )
@@ -97,7 +106,15 @@ fun PacienteDetalleScreen(
             } else {
                 LazyColumn {
                     items(uiState.sesiones, key = { it.id }) { sesion ->
-                        TarjetaSesion(sesion)
+                        TarjetaSesion(
+                            sesion = sesion,
+                            ejercicio = uiState.ejerciciosPorId[sesion.ejercicioId],
+                            onClick = {
+                                if (sesion.estado == EstadoSesion.PENDIENTE) {
+                                    onEditarSesion(viewModel.pacienteId, sesion.id)
+                                }
+                            },
+                        )
                     }
                 }
             }
@@ -143,8 +160,11 @@ private fun TarjetaProgreso(completadas: Int, total: Int) {
 }
 
 @Composable
-private fun TarjetaSesion(sesion: Sesion) {
+private fun TarjetaSesion(sesion: Sesion, ejercicio: Ejercicio?, onClick: () -> Unit) {
+    val esPendiente = sesion.estado == EstadoSesion.PENDIENTE
     Card(
+        onClick = onClick,
+        enabled = esPendiente,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
@@ -162,7 +182,10 @@ private fun TarjetaSesion(sesion: Sesion) {
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Ejercicio: ${sesion.ejercicioId}", style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = ejercicio?.nombre ?: "Ejercicio eliminado",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
                 sesion.resultado?.let { resultado ->
                     Text(
                         text = "Ejecución: ${resultado.porcentajeEjecucion.toInt()}%",

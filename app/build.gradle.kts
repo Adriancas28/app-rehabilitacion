@@ -79,6 +79,9 @@ dependencies {
     // DataStore (RNF06 — persistencia local del consentimiento informado)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // Coil (HU05 — cargar imágenes de material terapéutico desde Storage)
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")

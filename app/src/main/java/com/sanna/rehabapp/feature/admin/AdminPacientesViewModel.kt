@@ -7,6 +7,7 @@ import com.sanna.rehabapp.domain.repository.AdminRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -33,7 +34,11 @@ class AdminPacientesViewModel @Inject constructor(
                 adminRepository.observarFisioterapeutas(),
             ) { pacientes, fisioterapeutas ->
                 AdminPacientesUiState(pacientes = pacientes, fisioterapeutas = fisioterapeutas, cargando = false)
-            }.collect { estado -> _uiState.value = estado }
+            }
+                // Evita que un PERMISSION_DENIED por cierre de sesión mientras
+                // esta pantalla sigue activa tumbe la app (excepción no atrapada).
+                .catch { }
+                .collect { estado -> _uiState.value = estado }
         }
     }
 

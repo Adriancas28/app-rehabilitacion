@@ -11,6 +11,7 @@ import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
 import com.sanna.rehabapp.domain.repository.SesionRepository
+import java.util.Date
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -62,19 +63,79 @@ class SesionRepositoryImpl @Inject constructor(
         Unit
     }
 
-    override fun observarSesionesDe(pacienteId: String): Flow<List<Sesion>> = callbackFlow {
-        val registro = firestore.collection(COLECCION_USUARIOS)
+    override fun observarSesionesDe(pacienteId: String, fisioterapeutaId: String?): Flow<List<Sesion>> = callbackFlow {
+        val coleccion = firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
             .collection(SUBCOLECCION_SESIONES)
-            .orderBy("fechaAsignacion", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                trySend(snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList())
+
+        // Con filtro por fisioterapeutaId no se encadena orderBy: combinar un
+        // whereEqualTo con un orderBy en otro campo requeriría un índice
+        // compuesto nuevo en Firestore. Se ordena en memoria en su lugar.
+        val consulta: Query = if (fisioterapeutaId != null) {
+            coleccion.whereEqualTo("fisioterapeutaId", fisioterapeutaId)
+        } else {
+            coleccion.orderBy("fechaAsignacion", Query.Direction.DESCENDING)
+        }
+
+        val registro = consulta.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
             }
+            val sesiones = snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList()
+            trySend(if (fisioterapeutaId != null) sesiones.sortedByDescending { it.fechaAsignacion } else sesiones)
+        }
         awaitClose { registro.remove() }
+    }
+
+    override suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion? {
+        val snapshot = firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .document(sesionId)
+            .get()
+            .await()
+        return snapshot.toSesion()
+    }
+
+    override suspend fun asignarSesion(
+        pacienteId: String,
+        ejercicioId: String,
+        fisioterapeutaId: String,
+        fechaAsignacion: Date,
+    ): Result<Unit> = runCatching {
+        val datos = mapOf(
+            "ejercicioId" to ejercicioId,
+            "fisioterapeutaId" to fisioterapeutaId,
+            "fechaAsignacion" to fechaAsignacion,
+            "estado" to EstadoSesion.PENDIENTE.aFirestore(),
+            "sincronizado" to true,
+        )
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .add(datos)
+            .await()
+        Unit
+    }
+
+    override suspend fun actualizarSesion(
+        pacienteId: String,
+        sesionId: String,
+        ejercicioId: String,
+        fechaAsignacion: Date,
+    ): Result<Unit> = runCatching {
+        val datos = mapOf(
+            "ejercicioId" to ejercicioId,
+            "fechaAsignacion" to fechaAsignacion,
+        )
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .document(sesionId)
+            .set(datos, SetOptions.merge())
+            .await()
+        Unit
     }
 }
 

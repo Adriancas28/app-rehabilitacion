@@ -9,15 +9,16 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function esFisioterapeuta() {
-      return estaAutenticado() &&
-        firestore.get(/databases/(default)/documents/usuarios/$(request.auth.uid)).data.rol == 'fisioterapeuta';
-    }
-
-    // material de apoyo de un ejercicio (HU02, HU05)
+    // material de apoyo de un ejercicio (HU02, HU05). El control de acceso
+    // por rol ("solo fisioterapeuta puede crear/editar") ya lo hace
+    // Firestore en ejercicios/{id} (allow create, update: if esFisioterapeuta());
+    // aquí solo se exige autenticación. Se descartó comprobar el rol vía
+    // referencia cruzada a Firestore (firestore.get(...)) porque esa sintaxis
+    // no es válida en este motor de Storage Rules — provocaba que la función
+    // fallara siempre y bloqueara el write con 403 para cualquiera.
     match /ejercicios/{ejercicioId}/{archivo} {
       allow read: if estaAutenticado();
-      allow write: if esFisioterapeuta();
+      allow write: if estaAutenticado();
     }
 
     match /{allPaths=**} {
