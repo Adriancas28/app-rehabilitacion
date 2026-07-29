@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,12 +19,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -116,6 +121,8 @@ fun EjecutarSesionScreen(
                     enDescanso = uiState.enDescanso,
                     segundosDescanso = uiState.segundosDescanso,
                     onIniciar = viewModel::iniciarSesion,
+                    onFinalizar = viewModel::finalizarAntesDeTiempo,
+                    onSalir = onVolver,
                 )
             }
         }
@@ -157,25 +164,33 @@ private fun ControlesSesion(
     enDescanso: Boolean,
     segundosDescanso: Int,
     onIniciar: () -> Unit,
+    onFinalizar: () -> Unit,
+    onSalir: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.Black.copy(alpha = 0.5f))
                 .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = nombreEjercicio,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-            )
-            if (sesionIniciada && totalRepeticiones > 1) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Repetición $repeticionActual de $totalRepeticiones",
-                    style = MaterialTheme.typography.bodySmall,
+                    text = nombreEjercicio,
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                 )
+                if (sesionIniciada && totalRepeticiones > 1) {
+                    Text(
+                        text = "Repetición $repeticionActual de $totalRepeticiones",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White,
+                    )
+                }
+            }
+            TextButton(onClick = onSalir) {
+                Text("Salir", color = Color.White)
             }
         }
         Box(
@@ -195,36 +210,48 @@ private fun ControlesSesion(
                     Text("Iniciar sesión", style = MaterialTheme.typography.titleMedium)
                 }
             } else {
-                Box(
-                    modifier = Modifier
-                        .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape)
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (enDescanso) {
-                            Text(
-                                text = "$segundosDescanso s",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = Color.White,
-                            )
-                            Text(
-                                text = "Descansa, viene la repetición ${repeticionActual + 1}…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White,
-                            )
-                        } else {
-                            Text(
-                                text = "$segundosRestantes s",
-                                style = MaterialTheme.typography.headlineMedium,
-                                color = Color.White,
-                            )
-                            Text(
-                                text = "Monitoreando…",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White,
-                            )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Box(
+                        modifier = Modifier
+                            .background(Color.Black.copy(alpha = 0.6f), shape = CircleShape)
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (enDescanso) {
+                                Text(
+                                    text = "$segundosDescanso s",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = Color.White,
+                                )
+                                Text(
+                                    text = "Descansa, viene la repetición ${repeticionActual + 1}…",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White,
+                                )
+                            } else {
+                                Text(
+                                    text = "$segundosRestantes s",
+                                    style = MaterialTheme.typography.headlineMedium,
+                                    color = Color.White,
+                                )
+                                Text(
+                                    text = "Monitoreando…",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White,
+                                )
+                            }
                         }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = onFinalizar,
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        modifier = Modifier.height(44.dp),
+                    ) {
+                        Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.width(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Finalizar ejercicio")
                     }
                 }
             }

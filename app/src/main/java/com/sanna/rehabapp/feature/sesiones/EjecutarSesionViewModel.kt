@@ -12,6 +12,7 @@ import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +54,7 @@ class EjecutarSesionViewModel @Inject constructor(
     val uiState: StateFlow<EjecutarSesionUiState> = _uiState
 
     private var procesadorMovimiento: ProcesadorMovimiento? = null
+    private var jobCicloRepeticiones: Job? = null
 
     init {
         cargarEjercicio()
@@ -86,7 +88,7 @@ class EjecutarSesionViewModel @Inject constructor(
         if (_uiState.value.sesionIniciada) return
         val totalRepeticiones = _uiState.value.totalRepeticiones
         _uiState.update { it.copy(sesionIniciada = true) }
-        viewModelScope.launch {
+        jobCicloRepeticiones = viewModelScope.launch {
             for (repeticion in 1..totalRepeticiones) {
                 _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
                 while (_uiState.value.segundosRestantes > 0) {
@@ -118,6 +120,15 @@ class EjecutarSesionViewModel @Inject constructor(
 
     fun onErrorCamara(mensaje: String) {
         _uiState.update { it.copy(error = mensaje) }
+    }
+
+    // El paciente puede terminar antes de completar todas las repeticiones;
+    // se registra igual con lo medido hasta ese momento (mejor eso que
+    // perder por completo lo ya ejecutado).
+    fun finalizarAntesDeTiempo() {
+        if (!_uiState.value.sesionIniciada || _uiState.value.sesionCompletada) return
+        jobCicloRepeticiones?.cancel()
+        finalizarSesion()
     }
 
     // HU06-CA04/CA05: finaliza el tiempo establecido y registra el resultado.
