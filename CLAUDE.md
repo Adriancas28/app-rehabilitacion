@@ -217,7 +217,7 @@ ejercicios/{ejercicioId}
 
 Fuente de verdad del producto. 19 Historias de Usuario + 6 Requisitos No
 Funcionales, ya depurados (sin criterios de aceptación genéricos/duplicados)
-y priorizados en 6 sprints.
+y priorizados en 5 sprints.
 
 ---
 
@@ -522,15 +522,26 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 | 4 | E02 | HU09 | Analizar ejecución terapéutica | Alta |
 | 4 | E03 | HU10 | Generar retroalimentación inmediata | Crítica |
 | 4 | E03 | HU11 | Visualizar resultados y % de ejecución | Crítica |
-| 5 | E05 | HU15 | Registrar y gestionar recomendaciones | Alta |
-| 5 | E05 | HU16 | Consultar recomendaciones terapéuticas | Alta |
+| 4 | E05 | HU15 | Registrar y gestionar recomendaciones | Alta |
+| 4 | E05 | HU16 | Consultar recomendaciones terapéuticas | Alta |
 | 5 | E04 | HU12 | Visualizar progreso y evolución | Media |
 | 5 | E04 | HU13 | Consultar historial terapéutico | Media |
 | 5 | E04 | HU14 | Monitorear cumplimiento terapéutico | Media |
-| 6 | E06 | HU18 | Gestionar sesiones y resultados registrados | Alta |
-| 6 | E06 | HU19 | Sincronizar información terapéutica | Media |
-| 6 | RNF | RNF01 | Disponibilidad operativa del sistema | Crítica |
-| 6 | RNF | RNF04 | Integridad de la información terapéutica | Alta |
+| 5 | E06 | HU18 | Gestionar sesiones y resultados registrados | Alta |
+| 5 | E06 | HU19 | Sincronizar información terapéutica | Media |
+| 5 | RNF | RNF01 | Disponibilidad operativa del sistema | Crítica |
+| 5 | RNF | RNF04 | Integridad de la información terapéutica | Alta |
+
+> Nota: el plan original repartía esto en 6 sprints; se comprimió a 5.
+> HU15/HU16 (recomendaciones) se adelantaron al sprint 4 junto con
+> HU09-11 porque ya dependen de que exista una sesión con resultado real
+> (HU15-CA01: "seleccione una sesión realizada"), disponible desde
+> HU08/HU09 — no había motivo para esperar un sprint más. El resto de la
+> Épica 04 (seguimiento) y el cierre de la Épica 06 (HU18/HU19, RNF01,
+> RNF04) se fusionaron en el sprint 5 final, ya que son en su mayoría
+> pantallas de consulta/lectura sobre datos que otras historias ya
+> generan, más el endurecimiento (offline, integridad) de cierre de
+> proyecto.
 
 ---
 
