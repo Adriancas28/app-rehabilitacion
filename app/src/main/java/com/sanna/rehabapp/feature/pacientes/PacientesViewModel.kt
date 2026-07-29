@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -44,11 +45,15 @@ class PacientesViewModel @Inject constructor(
             consultaBusqueda = consulta,
             cargando = false,
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = PacientesUiState(),
-    )
+    }
+        // Evita que un PERMISSION_DENIED por cierre de sesión mientras esta
+        // pantalla sigue activa tumbe la app (excepción no atrapada).
+        .catch { }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = PacientesUiState(),
+        )
 
     fun onConsultaCambiada(valor: String) {
         consultaBusqueda.value = valor

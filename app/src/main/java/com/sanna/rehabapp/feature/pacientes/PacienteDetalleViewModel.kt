@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -61,17 +62,23 @@ class PacienteDetalleViewModel @Inject constructor(
     private fun observarSesiones() {
         val fisioterapeutaId = authRepository.uidActual ?: return
         viewModelScope.launch {
-            sesionRepository.observarSesionesDe(pacienteId, fisioterapeutaId).collect { lista ->
-                _uiState.update { it.copy(sesiones = lista) }
-            }
+            sesionRepository.observarSesionesDe(pacienteId, fisioterapeutaId)
+                // Evita que un PERMISSION_DENIED por cierre de sesión mientras
+                // esta pantalla sigue activa tumbe la app (excepción no atrapada).
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(sesiones = lista) }
+                }
         }
     }
 
     private fun observarEjercicios() {
         viewModelScope.launch {
-            ejercicioRepository.observarEjercicios().collect { lista ->
-                _uiState.update { it.copy(ejerciciosPorId = lista.associateBy { ejercicio -> ejercicio.id }) }
-            }
+            ejercicioRepository.observarEjercicios()
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(ejerciciosPorId = lista.associateBy { ejercicio -> ejercicio.id }) }
+                }
         }
     }
 }

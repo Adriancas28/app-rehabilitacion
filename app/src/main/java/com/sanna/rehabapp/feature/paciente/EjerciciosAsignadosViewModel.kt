@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -58,9 +59,13 @@ class EjerciciosAsignadosViewModel @Inject constructor(
                             EjercicioAsignado(sesionId = sesion.id, ejercicio = ejercicio)
                         }
                     }
-            }.collect { lista ->
-                _uiState.update { it.copy(ejerciciosAsignados = lista, cargando = false) }
             }
+                // Evita que un PERMISSION_DENIED por cierre de sesión mientras
+                // esta pantalla sigue activa tumbe la app (excepción no atrapada).
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(ejerciciosAsignados = lista, cargando = false) }
+                }
         }
     }
 }

@@ -13,6 +13,7 @@ import java.util.Date
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -49,9 +50,11 @@ class AsignarSesionViewModel @Inject constructor(
 
     private fun observarEjercicios() {
         viewModelScope.launch {
-            ejercicioRepository.observarEjercicios().collect { lista ->
-                _uiState.update { it.copy(ejercicios = lista.filter { ejercicio -> ejercicio.activo }) }
-            }
+            ejercicioRepository.observarEjercicios()
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(ejercicios = lista.filter { ejercicio -> ejercicio.activo }) }
+                }
         }
     }
 

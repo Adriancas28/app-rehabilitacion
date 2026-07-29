@@ -7,6 +7,7 @@ import com.sanna.rehabapp.domain.repository.AdminRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,9 +28,11 @@ class AdminFisioterapeutasViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            adminRepository.observarFisioterapeutas().collect { lista ->
-                _uiState.update { it.copy(fisioterapeutas = lista, cargando = false) }
-            }
+            adminRepository.observarFisioterapeutas()
+                .catch { }
+                .collect { lista ->
+                    _uiState.update { it.copy(fisioterapeutas = lista, cargando = false) }
+                }
         }
     }
 
