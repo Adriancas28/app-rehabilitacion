@@ -250,6 +250,15 @@ y priorizados en 5 sprints.
 - CA04: Dado que existen ejercicios registrados, cuando acceda al módulo, entonces el sistema muestra la lista disponible.
 - CA05: Dado que desea modificar un ejercicio, cuando actualice la información, entonces el sistema guarda los cambios.
 - CA06: Dado que desea eliminar un ejercicio, cuando confirme la acción, entonces el sistema lo elimina.
+- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que asocie un video como material terapéutico y haya seleccionado
+  al menos una articulación de referencia, cuando solicite el cálculo
+  automático de rango, entonces el sistema analiza el video en el propio
+  dispositivo (MediaPipe, sin subirlo a ningún servicio externo — RNF06) y
+  calcula el ángulo mínimo y máximo observado para cada articulación, sin
+  que el fisioterapeuta deba escribirlos a mano. El fisioterapeuta puede
+  seguir editando esos valores manualmente después si lo considera
+  necesario.
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -526,13 +535,13 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 | 3 | E02 | HU08 | Procesar movimiento corporal | Crítica |
 | 3 | RNF | RNF05 | Consistencia del monitoreo corporal | Alta |
 | 3 | RNF | RNF03 | Compatibilidad con dispositivos móviles | Alta |
+| 3 | E03 | HU11 | Visualizar resultados y % de ejecución | Crítica |
+| 3 | E04 | HU13 | Consultar historial terapéutico | Media |
 | 4 | E02 | HU09 | Analizar ejecución terapéutica | Alta |
 | 4 | E03 | HU10 | Generar retroalimentación inmediata | Crítica |
-| 4 | E03 | HU11 | Visualizar resultados y % de ejecución | Crítica |
 | 4 | E05 | HU15 | Registrar y gestionar recomendaciones | Alta |
 | 4 | E05 | HU16 | Consultar recomendaciones terapéuticas | Alta |
 | 5 | E04 | HU12 | Visualizar progreso y evolución | Media |
-| 5 | E04 | HU13 | Consultar historial terapéutico | Media |
 | 5 | E04 | HU14 | Monitorear cumplimiento terapéutico | Media |
 | 5 | E06 | HU18 | Gestionar sesiones y resultados registrados | Alta |
 | 5 | E06 | HU19 | Sincronizar información terapéutica | Media |
@@ -541,7 +550,7 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 
 > Nota: el plan original repartía esto en 6 sprints; se comprimió a 5.
 > HU15/HU16 (recomendaciones) se adelantaron al sprint 4 junto con
-> HU09-11 porque ya dependen de que exista una sesión con resultado real
+> HU09-10 porque ya dependen de que exista una sesión con resultado real
 > (HU15-CA01: "seleccione una sesión realizada"), disponible desde
 > HU08/HU09 — no había motivo para esperar un sprint más. El resto de la
 > Épica 04 (seguimiento) y el cierre de la Épica 06 (HU18/HU19, RNF01,
@@ -549,6 +558,16 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 > pantallas de consulta/lectura sobre datos que otras historias ya
 > generan, más el endurecimiento (offline, integridad) de cierre de
 > proyecto.
+>
+> Ajuste posterior (durante el propio sprint 3): HU11 y HU13 se
+> adelantaron de los sprints 4/5 al sprint 3, por decisión explícita del
+> usuario al probar HU06/07/08 — no tenía sentido ejecutar sesiones y
+> guardar resultados (HU08 ya los calcula completos: % de ejecución,
+> desviación promedio, ángulos por articulación) sin que el paciente
+> pudiera ver ni su historial ni el detalle de lo que hizo. HU09
+> (clasificación fina del tipo de error) y HU10 (retroalimentación en
+> vivo) siguen en el sprint 4 sin cambios — HU11 solo necesita los datos
+> que HU08 ya deja listos, no depende de HU09/HU10.
 
 ---
 
