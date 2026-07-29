@@ -10,8 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -132,7 +134,7 @@ fun EjerciciosListScreen(
                     }
                 }
 
-                else -> LazyColumn {
+                else -> LazyVerticalGrid(columns = GridCells.Fixed(2)) {
                     items(uiState.ejercicios, key = { it.id }) { ejercicio ->
                         TarjetaEjercicio(
                             ejercicio = ejercicio,
@@ -176,41 +178,24 @@ private fun TarjetaEjercicio(ejercicio: Ejercicio, onEditar: () -> Unit, onElimi
         shape = MaterialTheme.shapes.large,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 6.dp),
+            .padding(6.dp),
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    Icons.Filled.FitnessCenter,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = ejercicio.nombre, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = ejercicio.categoria,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = ejercicio.descripcion,
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Box {
-                IconButton(onClick = { menuAbierto = true }) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.FitnessCenter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Box(modifier = Modifier.weight(1f))
+                IconButton(onClick = { menuAbierto = true }, modifier = Modifier.size(32.dp)) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones")
                 }
                 DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
@@ -232,6 +217,39 @@ private fun TarjetaEjercicio(ejercicio: Ejercicio, onEditar: () -> Unit, onElimi
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = ejercicio.nombre,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = ejercicio.categoria,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.Schedule,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(14.dp),
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = formatearDuracion(ejercicio.duracionSegundos),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
+
+private fun formatearDuracion(segundos: Int): String =
+    if (segundos >= 60) "${segundos / 60} min" else "$segundos s"
