@@ -1,10 +1,11 @@
 /**
- * Crea un usuario (paciente o fisioterapeuta) en Firebase Auth + su
- * documento en Firestore, con una contraseña generada aleatoriamente.
+ * Crea un usuario (paciente, fisioterapeuta o admin) en Firebase Auth +
+ * su documento en Firestore, con una contraseña generada aleatoriamente.
  *
- * No hay pantalla de auto-registro en la app: las cuentas se dan de alta
- * con este script y la contraseña se entrega manualmente (correo o
- * WhatsApp) a quien corresponda.
+ * Desde HU20/HU21, el rol admin ya puede crear pacientes/fisioterapeutas
+ * dentro de la propia app — este script sigue siendo necesario solo para
+ * dar de alta a la/las primera(s) cuenta(s) admin (no hay forma de
+ * crear un admin desde la app misma, por diseño).
  *
  * Requiere: `npm install` (en /backend) y la variable de entorno
  * GOOGLE_APPLICATION_CREDENTIALS apuntando a una service account con
@@ -16,6 +17,9 @@
  *
  *   npx ts-node seed/crear-usuario.ts --nombre "Dra. Ana Ruiz" \
  *     --email ana.ruiz@sanna.pe --rol fisioterapeuta
+ *
+ *   npx ts-node seed/crear-usuario.ts --nombre "Admin Clinica" \
+ *     --email admin@sanna.pe --rol admin
  */
 import * as admin from "firebase-admin";
 import * as crypto from "crypto";
@@ -23,7 +27,7 @@ import * as crypto from "crypto";
 interface Argumentos {
   nombre: string;
   email: string;
-  rol: "paciente" | "fisioterapeuta";
+  rol: "paciente" | "fisioterapeuta" | "admin";
   fisioterapeutaId?: string;
 }
 
@@ -42,11 +46,11 @@ function parsearArgumentos(argv: string[]): Argumentos {
   if (!nombre || !email || !rol) {
     throw new Error(
       'Uso: ts-node crear-usuario.ts --nombre "..." --email ... ' +
-        "--rol paciente|fisioterapeuta [--fisioterapeutaId <uid>]",
+        "--rol paciente|fisioterapeuta|admin [--fisioterapeutaId <uid>]",
     );
   }
-  if (rol !== "paciente" && rol !== "fisioterapeuta") {
-    throw new Error('--rol debe ser "paciente" o "fisioterapeuta"');
+  if (rol !== "paciente" && rol !== "fisioterapeuta" && rol !== "admin") {
+    throw new Error('--rol debe ser "paciente", "fisioterapeuta" o "admin"');
   }
   if (rol === "paciente" && !fisioterapeutaId) {
     throw new Error("--fisioterapeutaId es obligatorio cuando --rol es paciente");
