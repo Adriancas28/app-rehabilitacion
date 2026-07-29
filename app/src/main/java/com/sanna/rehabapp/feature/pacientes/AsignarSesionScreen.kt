@@ -185,13 +185,14 @@ fun AsignarSesionScreen(
 
     if (selectorFechaAbierto) {
         val estadoDatePicker = rememberDatePickerState(
-            initialSelectedDateMillis = uiState.fechaAsignacion?.time ?: System.currentTimeMillis(),
+            initialSelectedDateMillis = uiState.fechaAsignacion?.let(::diaLocalAUtcMillis)
+                ?: diaLocalAUtcMillis(Date()),
         )
         DatePickerDialog(
             onDismissRequest = { selectorFechaAbierto = false },
             confirmButton = {
                 TextButton(onClick = {
-                    estadoDatePicker.selectedDateMillis?.let { viewModel.onFechaSeleccionada(Date(it)) }
+                    estadoDatePicker.selectedDateMillis?.let { viewModel.onFechaSeleccionada(utcMillisADiaLocal(it)) }
                     selectorFechaAbierto = false
                 }) { Text("Aceptar") }
             },
