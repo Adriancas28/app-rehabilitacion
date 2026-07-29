@@ -18,14 +18,22 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
+
 data class EjecutarSesionUiState(
     val ejercicio: Ejercicio? = null,
     val cargando: Boolean = true,
     val sesionIniciada: Boolean = false,
+    val repeticionActual: Int = 1,
     val segundosRestantes: Int = 0,
+    // HU06-CA06: pausa breve entre repeticiones antes de que arranque la siguiente.
+    val enDescanso: Boolean = false,
+    val segundosDescanso: Int = 0,
     val sesionCompletada: Boolean = false,
     val error: String? = null,
-)
+) {
+    val totalRepeticiones: Int get() = ejercicio?.repeticiones ?: 1
+}
 
 // HU06 — ejecutar una sesión terapéutica: cargar el ejercicio asignado
 // (CA01), iniciar el monitoreo por un tiempo determinado (CA02/CA03/CA04),
@@ -71,13 +79,28 @@ class EjecutarSesionViewModel @Inject constructor(
     }
 
     // HU06-CA02: habilita la ejecución y arranca el cronómetro.
+    // HU06-CA06: repite el ciclo de monitoreo tantas veces como
+    // repeticiones tenga el ejercicio, con una pausa entre cada una; todas
+    // se acumulan en el mismo ProcesadorMovimiento (un único resultado).
     fun iniciarSesion() {
         if (_uiState.value.sesionIniciada) return
+        val totalRepeticiones = _uiState.value.totalRepeticiones
         _uiState.update { it.copy(sesionIniciada = true) }
         viewModelScope.launch {
-            while (_uiState.value.segundosRestantes > 0) {
-                delay(1_000)
-                _uiState.update { it.copy(segundosRestantes = it.segundosRestantes - 1) }
+            for (repeticion in 1..totalRepeticiones) {
+                _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
+                while (_uiState.value.segundosRestantes > 0) {
+                    delay(1_000)
+                    _uiState.update { it.copy(segundosRestantes = it.segundosRestantes - 1) }
+                }
+                if (repeticion < totalRepeticiones) {
+                    _uiState.update { it.copy(enDescanso = true, segundosDescanso = SEGUNDOS_DESCANSO_ENTRE_REPETICIONES) }
+                    while (_uiState.value.segundosDescanso > 0) {
+                        delay(1_000)
+                        _uiState.update { it.copy(segundosDescanso = it.segundosDescanso - 1) }
+                    }
+                    _uiState.update { it.copy(enDescanso = false) }
+                }
             }
             finalizarSesion()
         }
@@ -86,7 +109,10 @@ class EjecutarSesionViewModel @Inject constructor(
     // HU07/HU08 — cada resultado de MediaPipe en vivo se mide contra el
     // patronesReferencia del ejercicio mientras la sesión está activa.
     fun procesarResultadoPose(resultado: PoseLandmarkerResult) {
-        if (!_uiState.value.sesionIniciada || _uiState.value.sesionCompletada) return
+        val estado = _uiState.value
+        // En descanso entre repeticiones no se mide: el paciente no está
+        // ejecutando el ejercicio en ese momento.
+        if (!estado.sesionIniciada || estado.sesionCompletada || estado.enDescanso) return
         procesadorMovimiento?.procesarResultado(resultado)
     }
 

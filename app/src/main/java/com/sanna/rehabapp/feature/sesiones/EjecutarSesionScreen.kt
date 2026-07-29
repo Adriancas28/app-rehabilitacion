@@ -110,7 +110,11 @@ fun EjecutarSesionScreen(
                 ControlesSesion(
                     nombreEjercicio = uiState.ejercicio?.nombre ?: "",
                     sesionIniciada = uiState.sesionIniciada,
+                    repeticionActual = uiState.repeticionActual,
+                    totalRepeticiones = uiState.totalRepeticiones,
                     segundosRestantes = uiState.segundosRestantes,
+                    enDescanso = uiState.enDescanso,
+                    segundosDescanso = uiState.segundosDescanso,
                     onIniciar = viewModel::iniciarSesion,
                 )
             }
@@ -147,19 +151,33 @@ private fun MensajeConIcono(icono: ImageVector, mensaje: String) {
 private fun ControlesSesion(
     nombreEjercicio: String,
     sesionIniciada: Boolean,
+    repeticionActual: Int,
+    totalRepeticiones: Int,
     segundosRestantes: Int,
+    enDescanso: Boolean,
+    segundosDescanso: Int,
     onIniciar: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Text(
-            text = nombreEjercicio,
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Color.Black.copy(alpha = 0.5f))
                 .padding(16.dp),
-        )
+        ) {
+            Text(
+                text = nombreEjercicio,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+            )
+            if (sesionIniciada && totalRepeticiones > 1) {
+                Text(
+                    text = "Repetición $repeticionActual de $totalRepeticiones",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White,
+                )
+            }
+        }
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -184,16 +202,29 @@ private fun ControlesSesion(
                     contentAlignment = Alignment.Center,
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "$segundosRestantes s",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = Color.White,
-                        )
-                        Text(
-                            text = "Monitoreando…",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White,
-                        )
+                        if (enDescanso) {
+                            Text(
+                                text = "$segundosDescanso s",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Color.White,
+                            )
+                            Text(
+                                text = "Descansa, viene la repetición ${repeticionActual + 1}…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White,
+                            )
+                        } else {
+                            Text(
+                                text = "$segundosRestantes s",
+                                style = MaterialTheme.typography.headlineMedium,
+                                color = Color.White,
+                            )
+                            Text(
+                                text = "Monitoreando…",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White,
+                            )
+                        }
                     }
                 }
             }

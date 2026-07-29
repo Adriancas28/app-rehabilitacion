@@ -18,6 +18,9 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
             onEjercicioSeleccionado = { sesionId ->
                 navController.navigate(Rutas.detalleEjercicioAsignado(sesionId))
             },
+            onIniciarSesionDirecta = { sesionId ->
+                navController.navigate(Rutas.ejecutarSesion(sesionId))
+            },
             onNavegarAHistorial = {
                 navController.navigate(Rutas.HISTORIAL_SESIONES)
             },

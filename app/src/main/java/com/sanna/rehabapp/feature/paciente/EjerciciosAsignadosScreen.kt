@@ -19,7 +19,9 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,26 +48,25 @@ import com.sanna.rehabapp.domain.model.Ejercicio
 @Composable
 fun EjerciciosAsignadosScreen(
     onEjercicioSeleccionado: (sesionId: String) -> Unit,
+    onIniciarSesionDirecta: (sesionId: String) -> Unit,
     onNavegarAHistorial: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: EjerciciosAsignadosViewModel = hiltViewModel(),
     cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val primerNombre = uiState.nombrePaciente.trim().substringBefore(" ")
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Mis ejercicios") },
+                title = { Text(if (primerNombre.isNotBlank()) "Hola, $primerNombre" else "Mis ejercicios") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 actions = {
-                    IconButton(onClick = onNavegarAHistorial) {
-                        Icon(Icons.Filled.History, contentDescription = "Historial")
-                    }
                     IconButton(onClick = {
                         cerrarSesionViewModel.cerrarSesion()
                         onCerrarSesion()
@@ -92,12 +93,33 @@ fun EjerciciosAsignadosScreen(
 
                 uiState.ejerciciosAsignados.isEmpty() -> MensajeSinEjercicios()
 
-                else -> LazyColumn {
-                    items(uiState.ejerciciosAsignados, key = { it.sesionId }) { item ->
-                        TarjetaEjercicioAsignado(
-                            ejercicio = item.ejercicio,
-                            onClick = { onEjercicioSeleccionado(item.sesionId) },
-                        )
+                else -> {
+                    val proxima = uiState.ejerciciosAsignados.first()
+                    val resto = uiState.ejerciciosAsignados.drop(1)
+
+                    Text(text = "Próxima sesión", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    TarjetaProximaSesion(
+                        ejercicio = proxima.ejercicio,
+                        onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
+                        onClick = { onEjercicioSeleccionado(proxima.sesionId) },
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    AccesoRapidoProgreso(onClick = onNavegarAHistorial)
+
+                    if (resto.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(text = "Todos mis ejercicios", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LazyColumn {
+                            items(resto, key = { it.sesionId }) { item ->
+                                TarjetaEjercicioAsignado(
+                                    ejercicio = item.ejercicio,
+                                    onClick = { onEjercicioSeleccionado(item.sesionId) },
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -120,6 +142,79 @@ private fun MensajeSinEjercicios() {
                 text = "Todavía no tienes ejercicios asignados.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TarjetaProximaSesion(ejercicio: Ejercicio, onIniciar: () -> Unit, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.FitnessCenter,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
+                Spacer(modifier = Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = ejercicio.nombre, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = ejercicio.categoria,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onIniciar,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+            ) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text("Iniciar sesión")
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccesoRapidoProgreso(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.History, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(text = "Mi progreso", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Icon(
+                Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

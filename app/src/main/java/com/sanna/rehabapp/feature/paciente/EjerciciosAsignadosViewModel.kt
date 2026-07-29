@@ -7,6 +7,7 @@ import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
+import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 data class EjercicioAsignado(val sesionId: String, val ejercicio: Ejercicio)
 
 data class EjerciciosAsignadosUiState(
+    val nombrePaciente: String = "",
     val ejerciciosAsignados: List<EjercicioAsignado> = emptyList(),
     val cargando: Boolean = true,
 )
@@ -29,6 +31,7 @@ data class EjerciciosAsignadosUiState(
 @HiltViewModel
 class EjerciciosAsignadosViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val usuarioRepository: UsuarioRepository,
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
 ) : ViewModel() {
@@ -37,7 +40,16 @@ class EjerciciosAsignadosViewModel @Inject constructor(
     val uiState: StateFlow<EjerciciosAsignadosUiState> = _uiState
 
     init {
+        cargarPaciente()
         observarEjerciciosAsignados()
+    }
+
+    private fun cargarPaciente() {
+        val pacienteId = authRepository.uidActual ?: return
+        viewModelScope.launch {
+            val paciente = usuarioRepository.obtenerUsuario(pacienteId)
+            _uiState.update { it.copy(nombrePaciente = paciente?.nombre ?: "") }
+        }
     }
 
     private fun observarEjerciciosAsignados() {
