@@ -20,6 +20,9 @@ object Rutas {
     // pacienteId explícito: no hay un "dueño autenticado" implícito).
     const val FISIO_RESULTADO_SESION = "fisioterapeuta/pacientes/{pacienteId}/sesiones/{sesionId}/resultado"
 
+    // HU15 — registrar/editar/eliminar recomendaciones sobre una sesión.
+    const val RECOMENDACIONES = "fisioterapeuta/pacientes/{pacienteId}/sesiones/{sesionId}/recomendaciones"
+
     const val INICIO_PACIENTE = "paciente/inicio"
     const val DETALLE_EJERCICIO_ASIGNADO = "paciente/ejercicios/{sesionId}"
     const val EJECUTAR_SESION = "paciente/ejercicios/{sesionId}/ejecutar"
@@ -43,6 +46,9 @@ object Rutas {
 
     fun fisioResultadoSesion(pacienteId: String, sesionId: String): String =
         "fisioterapeuta/pacientes/$pacienteId/sesiones/$sesionId/resultado"
+
+    fun recomendaciones(pacienteId: String, sesionId: String): String =
+        "fisioterapeuta/pacientes/$pacienteId/sesiones/$sesionId/recomendaciones"
 
     fun detalleEjercicioAsignado(sesionId: String): String = "paciente/ejercicios/$sesionId"
 

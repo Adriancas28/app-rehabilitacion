@@ -3,11 +3,13 @@ package com.sanna.rehabapp.core.di
 import com.sanna.rehabapp.data.repository.AdminRepositoryImpl
 import com.sanna.rehabapp.data.repository.AuthRepositoryImpl
 import com.sanna.rehabapp.data.repository.EjercicioRepositoryImpl
+import com.sanna.rehabapp.data.repository.RecomendacionRepositoryImpl
 import com.sanna.rehabapp.data.repository.SesionRepositoryImpl
 import com.sanna.rehabapp.data.repository.UsuarioRepositoryImpl
 import com.sanna.rehabapp.domain.repository.AdminRepository
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
+import com.sanna.rehabapp.domain.repository.RecomendacionRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.Binds
@@ -39,4 +41,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun ligarAdminRepository(impl: AdminRepositoryImpl): AdminRepository
+
+    @Binds
+    @Singleton
+    abstract fun ligarRecomendacionRepository(impl: RecomendacionRepositoryImpl): RecomendacionRepository
 }
