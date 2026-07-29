@@ -8,6 +8,7 @@ import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
 import com.sanna.rehabapp.domain.model.Usuario
+import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
@@ -33,6 +34,7 @@ data class PacienteDetalleUiState(
 @HiltViewModel
 class PacienteDetalleViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    private val authRepository: AuthRepository,
     private val usuarioRepository: UsuarioRepository,
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
@@ -57,8 +59,9 @@ class PacienteDetalleViewModel @Inject constructor(
     }
 
     private fun observarSesiones() {
+        val fisioterapeutaId = authRepository.uidActual ?: return
         viewModelScope.launch {
-            sesionRepository.observarSesionesDe(pacienteId).collect { lista ->
+            sesionRepository.observarSesionesDe(pacienteId, fisioterapeutaId).collect { lista ->
                 _uiState.update { it.copy(sesiones = lista) }
             }
         }

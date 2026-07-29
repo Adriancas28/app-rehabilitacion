@@ -63,18 +63,28 @@ class SesionRepositoryImpl @Inject constructor(
         Unit
     }
 
-    override fun observarSesionesDe(pacienteId: String): Flow<List<Sesion>> = callbackFlow {
-        val registro = firestore.collection(COLECCION_USUARIOS)
+    override fun observarSesionesDe(pacienteId: String, fisioterapeutaId: String?): Flow<List<Sesion>> = callbackFlow {
+        val coleccion = firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
             .collection(SUBCOLECCION_SESIONES)
-            .orderBy("fechaAsignacion", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                trySend(snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList())
+
+        // Con filtro por fisioterapeutaId no se encadena orderBy: combinar un
+        // whereEqualTo con un orderBy en otro campo requeriría un índice
+        // compuesto nuevo en Firestore. Se ordena en memoria en su lugar.
+        val consulta: Query = if (fisioterapeutaId != null) {
+            coleccion.whereEqualTo("fisioterapeutaId", fisioterapeutaId)
+        } else {
+            coleccion.orderBy("fechaAsignacion", Query.Direction.DESCENDING)
+        }
+
+        val registro = consulta.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                close(error)
+                return@addSnapshotListener
             }
+            val sesiones = snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList()
+            trySend(if (fisioterapeutaId != null) sesiones.sortedByDescending { it.fechaAsignacion } else sesiones)
+        }
         awaitClose { registro.remove() }
     }
 

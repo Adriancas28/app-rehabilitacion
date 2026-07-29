@@ -16,7 +16,14 @@ interface SesionRepository {
 
     // HU01-CA03 / HU04-CA01 — sesiones registradas de un paciente; lo usa
     // tanto el detalle del fisioterapeuta como el home del propio paciente.
-    fun observarSesionesDe(pacienteId: String): Flow<List<Sesion>>
+    // Firestore Security Rules valida las consultas de tipo "listar" contra
+    // la forma de la consulta, no documento por documento: el paciente
+    // (dueño) puede pedir todo sin filtro, pero un fisioterapeuta necesita
+    // que la propia consulta quede acotada a `fisioterapeutaId` para que la
+    // regla "resource.data.fisioterapeutaId == request.auth.uid" se pueda
+    // validar — de lo contrario Firestore la rechaza con PERMISSION_DENIED
+    // aunque el fisioterapeuta sí tenga acceso a esos documentos.
+    fun observarSesionesDe(pacienteId: String, fisioterapeutaId: String? = null): Flow<List<Sesion>>
 
     // HU03-CA03 — cargar una sesión puntual para editarla.
     suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
