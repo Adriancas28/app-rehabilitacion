@@ -7,6 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.paciente.DetalleEjercicioAsignadoScreen
 import com.sanna.rehabapp.feature.paciente.EjerciciosAsignadosScreen
+import com.sanna.rehabapp.feature.paciente.HistorialSesionesScreen
+import com.sanna.rehabapp.feature.paciente.ResultadoSesionScreen
 import com.sanna.rehabapp.feature.sesiones.EjecutarSesionScreen
 
 fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
@@ -16,6 +18,9 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
             onEjercicioSeleccionado = { sesionId ->
                 navController.navigate(Rutas.detalleEjercicioAsignado(sesionId))
             },
+            onNavegarAHistorial = {
+                navController.navigate(Rutas.HISTORIAL_SESIONES)
+            },
             onCerrarSesion = {
                 cerrarSesionViewModel.cerrarSesion()
                 navController.navigate(Rutas.LOGIN) {
@@ -23,6 +28,18 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
                 }
             },
         )
+    }
+    composable(Rutas.HISTORIAL_SESIONES) {
+        HistorialSesionesScreen(
+            onVolver = { navController.popBackStack() },
+            onSesionSeleccionada = { sesionId -> navController.navigate(Rutas.resultadoSesion(sesionId)) },
+        )
+    }
+    composable(
+        route = Rutas.RESULTADO_SESION,
+        arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
+    ) {
+        ResultadoSesionScreen(onVolver = { navController.popBackStack() })
     }
     composable(
         route = Rutas.DETALLE_EJERCICIO_ASIGNADO,

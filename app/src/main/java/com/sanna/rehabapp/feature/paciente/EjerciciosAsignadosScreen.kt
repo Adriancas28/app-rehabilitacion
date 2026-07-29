@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +46,7 @@ import com.sanna.rehabapp.domain.model.Ejercicio
 @Composable
 fun EjerciciosAsignadosScreen(
     onEjercicioSeleccionado: (sesionId: String) -> Unit,
+    onNavegarAHistorial: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: EjerciciosAsignadosViewModel = hiltViewModel(),
     cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
@@ -61,6 +63,9 @@ fun EjerciciosAsignadosScreen(
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
                 actions = {
+                    IconButton(onClick = onNavegarAHistorial) {
+                        Icon(Icons.Filled.History, contentDescription = "Historial")
+                    }
                     IconButton(onClick = {
                         cerrarSesionViewModel.cerrarSesion()
                         onCerrarSesion()
