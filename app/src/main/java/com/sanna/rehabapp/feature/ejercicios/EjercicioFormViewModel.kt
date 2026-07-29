@@ -1,15 +1,19 @@
 package com.sanna.rehabapp.feature.ejercicios
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.core.posedetection.AnalizadorVideoReferencia
+import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -21,7 +25,7 @@ import javax.inject.Inject
 // Fila editable del formulario — una por articulación con su ROM esperado.
 data class PatronReferenciaFila(
     val idFila: String = UUID.randomUUID().toString(),
-    val articulacion: String = "",
+    val articulacion: Articulacion? = null,
     val anguloMin: String = "",
     val anguloMax: String = "",
 )
@@ -30,9 +34,13 @@ data class EjercicioFormUiState(
     val nombre: String = "",
     val descripcion: String = "",
     val categoria: String = "",
+    val duracionSegundos: String = "30",
+    val repeticiones: String = "1",
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
     val materialUrlActual: String = "",
     val archivoSeleccionado: Uri? = null,
+    val esVideoSeleccionado: Boolean = false,
+    val calculandoRom: Boolean = false,
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
@@ -45,9 +53,12 @@ data class EjercicioFormUiState(
 @HiltViewModel
 class EjercicioFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext private val context: Context,
     private val authRepository: AuthRepository,
     private val ejercicioRepository: EjercicioRepository,
 ) : ViewModel() {
+
+    private val analizadorVideoReferencia = AnalizadorVideoReferencia(context)
 
     private val ejercicioIdArg: String? = savedStateHandle[Rutas.ARG_EJERCICIO_ID]
     val esEdicion: Boolean get() = !ejercicioIdArg.isNullOrBlank()
@@ -74,6 +85,8 @@ class EjercicioFormViewModel @Inject constructor(
                         nombre = ejercicio.nombre,
                         descripcion = ejercicio.descripcion,
                         categoria = ejercicio.categoria,
+                        duracionSegundos = ejercicio.duracionSegundos.toString(),
+                        repeticiones = ejercicio.repeticiones.toString(),
                         patronesReferencia = ejercicio.patronesReferencia.map { patron ->
                             PatronReferenciaFila(
                                 articulacion = patron.articulacion,
@@ -94,7 +107,60 @@ class EjercicioFormViewModel @Inject constructor(
     fun onNombreCambiado(valor: String) = _uiState.update { it.copy(nombre = valor, error = null) }
     fun onDescripcionCambiada(valor: String) = _uiState.update { it.copy(descripcion = valor, error = null) }
     fun onCategoriaCambiada(valor: String) = _uiState.update { it.copy(categoria = valor, error = null) }
-    fun onArchivoSeleccionado(uri: Uri?) = _uiState.update { it.copy(archivoSeleccionado = uri) }
+    fun onDuracionCambiada(valor: String) = _uiState.update { it.copy(duracionSegundos = valor, error = null) }
+    fun onRepeticionesCambiadas(valor: String) = _uiState.update { it.copy(repeticiones = valor, error = null) }
+    fun onArchivoSeleccionado(uri: Uri?) {
+        val esVideo = uri != null && context.contentResolver.getType(uri)?.startsWith("video/") == true
+        _uiState.update { it.copy(archivoSeleccionado = uri, esVideoSeleccionado = esVideo, error = null) }
+    }
+
+    // HU02-CA07 — calcula automáticamente el anguloMin/anguloMax de cada
+    // articulación ya seleccionada, analizando el video elegido como
+    // material. El fisioterapeuta puede seguir editando los valores a mano
+    // después si lo considera necesario.
+    fun calcularRomDesdeVideo() {
+        val estado = _uiState.value
+        val video = estado.archivoSeleccionado
+        val articulaciones = estado.patronesReferencia.mapNotNull { it.articulacion }
+        if (video == null) {
+            _uiState.update { it.copy(error = "Selecciona primero un video de material.") }
+            return
+        }
+        if (articulaciones.isEmpty()) {
+            _uiState.update { it.copy(error = "Agrega al menos una articulación antes de calcular el rango.") }
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(calculandoRom = true, error = null) }
+            val rangos = analizadorVideoReferencia.calcularRangosDeAngulo(video, articulaciones)
+            if (rangos.isEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        calculandoRom = false,
+                        error = "No se pudo detectar el cuerpo en el video, intenta con otro.",
+                    )
+                }
+                return@launch
+            }
+            _uiState.update { estadoActual ->
+                estadoActual.copy(
+                    calculandoRom = false,
+                    patronesReferencia = estadoActual.patronesReferencia.map { fila ->
+                        val rango = fila.articulacion?.let { rangos[it] }
+                        if (rango != null) {
+                            fila.copy(
+                                anguloMin = rango.min.toInt().toString(),
+                                anguloMax = rango.max.toInt().toString(),
+                            )
+                        } else {
+                            fila
+                        }
+                    },
+                )
+            }
+        }
+    }
 
     fun agregarArticulacion() {
         _uiState.update { it.copy(patronesReferencia = it.patronesReferencia + PatronReferenciaFila()) }
@@ -104,7 +170,7 @@ class EjercicioFormViewModel @Inject constructor(
         _uiState.update { it.copy(patronesReferencia = it.patronesReferencia.filterNot { fila -> fila.idFila == idFila }) }
     }
 
-    fun onArticulacionCambiada(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(articulacion = valor) }
+    fun onArticulacionCambiada(idFila: String, valor: Articulacion) = actualizarFila(idFila) { it.copy(articulacion = valor) }
     fun onAnguloMinCambiado(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(anguloMin = valor) }
     fun onAnguloMaxCambiado(idFila: String, valor: String) = actualizarFila(idFila) { it.copy(anguloMax = valor) }
 
@@ -129,14 +195,24 @@ class EjercicioFormViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Sesión inválida, vuelve a iniciar sesión.") }
             return
         }
+        val duracion = estado.duracionSegundos.toIntOrNull()
+        if (duracion == null || duracion <= 0) {
+            _uiState.update { it.copy(error = "La duración debe ser un número de segundos mayor a cero.") }
+            return
+        }
+        val repeticiones = estado.repeticiones.toIntOrNull()
+        if (repeticiones == null || repeticiones <= 0) {
+            _uiState.update { it.copy(error = "Las repeticiones deben ser un número mayor a cero.") }
+            return
+        }
 
         // Filas incompletas (sin articulación o sin ambos ángulos) se ignoran
         // en silencio: el ROM es opcional en HU02, se puede completar después.
         val patrones = estado.patronesReferencia.mapNotNull { fila ->
-            if (fila.articulacion.isBlank()) return@mapNotNull null
+            val articulacion = fila.articulacion ?: return@mapNotNull null
             val min = fila.anguloMin.toFloatOrNull() ?: return@mapNotNull null
             val max = fila.anguloMax.toFloatOrNull() ?: return@mapNotNull null
-            PatronReferencia(articulacion = fila.articulacion.trim(), anguloMin = min, anguloMax = max)
+            PatronReferencia(articulacion = articulacion, anguloMin = min, anguloMax = max)
         }
 
         val ejercicio = Ejercicio(
@@ -145,6 +221,8 @@ class EjercicioFormViewModel @Inject constructor(
             descripcion = estado.descripcion.trim(),
             categoria = estado.categoria.trim(),
             materialUrl = estado.materialUrlActual,
+            duracionSegundos = duracion,
+            repeticiones = repeticiones,
             patronesReferencia = patrones,
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,

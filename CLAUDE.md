@@ -162,6 +162,10 @@ Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 usuarios/{uid}
   - nombre, email, rol ("paciente" | "fisioterapeuta" | "admin")
   - fisioterapeutaId          (solo si rol = paciente; a quién está asignado)
+  - tipoDiagnostico           (solo si rol = paciente; valor del enum
+                                TipoDiagnostico que elige el fisioterapeuta
+                                de un catálogo cerrado — HU01-CA06, revisado
+                                en Sprint 3 de texto libre a catálogo)
   - fechaRegistro
 
   usuarios/{pacienteId}/sesiones/{sesionId}
@@ -169,9 +173,27 @@ usuarios/{uid}
     - fisioterapeutaId
     - fechaAsignacion, fechaEjecucion
     - estado                  ("pendiente" | "completada")
+    - notas                   (texto libre opcional del fisioterapeuta al
+                                asignar la sesión — HU03-CA05, Sprint 3)
+    - repeticiones             (opcional; override de las repeticiones del
+                                ejercicio SOLO para esta sesión puntual —
+                                HU03-CA06, Sprint 3. Si es null, se usa el
+                                valor por defecto de `ejercicios.repeticiones`)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
-        erroresDetectados: [{ articulacion, tipo, repeticiones }]
+        erroresDetectados: [{ articulacion, tipo, repeticiones }],
+        repeticionesCompletadas, repeticionesAsignadas, repeticionesCorrectas
+                             (HU11-CA05, Sprint 3: completadas puede ser
+                              menor a asignadas si se finalizó antes de
+                              tiempo, HU06-CA07; correctas cuenta las
+                              repeticiones sin ningún error detectado),
+        detallePorRepeticion: [{ numero, dentroDeRango, erroresDetectados }]
+                             (HU18-CA04, Sprint 4/5 — PENDIENTE DE
+                              CONSTRUIR, no existe todavía. Es el desglose
+                              por repetición que ve el fisioterapeuta antes
+                              de recomendar, HU15. `erroresDetectados` aquí
+                              es el mismo tipo que el de arriba pero acotado
+                              a esa repetición puntual, no agregado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -181,7 +203,17 @@ usuarios/{uid}
 ejercicios/{ejercicioId}
   - nombre, descripcion, categoria
   - materialUrl              (video/imagen en Firebase Storage)
-  - patronReferencia         (ángulos ideales / ROM esperado, usado por HU08-09)
+  - duracionSegundos         (duración de CADA repetición, HU06-CA04)
+  - repeticiones             (cuántas veces se repite el ciclo de
+                              monitoreo dentro de una misma sesión —
+                              HU02-CA08 / HU06-CA06, Sprint 3)
+  - patronesReferencia: [{ articulacion, anguloMin, anguloMax }]
+                             (ángulos ideales / ROM esperado, usado por HU08-09;
+                              `articulacion` es un valor del enum Articulacion
+                              — Sprint 3 — no texto libre, porque el sistema
+                              necesita mapear cada patrón a una tripleta de
+                              landmarks concreta de MediaPipe para calcular el
+                              ángulo automáticamente)
   - creadoPor, fechaCreacion, activo
 ```
 
@@ -232,6 +264,16 @@ y priorizados en 5 sprints.
 - CA03: Dado que consulta un paciente, cuando acceda a su detalle, entonces el sistema muestra progreso y sesiones registradas.
 - CA04: Dado que desee ubicar un paciente, cuando ingrese un criterio de búsqueda, entonces el sistema filtra la lista mostrada.
 - CA05: Dado que no tenga pacientes asignados, cuando acceda al módulo, entonces el sistema muestra un mensaje de ausencia de pacientes.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis;
+  revisada durante el propio Sprint 3: pasó de texto libre a catálogo
+  cerrado)*: Dado que consulte el detalle de un paciente, cuando elija su
+  diagnóstico de un catálogo cerrado de tipos frecuentes en rehabilitación
+  (ej. tendinitis de hombro, lesión de rodilla, lumbalgia, post-operatorio,
+  esguince de tobillo, fortalecimiento lumbar, otro), entonces el sistema
+  guarda ese valor y lo muestra junto al resto de su información
+  terapéutica (incluida la lista de pacientes). No es texto libre: el
+  fisioterapeuta selecciona de la lista, no redacta; esto permite
+  consistencia entre pacientes. No se deriva de ninguna otra historia.
 
 #### HU02 — Gestionar ejercicios terapéuticos
 **Rol:** Fisioterapeuta
@@ -243,6 +285,21 @@ y priorizados en 5 sprints.
 - CA04: Dado que existen ejercicios registrados, cuando acceda al módulo, entonces el sistema muestra la lista disponible.
 - CA05: Dado que desea modificar un ejercicio, cuando actualice la información, entonces el sistema guarda los cambios.
 - CA06: Dado que desea eliminar un ejercicio, cuando confirme la acción, entonces el sistema lo elimina.
+- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que asocie un video como material terapéutico y haya seleccionado
+  al menos una articulación de referencia, cuando solicite el cálculo
+  automático de rango, entonces el sistema analiza el video en el propio
+  dispositivo (MediaPipe, sin subirlo a ningún servicio externo — RNF06) y
+  calcula el ángulo mínimo y máximo observado para cada articulación, sin
+  que el fisioterapeuta deba escribirlos a mano. El fisioterapeuta puede
+  seguir editando esos valores manualmente después si lo considera
+  necesario.
+- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que registre un ejercicio, cuando indique el número de
+  repeticiones, entonces el sistema lo guarda junto con la duración de
+  cada repetición (`duracionSegundos`, CA02). Este número es el que usa
+  HU06 para repetir el ciclo de monitoreo esa cantidad de veces dentro
+  de una misma sesión.
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -252,6 +309,22 @@ y priorizados en 5 sprints.
 - CA02: Dado que selecciona ejercicios y confirma, entonces el sistema almacena la sesión con la fecha de asignación.
 - CA03: Dado que desea modificar una sesión ya asignada, cuando actualice ejercicios o fecha, entonces el sistema guarda los cambios.
 - CA04: Dado que el paciente consulta sus actividades, entonces el sistema muestra las sesiones asignadas.
+- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que esté asignando o editando una sesión, cuando agregue una nota
+  (texto libre, opcional), entonces el sistema la guarda junto con la
+  sesión. Sirve para indicaciones puntuales del fisioterapeuta sobre esa
+  sesión en particular (ej. "hacerlo con apoyo"); no reemplaza a las
+  recomendaciones de HU15/HU16, que se registran sobre una sesión ya
+  realizada, no al momento de asignarla.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que esté asignando o editando una sesión, el sistema precarga el
+  número de repeticiones configurado por defecto en el ejercicio
+  (HU02-CA08), pero permite que el fisioterapeuta lo cambie solo para
+  esa sesión puntual (ej. reducirlo para un paciente que recién empieza),
+  sin alterar el valor por defecto del ejercicio ni el de otras sesiones
+  ya asignadas o futuras. El sistema también muestra la duración total
+  estimada de la sesión (repeticiones × duración por repetición) como
+  referencia antes de guardar.
 
 #### HU04 — Visualizar ejercicios asignados
 **Rol:** Paciente
@@ -284,6 +357,30 @@ y priorizados en 5 sprints.
 - CA03: Dado que ejecuta el ejercicio, cuando la cámara detecte movimiento, entonces el sistema inicia el monitoreo.
 - CA04: Dado que finaliza el tiempo establecido, entonces el sistema concluye la sesión.
 - CA05: Dado que completa la sesión, entonces el sistema la registra.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que el ejercicio tenga más de una repetición asignada (HU02-CA08)
+  y termine el tiempo de la repetición actual, cuando todavía falten
+  repeticiones por completar, entonces el sistema anuncia el inicio de
+  la siguiente repetición tras una breve pausa, en vez de concluir la
+  sesión — CA04/CA05 solo aplican una vez completadas todas las
+  repeticiones asignadas. Todas las repeticiones de una misma sesión se
+  registran juntas como un único resultado consolidado (HU08-CA04), no
+  como sesiones separadas.
+- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que la sesión esté en ejecución, cuando el paciente seleccione
+  "Finalizar ejercicio" antes de completar el tiempo o las repeticiones
+  asignadas, entonces el sistema concluye la sesión igualmente y registra
+  el resultado con lo medido hasta ese momento (mejor un resultado
+  parcial que perder por completo la ejecución ya realizada). Distinto
+  de "Salir", que abandona la pantalla sin registrar nada.
+- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que el paciente inicie el monitoreo de una sesión, entonces el
+  sistema lee en voz alta (texto a voz nativo de Android, en el
+  dispositivo, sin conexión) la descripción/instrucción del ejercicio una
+  sola vez al empezar — no en cada repetición. Distinto de HU10-CA06
+  (Sprint 4): esto lee la instrucción estática del ejercicio
+  (`Ejercicio.descripcion`), no genera frases de corrección en tiempo real
+  según el error detectado.
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
@@ -348,6 +445,17 @@ y priorizados en 5 sprints.
 - CA02: Dado que consulte el detalle, entonces el sistema muestra métricas comprensibles (desviación promedio, % de acierto).
 - CA03: Dado que la sesión incluya más de un ejercicio, entonces el sistema diferencia el resultado por cada uno.
 - CA04: Dado que consulte una sesión anterior, entonces el sistema muestra el mismo detalle de resultados obtenido en su momento.
+- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que la sesión se haya completado o finalizado antes de tiempo
+  (HU06-CA07), entonces el sistema muestra cuántas repeticiones se
+  llegaron a completar sobre el total asignado (ej. "8/12"), y de esas
+  cuántas no tuvieron ningún error ("Correctas") frente a las que sí
+  ("Errores") — así se distingue una ejecución completa de una parcial.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que consulte el resultado de una sesión, entonces el sistema
+  ofrece acceso directo a "Ver mi progreso" (historial, HU13) y "Volver
+  al inicio" (HU04), sin tener que navegar hacia atrás pantalla por
+  pantalla.
 
 ---
 
@@ -421,6 +529,29 @@ y priorizados en 5 sprints.
 - CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
 - CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
 - CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
+- CA04 *(ampliación acordada, no en la versión original de la tesis; pendiente
+  de construir — ver nota de dependencia con HU15 más abajo)*: Dado que
+  acceda al detalle de una sesión completada, entonces el sistema
+  desglosa el resultado **por repetición** (no solo agregado): para cada
+  repetición muestra si estuvo dentro de rango y, si no, qué error se
+  detectó y en qué articulación (ej. "Repetición 5: hombro derecho, rango
+  incompleto"). Esto es más granular que `erroresDetectados` (HU08-CA04),
+  que hoy agrupa por tipo de error con un conteo total, sin registrar en
+  qué repetición ocurrió cada uno — requiere una estructura nueva
+  (`detallePorRepeticion`, ver sección 5) para poder mostrarlo así. Es la
+  base con la que el fisioterapeuta decide qué recomendación registrar
+  (HU15).
+
+> **Nota de dependencia (Sprint 4/5):** HU15 (registrar recomendaciones,
+> Sprint 4) requiere que el fisioterapeuta pueda ver el resultado de una
+> sesión completada antes de recomendar algo — pero esa vista es HU18-CA02,
+> planeada recién para Sprint 5. Igual que se hizo con HU11/HU13 (adelantadas
+> a Sprint 3 por la misma razón de dependencia), en Sprint 4 habrá que
+> construir al menos una versión mínima de HU18-CA02 (y probablemente CA04)
+> junto con HU15, no esperar al Sprint 5 completo. Hoy (Sprint 3) esta
+> vista NO existe todavía: en `PacienteDetalleScreen` las tarjetas de
+> sesiones completadas no son clickeables (solo las pendientes, para
+> editarlas) — es una limitación conocida, no un bug.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
@@ -468,6 +599,12 @@ El sistema deberá garantizar disponibilidad operativa, incluyendo funcionamient
 - CA03: La disponibilidad debe mantenerse durante la operación del fisioterapeuta.
 
 #### RNF02 — Seguridad de acceso a la información terapéutica
+> Nota: no existe una HU propia de "Iniciar/cerrar sesión" — la pantalla de
+> Login y el botón de Logout que aparecen en toda la app implementan
+> directamente los CA de este RNF (CA01 login, CA02 redirección por rol,
+> CA04 logout), no una historia de usuario aparte. No hay pantalla de
+> auto-registro ni recuperación de contraseña: las cuentas se crean por el
+> Administrador (HU20/HU21) o el script `crear-usuario.ts`.
 - CA01: El sistema valida correctamente la autenticación.
 - CA02: El sistema restringe el acceso según el tipo de usuario (rol).
 - CA03: La información almacenada debe mantenerse protegida.
@@ -519,13 +656,13 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 | 3 | E02 | HU08 | Procesar movimiento corporal | Crítica |
 | 3 | RNF | RNF05 | Consistencia del monitoreo corporal | Alta |
 | 3 | RNF | RNF03 | Compatibilidad con dispositivos móviles | Alta |
+| 3 | E03 | HU11 | Visualizar resultados y % de ejecución | Crítica |
+| 3 | E04 | HU13 | Consultar historial terapéutico | Media |
 | 4 | E02 | HU09 | Analizar ejecución terapéutica | Alta |
 | 4 | E03 | HU10 | Generar retroalimentación inmediata | Crítica |
-| 4 | E03 | HU11 | Visualizar resultados y % de ejecución | Crítica |
 | 4 | E05 | HU15 | Registrar y gestionar recomendaciones | Alta |
 | 4 | E05 | HU16 | Consultar recomendaciones terapéuticas | Alta |
 | 5 | E04 | HU12 | Visualizar progreso y evolución | Media |
-| 5 | E04 | HU13 | Consultar historial terapéutico | Media |
 | 5 | E04 | HU14 | Monitorear cumplimiento terapéutico | Media |
 | 5 | E06 | HU18 | Gestionar sesiones y resultados registrados | Alta |
 | 5 | E06 | HU19 | Sincronizar información terapéutica | Media |
@@ -534,7 +671,7 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 
 > Nota: el plan original repartía esto en 6 sprints; se comprimió a 5.
 > HU15/HU16 (recomendaciones) se adelantaron al sprint 4 junto con
-> HU09-11 porque ya dependen de que exista una sesión con resultado real
+> HU09-10 porque ya dependen de que exista una sesión con resultado real
 > (HU15-CA01: "seleccione una sesión realizada"), disponible desde
 > HU08/HU09 — no había motivo para esperar un sprint más. El resto de la
 > Épica 04 (seguimiento) y el cierre de la Épica 06 (HU18/HU19, RNF01,
@@ -542,6 +679,16 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 > pantallas de consulta/lectura sobre datos que otras historias ya
 > generan, más el endurecimiento (offline, integridad) de cierre de
 > proyecto.
+>
+> Ajuste posterior (durante el propio sprint 3): HU11 y HU13 se
+> adelantaron de los sprints 4/5 al sprint 3, por decisión explícita del
+> usuario al probar HU06/07/08 — no tenía sentido ejecutar sesiones y
+> guardar resultados (HU08 ya los calcula completos: % de ejecución,
+> desviación promedio, ángulos por articulación) sin que el paciente
+> pudiera ver ni su historial ni el detalle de lo que hizo. HU09
+> (clasificación fina del tipo de error) y HU10 (retroalimentación en
+> vivo) siguen en el sprint 4 sin cambios — HU11 solo necesita los datos
+> que HU08 ya deja listos, no depende de HU09/HU10.
 
 ---
 

@@ -51,6 +51,9 @@ class SesionRepositoryImpl @Inject constructor(
                         "repeticiones" to it.repeticiones,
                     )
                 },
+                "repeticionesCompletadas" to resultado.repeticionesCompletadas,
+                "repeticionesAsignadas" to resultado.repeticionesAsignadas,
+                "repeticionesCorrectas" to resultado.repeticionesCorrectas,
             ),
             "sincronizado" to true,
         )
@@ -103,12 +106,16 @@ class SesionRepositoryImpl @Inject constructor(
         ejercicioId: String,
         fisioterapeutaId: String,
         fechaAsignacion: Date,
+        notas: String?,
+        repeticiones: Int?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
             "fisioterapeutaId" to fisioterapeutaId,
             "fechaAsignacion" to fechaAsignacion,
             "estado" to EstadoSesion.PENDIENTE.aFirestore(),
+            "notas" to notas,
+            "repeticiones" to repeticiones,
             "sincronizado" to true,
         )
         firestore.collection(COLECCION_USUARIOS)
@@ -124,10 +131,14 @@ class SesionRepositoryImpl @Inject constructor(
         sesionId: String,
         ejercicioId: String,
         fechaAsignacion: Date,
+        notas: String?,
+        repeticiones: Int?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
             "fechaAsignacion" to fechaAsignacion,
+            "notas" to notas,
+            "repeticiones" to repeticiones,
         )
         firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -153,6 +164,9 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
             erroresDetectados = (it["erroresDetectados"] as? List<*>)
                 ?.mapNotNull { entrada -> (entrada as? Map<*, *>)?.toErrorDetectado() }
                 ?: emptyList(),
+            repeticionesCompletadas = (it["repeticionesCompletadas"] as? Number)?.toInt() ?: 0,
+            repeticionesAsignadas = (it["repeticionesAsignadas"] as? Number)?.toInt() ?: 0,
+            repeticionesCorrectas = (it["repeticionesCorrectas"] as? Number)?.toInt() ?: 0,
         )
     }
     return Sesion(
@@ -162,6 +176,8 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
         fechaAsignacion = getDate("fechaAsignacion"),
         fechaEjecucion = getDate("fechaEjecucion"),
         estado = EstadoSesion.desdeFirestore(estadoStr),
+        notas = getString("notas"),
+        repeticiones = (get("repeticiones") as? Number)?.toInt(),
         resultado = resultado,
         sincronizado = getBoolean("sincronizado") ?: true,
     )

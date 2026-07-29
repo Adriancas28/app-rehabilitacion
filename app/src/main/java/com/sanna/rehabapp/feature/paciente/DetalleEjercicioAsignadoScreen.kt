@@ -10,11 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,6 +43,7 @@ import coil.compose.AsyncImage
 @Composable
 fun DetalleEjercicioAsignadoScreen(
     onVolver: () -> Unit,
+    onIniciarSesion: (sesionId: String) -> Unit,
     viewModel: DetalleEjercicioAsignadoViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -104,6 +108,22 @@ fun DetalleEjercicioAsignadoScreen(
                     Text(text = "Instrucciones", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(text = ejercicio.descripcion, style = MaterialTheme.typography.bodyMedium)
+
+                    // HU06-CA01/CA02: solo tiene sentido iniciar una sesión
+                    // que todavía está pendiente.
+                    if (uiState.sesionPendiente) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { onIniciarSesion(viewModel.sesionId) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                        ) {
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Iniciar sesión", style = MaterialTheme.typography.titleMedium)
+                        }
+                    }
                 }
             }
         }

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.domain.model.Ejercicio
+import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
@@ -17,6 +18,7 @@ import kotlinx.coroutines.launch
 
 data class DetalleEjercicioAsignadoUiState(
     val ejercicio: Ejercicio? = null,
+    val sesionPendiente: Boolean = false,
     val cargando: Boolean = true,
 )
 
@@ -30,7 +32,7 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
     private val ejercicioRepository: EjercicioRepository,
 ) : ViewModel() {
 
-    private val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
+    val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
 
     private val _uiState = MutableStateFlow(DetalleEjercicioAsignadoUiState())
     val uiState: StateFlow<DetalleEjercicioAsignadoUiState> = _uiState
@@ -48,7 +50,13 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
-            _uiState.update { it.copy(ejercicio = ejercicio, cargando = false) }
+            _uiState.update {
+                it.copy(
+                    ejercicio = ejercicio,
+                    sesionPendiente = sesion?.estado == EstadoSesion.PENDIENTE,
+                    cargando = false,
+                )
+            }
         }
     }
 }

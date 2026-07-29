@@ -31,7 +31,12 @@ service cloud.firestore {
     // usuarios/{uid}
     match /usuarios/{uid} {
       allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
-      allow write: if esDueno(uid) || esAdmin();
+      allow create, delete: if esDueno(uid) || esAdmin();
+      // HU01-CA06: el fisioterapeuta asignado puede actualizar el
+      // documento de su paciente (en la práctica, solo el diagnóstico —
+      // el resto de campos del paciente los gestiona el admin, HU20).
+      allow update: if esDueno(uid) || esAdmin() ||
+                       (esFisioterapeuta() && resource.data.fisioterapeutaId == request.auth.uid);
 
       // usuarios/{pacienteId}/sesiones/{sesionId}
       match /sesiones/{sesionId} {

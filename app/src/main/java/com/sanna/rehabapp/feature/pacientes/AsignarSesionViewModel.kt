@@ -17,10 +17,16 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+// HU03-CA06: opciones fijas del selector de repeticiones al asignar/editar
+// una sesión (no texto libre: mismo criterio que Articulacion/TipoDiagnostico).
+val OPCIONES_REPETICIONES = listOf(1, 3, 6, 9, 12)
+
 data class AsignarSesionUiState(
     val ejercicios: List<Ejercicio> = emptyList(),
     val ejercicioSeleccionadoId: String? = null,
     val fechaAsignacion: Date? = null,
+    val notas: String = "",
+    val repeticiones: Int? = null,
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
@@ -67,6 +73,8 @@ class AsignarSesionViewModel @Inject constructor(
                     it.copy(
                         ejercicioSeleccionadoId = sesion.ejercicioId,
                         fechaAsignacion = sesion.fechaAsignacion,
+                        notas = sesion.notas ?: "",
+                        repeticiones = sesion.repeticiones,
                         cargando = false,
                     )
                 } else {
@@ -76,11 +84,26 @@ class AsignarSesionViewModel @Inject constructor(
         }
     }
 
-    fun onEjercicioSeleccionado(ejercicioId: String) =
-        _uiState.update { it.copy(ejercicioSeleccionadoId = ejercicioId, error = null) }
+    // HU03-CA06 — al elegir un ejercicio se precarga, dentro de las
+    // opciones fijas del selector, la más cercana a su valor por defecto.
+    fun onEjercicioSeleccionado(ejercicioId: String) {
+        val ejercicio = _uiState.value.ejercicios.find { it.id == ejercicioId }
+        _uiState.update {
+            it.copy(
+                ejercicioSeleccionadoId = ejercicioId,
+                repeticiones = ejercicio?.let { seleccionado -> valorMasCercano(seleccionado.repeticiones) }
+                    ?: it.repeticiones,
+                error = null,
+            )
+        }
+    }
 
     fun onFechaSeleccionada(fecha: Date) =
         _uiState.update { it.copy(fechaAsignacion = fecha, error = null) }
+
+    fun onNotasCambiadas(valor: String) = _uiState.update { it.copy(notas = valor) }
+
+    fun onRepeticionesCambiadas(valor: Int) = _uiState.update { it.copy(repeticiones = valor) }
 
     fun guardar() {
         val estado = _uiState.value
@@ -90,18 +113,33 @@ class AsignarSesionViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Selecciona un ejercicio y una fecha.") }
             return
         }
+        val notas = estado.notas.trim().ifBlank { null }
 
         viewModelScope.launch {
             _uiState.update { it.copy(guardando = true, error = null) }
             val resultado = if (esEdicion) {
-                sesionRepository.actualizarSesion(pacienteId, sesionIdArg!!, ejercicioId, fecha)
+                sesionRepository.actualizarSesion(
+                    pacienteId,
+                    sesionIdArg!!,
+                    ejercicioId,
+                    fecha,
+                    notas,
+                    estado.repeticiones,
+                )
             } else {
                 val fisioterapeutaId = authRepository.uidActual
                 if (fisioterapeutaId == null) {
                     _uiState.update { it.copy(guardando = false, error = "Sesión inválida, vuelve a iniciar sesión.") }
                     return@launch
                 }
-                sesionRepository.asignarSesion(pacienteId, ejercicioId, fisioterapeutaId, fecha)
+                sesionRepository.asignarSesion(
+                    pacienteId,
+                    ejercicioId,
+                    fisioterapeutaId,
+                    fecha,
+                    notas,
+                    estado.repeticiones,
+                )
             }
             resultado.fold(
                 onSuccess = { _uiState.update { it.copy(guardando = false, guardadoExitoso = true) } },
@@ -112,3 +150,6 @@ class AsignarSesionViewModel @Inject constructor(
         }
     }
 }
+
+private fun valorMasCercano(valor: Int): Int =
+    OPCIONES_REPETICIONES.minByOrNull { kotlin.math.abs(it - valor) } ?: OPCIONES_REPETICIONES.first()

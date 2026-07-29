@@ -2,7 +2,9 @@ package com.sanna.rehabapp.data.repository
 
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.sanna.rehabapp.domain.model.Rol
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import kotlinx.coroutines.channels.awaitClose
@@ -34,6 +36,15 @@ class UsuarioRepositoryImpl @Inject constructor(
             }
         awaitClose { registro.remove() }
     }
+
+    override suspend fun actualizarDiagnostico(pacienteId: String, tipoDiagnostico: TipoDiagnostico): Result<Unit> =
+        runCatching {
+            firestore.collection(COLECCION_USUARIOS)
+                .document(pacienteId)
+                .set(mapOf("tipoDiagnostico" to tipoDiagnostico.aFirestore()), SetOptions.merge())
+                .await()
+            Unit
+        }
 }
 
 private fun DocumentSnapshot.toUsuario(): Usuario? {
@@ -45,6 +56,7 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
+        tipoDiagnostico = TipoDiagnostico.desdeFirestoreOrNull(getString("tipoDiagnostico")),
         fechaRegistro = getDate("fechaRegistro"),
     )
 }

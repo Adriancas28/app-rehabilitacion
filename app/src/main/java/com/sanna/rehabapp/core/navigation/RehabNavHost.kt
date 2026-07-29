@@ -30,7 +30,7 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
     // construir el grafo (su `remember` interno no depende de este
     // estado) — leer `.value` recién dentro de cada composable(ruta) {}
     // es lo que permite que esa pantalla se recomponga cuando cambia.
-    val menuBarraLateralVisible = rememberSaveable { mutableStateOf(true) }
+    val menuBarraLateralVisible = rememberSaveable { mutableStateOf(false) }
 
     NavHost(navController = navController, startDestination = Rutas.RAIZ) {
         composable(Rutas.RAIZ) {

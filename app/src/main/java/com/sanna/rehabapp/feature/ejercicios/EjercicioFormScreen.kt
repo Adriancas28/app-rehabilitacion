@@ -2,6 +2,8 @@ package com.sanna.rehabapp.feature.ejercicios
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -17,13 +19,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,11 +44,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.domain.model.Articulacion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,6 +116,24 @@ fun EjercicioFormScreen(
                     label = { Text("Categoría") },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.duracionSegundos,
+                        onValueChange = viewModel::onDuracionCambiada,
+                        label = { Text("Duración por repetición (s)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OutlinedTextField(
+                        value = uiState.repeticiones,
+                        onValueChange = viewModel::onRepeticionesCambiadas,
+                        label = { Text("Repeticiones") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -125,6 +153,28 @@ fun EjercicioFormScreen(
                     Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.width(18.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Agregar articulación")
+                }
+
+                // HU02-CA07: si el material es un video y ya hay al menos
+                // una articulación elegida, se puede calcular el rango
+                // automáticamente en vez de escribirlo a mano.
+                if (uiState.esVideoSeleccionado && uiState.patronesReferencia.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(
+                        onClick = viewModel::calcularRomDesdeVideo,
+                        enabled = !uiState.calculandoRom,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        if (uiState.calculandoRom) {
+                            CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Analizando video…")
+                        } else {
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.width(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Calcular rango automáticamente desde el video")
+                        }
+                    }
                 }
             }
 
@@ -195,19 +245,44 @@ private fun SeccionFormulario(titulo: String, contenido: @Composable ColumnScope
 @Composable
 private fun FilaPatronReferencia(
     fila: PatronReferenciaFila,
-    onArticulacionCambiada: (String) -> Unit,
+    onArticulacionCambiada: (Articulacion) -> Unit,
     onAnguloMinCambiado: (String) -> Unit,
     onAnguloMaxCambiado: (String) -> Unit,
     onEliminar: () -> Unit,
 ) {
+    var menuAbierto by remember { mutableStateOf(false) }
+
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(
-                value = fila.articulacion,
-                onValueChange = onArticulacionCambiada,
-                label = { Text("Articulación (ej. rodilla derecha)") },
-                modifier = Modifier.weight(1f),
-            )
+            Box(modifier = Modifier.weight(1f)) {
+                OutlinedTextField(
+                    value = fila.articulacion?.etiqueta ?: "",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Articulación") },
+                    placeholder = { Text("Selecciona una articulación") },
+                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                // Overlay transparente: intercepta el toque para abrir el menú
+                // sin pelear con el foco/cursor propio del OutlinedTextField.
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { menuAbierto = true },
+                )
+                DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
+                    Articulacion.entries.forEach { articulacion ->
+                        DropdownMenuItem(
+                            text = { Text(articulacion.etiqueta) },
+                            onClick = {
+                                onArticulacionCambiada(articulacion)
+                                menuAbierto = false
+                            },
+                        )
+                    }
+                }
+            }
             IconButton(onClick = onEliminar) {
                 Icon(
                     Icons.Filled.RemoveCircleOutline,
