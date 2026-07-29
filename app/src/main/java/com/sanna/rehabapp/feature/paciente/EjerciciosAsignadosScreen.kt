@@ -93,41 +93,51 @@ fun EjerciciosAsignadosScreen(
                 .padding(padding)
                 .padding(horizontal = 16.dp),
         ) {
-            when {
-                uiState.cargando -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
+            Spacer(modifier = Modifier.height(16.dp))
+            // Siempre visible, sin importar si hay ejercicios pendientes:
+            // antes vivía dentro de la rama "else" de abajo, así que si el
+            // paciente se quedaba sin pendientes (ej. termina su única
+            // sesión) perdía toda forma de llegar al historial — parecía
+            // que sus sesiones completadas "desaparecían".
+            AccesoRapidoProgreso(onClick = onNavegarAHistorial)
+            Spacer(modifier = Modifier.height(16.dp))
 
-                uiState.ejerciciosAsignados.isEmpty() -> MensajeSinEjercicios()
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    uiState.cargando -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
 
-                else -> {
-                    val proxima = uiState.ejerciciosAsignados.first()
-                    val resto = uiState.ejerciciosAsignados.drop(1)
+                    uiState.ejerciciosAsignados.isEmpty() -> MensajeSinEjercicios()
 
-                    Text(text = "Próxima sesión", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    TarjetaProximaSesion(
-                        item = proxima,
-                        onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
-                        onClick = { onEjercicioSeleccionado(proxima.sesionId) },
-                    )
+                    else -> {
+                        val proxima = uiState.ejerciciosAsignados.first()
+                        val resto = uiState.ejerciciosAsignados.drop(1)
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    AccesoRapidoProgreso(onClick = onNavegarAHistorial)
+                        Column {
+                            Text(text = "Próxima sesión", style = MaterialTheme.typography.titleSmall)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TarjetaProximaSesion(
+                                item = proxima,
+                                onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
+                                onClick = { onEjercicioSeleccionado(proxima.sesionId) },
+                            )
 
-                    if (resto.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(20.dp))
-                        Text(text = "Todos mis ejercicios", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        LazyColumn {
-                            items(resto, key = { it.sesionId }) { item ->
-                                TarjetaEjercicioAsignado(
-                                    ejercicio = item.ejercicio,
-                                    onClick = { onEjercicioSeleccionado(item.sesionId) },
-                                )
+                            if (resto.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(20.dp))
+                                Text(text = "Todos mis ejercicios", style = MaterialTheme.typography.titleSmall)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                LazyColumn {
+                                    items(resto, key = { it.sesionId }) { item ->
+                                        TarjetaEjercicioAsignado(
+                                            ejercicio = item.ejercicio,
+                                            onClick = { onEjercicioSeleccionado(item.sesionId) },
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
