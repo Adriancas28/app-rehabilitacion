@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FitnessCenter
@@ -39,6 +40,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -103,6 +105,30 @@ fun PacientesListScreen(
                 .padding(padding)
                 .padding(16.dp),
         ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                TarjetaEstadistica(
+                    icono = Icons.Filled.People,
+                    valor = uiState.totalPacientes,
+                    etiqueta = "Pacientes activos",
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                TarjetaEstadistica(
+                    icono = Icons.Filled.CalendarMonth,
+                    valor = uiState.sesionesHoy,
+                    etiqueta = "Sesiones hoy",
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                TarjetaEstadistica(
+                    icono = Icons.Filled.FitnessCenter,
+                    valor = uiState.totalEjercicios,
+                    etiqueta = "Ejercicios",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = uiState.consultaBusqueda,
                 onValueChange = viewModel::onConsultaCambiada,
@@ -140,6 +166,33 @@ fun PacientesListScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaEstadistica(icono: ImageVector, valor: Int, etiqueta: String, modifier: Modifier = Modifier) {
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = modifier,
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Icon(
+                icono,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = valor.toString(), style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = etiqueta,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
