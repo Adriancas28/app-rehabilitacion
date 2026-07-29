@@ -186,7 +186,10 @@ usuarios/{uid}
 ejercicios/{ejercicioId}
   - nombre, descripcion, categoria
   - materialUrl              (video/imagen en Firebase Storage)
-  - duracionSegundos         (duración de la ejecución guiada, HU06-CA04)
+  - duracionSegundos         (duración de CADA repetición, HU06-CA04)
+  - repeticiones             (cuántas veces se repite el ciclo de
+                              monitoreo dentro de una misma sesión —
+                              HU02-CA08 / HU06-CA06, Sprint 3)
   - patronesReferencia: [{ articulacion, anguloMin, anguloMax }]
                              (ángulos ideales / ROM esperado, usado por HU08-09;
                               `articulacion` es un valor del enum Articulacion
@@ -270,6 +273,12 @@ y priorizados en 5 sprints.
   que el fisioterapeuta deba escribirlos a mano. El fisioterapeuta puede
   seguir editando esos valores manualmente después si lo considera
   necesario.
+- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que registre un ejercicio, cuando indique el número de
+  repeticiones, entonces el sistema lo guarda junto con la duración de
+  cada repetición (`duracionSegundos`, CA02). Este número es el que usa
+  HU06 para repetir el ciclo de monitoreo esa cantidad de veces dentro
+  de una misma sesión.
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -318,6 +327,15 @@ y priorizados en 5 sprints.
 - CA03: Dado que ejecuta el ejercicio, cuando la cámara detecte movimiento, entonces el sistema inicia el monitoreo.
 - CA04: Dado que finaliza el tiempo establecido, entonces el sistema concluye la sesión.
 - CA05: Dado que completa la sesión, entonces el sistema la registra.
+- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que el ejercicio tenga más de una repetición asignada (HU02-CA08)
+  y termine el tiempo de la repetición actual, cuando todavía falten
+  repeticiones por completar, entonces el sistema anuncia el inicio de
+  la siguiente repetición tras una breve pausa, en vez de concluir la
+  sesión — CA04/CA05 solo aplican una vez completadas todas las
+  repeticiones asignadas. Todas las repeticiones de una misma sesión se
+  registran juntas como un único resultado consolidado (HU08-CA04), no
+  como sesiones separadas.
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
