@@ -20,8 +20,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Button
@@ -41,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -48,6 +51,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
+import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.core.tts.rememberLectorInstrucciones
 
 @Composable
@@ -79,6 +84,14 @@ fun EjecutarSesionScreen(
         if (uiState.sesionIniciada) {
             uiState.ejercicio?.descripcion?.takeIf { it.isNotBlank() }?.let(leerInstrucciones)
         }
+    }
+
+    // HU10-CA06 — cada vez que el ViewModel decide una corrección nueva
+    // (ya con el debounce aplicado), se lee en voz alta. `eventoVoz` trae
+    // su propio timestamp, así que esto se dispara aunque el mensaje se
+    // repita.
+    LaunchedEffect(uiState.eventoVoz) {
+        uiState.eventoVoz?.let { leerInstrucciones(it.mensaje) }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -143,13 +156,26 @@ fun EjecutarSesionScreen(
                 // Cámara en vivo a un lado y el panel de progreso/instrucciones
                 // al otro — igual que el mockup de referencia (HU06/HU07).
                 else -> Row(modifier = Modifier.fillMaxSize()) {
-                    CamaraConDeteccionPose(
+                    Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
-                        onResultado = viewModel::procesarResultadoPose,
-                        onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
-                    )
+                    ) {
+                        CamaraConDeteccionPose(
+                            modifier = Modifier.fillMaxSize(),
+                            onResultado = viewModel::procesarResultadoPose,
+                            onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                        )
+                        // HU10-CA01/CA02: ícono mínimo, sin texto — la
+                        // corrección en sí la lleva la voz (CA06). El
+                        // paciente no puede leer la pantalla mientras se mueve.
+                        IconoEstadoCorreccion(
+                            enCorreccion = uiState.enCorreccion,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(10.dp),
+                        )
+                    }
                     PanelProgreso(
                         modifier = Modifier
                             .weight(1f)
@@ -213,6 +239,28 @@ private fun MensajeConIcono(icono: ImageVector, mensaje: String) {
             text = mensaje,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+// HU10-CA01/CA02: indicador mínimo superpuesto en la cámara — sin texto,
+// solo color/ícono. El mensaje de corrección en sí lo lleva la voz.
+@Composable
+private fun IconoEstadoCorreccion(enCorreccion: Boolean, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(36.dp)
+            .background(
+                if (enCorreccion) AmbarAlertaTexto else VerdeExitoTexto,
+                shape = CircleShape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = if (enCorreccion) Icons.Filled.PriorityHigh else Icons.Filled.Check,
+            contentDescription = if (enCorreccion) "Corrige la postura" else "Postura correcta",
+            tint = Color.White,
+            modifier = Modifier.size(20.dp),
         )
     }
 }

@@ -21,13 +21,18 @@ class ProcesadorMovimiento(private val ejercicio: Ejercicio) {
         medicionesPorRepeticion.add(mutableListOf())
     }
 
-    fun procesarResultado(resultado: PoseLandmarkerResult) {
-        val bucketRepeticionActual = medicionesPorRepeticion.lastOrNull() ?: return
+    // HU10 — devuelve las mediciones de ESTE frame (además de seguir
+    // acumulándolas internamente) para que quien la llama pueda reaccionar
+    // en vivo (retroalimentación visual/por voz), sin duplicar la lógica
+    // de medición.
+    fun procesarResultado(resultado: PoseLandmarkerResult): List<MedicionArticulacion> {
+        val bucketRepeticionActual = medicionesPorRepeticion.lastOrNull() ?: return emptyList()
         // Sin persona detectada en este frame: se ignora sin interrumpir el
         // procesamiento (RNF05-CA02/CA03), no se cuenta como frame medido.
-        val landmarks = resultado.landmarks().firstOrNull() ?: return
+        val landmarks = resultado.landmarks().firstOrNull() ?: return emptyList()
         val mediciones = ejercicio.patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
         bucketRepeticionActual.add(mediciones)
+        return mediciones
     }
 
     // HU06-CA07: repeticionesCompletadas puede ser menor a las asignadas si

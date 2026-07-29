@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.core.posedetection.MedicionArticulacion
 import com.sanna.rehabapp.core.posedetection.ProcesadorMovimiento
+import com.sanna.rehabapp.core.posedetection.fraseCorrectiva
+import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
@@ -20,6 +23,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
+
+// HU10-CA06: no repetir la misma corrección por voz más seguido que esto
+// (evita hablar en cada frame mientras el error persiste).
+private const val INTERVALO_REPETIR_VOZ_MS = 4_000L
+
+// HU10: un evento de voz nuevo cada vez que hay que decir algo — el
+// `instante` garantiza que la pantalla vuelva a hablar aunque el mensaje
+// sea idéntico al anterior (LaunchedEffect solo reacciona a valores
+// distintos).
+data class EventoVoz(val mensaje: String, val instante: Long)
 
 data class EjecutarSesionUiState(
     val ejercicio: Ejercicio? = null,
@@ -38,6 +51,11 @@ data class EjecutarSesionUiState(
     val segundosDescanso: Int = 0,
     val sesionCompletada: Boolean = false,
     val error: String? = null,
+    // HU10 — retroalimentación en vivo: ícono mínimo (sin texto en
+    // pantalla) + un evento de voz cada vez que hay que decir una
+    // corrección nueva (ver EventoVoz).
+    val enCorreccion: Boolean = false,
+    val eventoVoz: EventoVoz? = null,
 ) {
     val totalRepeticiones: Int get() = repeticionesOverride ?: ejercicio?.repeticiones ?: 1
 }
@@ -61,6 +79,11 @@ class EjecutarSesionViewModel @Inject constructor(
 
     private var procesadorMovimiento: ProcesadorMovimiento? = null
     private var jobCicloRepeticiones: Job? = null
+
+    // HU10-CA06: estado del debounce de voz (no vive en el UiState porque
+    // no es algo que la UI necesite leer, solo el propio ViewModel).
+    private var ultimaCorreccionHablada: Pair<Articulacion, String>? = null
+    private var instanteUltimaVoz = 0L
 
     init {
         cargarEjercicio()
@@ -123,12 +146,38 @@ class EjecutarSesionViewModel @Inject constructor(
 
     // HU07/HU08 — cada resultado de MediaPipe en vivo se mide contra el
     // patronesReferencia del ejercicio mientras la sesión está activa.
+    // HU10 — con esa misma medición se decide la retroalimentación en vivo.
     fun procesarResultadoPose(resultado: PoseLandmarkerResult) {
         val estado = _uiState.value
         // En descanso entre repeticiones no se mide: el paciente no está
         // ejecutando el ejercicio en ese momento.
         if (!estado.sesionIniciada || estado.sesionCompletada || estado.enDescanso) return
-        procesadorMovimiento?.procesarResultado(resultado)
+        val mediciones = procesadorMovimiento?.procesarResultado(resultado) ?: return
+        actualizarRetroalimentacionEnVivo(mediciones)
+    }
+
+    // HU10-CA01/CA02/CA06: si alguna articulación medida en este frame está
+    // fuera de rango, se elige la de mayor desviación para corregir. Si ya
+    // se estaba avisando de la misma corrección, solo se repite la voz
+    // pasado INTERVALO_REPETIR_VOZ_MS (evita hablar en cada frame).
+    private fun actualizarRetroalimentacionEnVivo(mediciones: List<MedicionArticulacion>) {
+        val peorMedicion = mediciones.filterNot { it.dentroDeRango }.maxByOrNull { it.desviacion }
+        if (peorMedicion == null) {
+            _uiState.update { it.copy(enCorreccion = false) }
+            ultimaCorreccionHablada = null
+            return
+        }
+        _uiState.update { it.copy(enCorreccion = true) }
+
+        val claveCorreccion = peorMedicion.articulacion to peorMedicion.tipoDeError
+        val ahora = System.currentTimeMillis()
+        val cambioDeCorreccion = claveCorreccion != ultimaCorreccionHablada
+        val pasoElIntervalo = ahora - instanteUltimaVoz >= INTERVALO_REPETIR_VOZ_MS
+        if (cambioDeCorreccion || pasoElIntervalo) {
+            ultimaCorreccionHablada = claveCorreccion
+            instanteUltimaVoz = ahora
+            _uiState.update { it.copy(eventoVoz = EventoVoz(fraseCorrectiva(peorMedicion), ahora)) }
+        }
     }
 
     fun onErrorCamara(mensaje: String) {
