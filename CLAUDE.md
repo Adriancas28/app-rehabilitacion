@@ -380,6 +380,19 @@ y priorizados en 5 sprints.
   (Sprint 4): esto lee la instrucción estática del ejercicio
   (`Ejercicio.descripcion`), no genera frases de corrección en tiempo real
   según el error detectado.
+- CA09 *(ampliación acordada, Sprint 4, no en la versión original de la
+  tesis)*: Dado que una sesión se haya finalizado antes de tiempo
+  (CA07) sin completar todas las repeticiones asignadas, entonces el
+  sistema la muestra en "Mis ejercicios" como **reanudable** (tarjeta
+  "Reanudar sesión" con "X/Y repeticiones completadas"), distinta de una
+  sesión pendiente nueva. Al reanudarla, el monitoreo continúa desde la
+  repetición siguiente a la última completada — no repite lo ya medido —
+  y el resultado final combina lo guardado antes con lo nuevo medido
+  (repeticiones correctas se suman, el detalle por repetición se
+  concatena con la numeración real, y los promedios/porcentajes globales
+  se recalculan ponderados por cuántas repeticiones aportó cada tramo).
+  Una sesión deja de ser reanudable en cuanto completa todas sus
+  repeticiones asignadas (`repeticionesCompletadas == repeticionesAsignadas`).
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
