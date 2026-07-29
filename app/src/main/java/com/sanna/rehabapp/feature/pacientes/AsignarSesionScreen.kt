@@ -1,25 +1,26 @@
 package com.sanna.rehabapp.feature.pacientes
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.matchParentSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenu
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -101,23 +102,27 @@ fun AsignarSesionScreen(
             Text(text = "Ejercicio", style = MaterialTheme.typography.titleSmall)
             Spacer(modifier = Modifier.height(8.dp))
 
-            ExposedDropdownMenuBox(
-                expanded = menuEjercicioAbierto,
-                onExpandedChange = { menuEjercicioAbierto = it },
-            ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = ejercicioSeleccionado?.nombre ?: "",
                     onValueChange = {},
                     readOnly = true,
                     placeholder = { Text("Selecciona un ejercicio") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = menuEjercicioAbierto)
-                    },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
+                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                ExposedDropdownMenu(expanded = menuEjercicioAbierto, onDismissRequest = { menuEjercicioAbierto = false }) {
+                // Overlay transparente: intercepta el toque para abrir el menú
+                // sin pelear con el foco/cursor propio del OutlinedTextField.
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clickable { menuEjercicioAbierto = true },
+                )
+                DropdownMenu(
+                    expanded = menuEjercicioAbierto,
+                    onDismissRequest = { menuEjercicioAbierto = false },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     if (uiState.ejercicios.isEmpty()) {
                         DropdownMenuItem(
                             text = { Text("No hay ejercicios registrados todavía.") },
