@@ -16,7 +16,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -24,13 +26,18 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -42,6 +49,7 @@ import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
+import com.sanna.rehabapp.domain.model.Usuario
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,6 +95,11 @@ fun PacienteDetalleScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(modifier = Modifier.height(16.dp))
+                TarjetaDiagnostico(
+                    paciente = paciente,
+                    onGuardar = viewModel::actualizarDiagnostico,
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
             TarjetaProgreso(
@@ -117,6 +130,68 @@ fun PacienteDetalleScreen(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+// HU01-CA06 — el fisioterapeuta registra/edita el diagnóstico del paciente.
+@Composable
+private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (String) -> Unit) {
+    var editando by remember { mutableStateOf(false) }
+    var texto by remember(paciente.diagnostico) { mutableStateOf(paciente.diagnostico ?: "") }
+
+    Card(
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.MedicalInformation,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Diagnóstico",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f),
+                )
+                if (!editando) {
+                    IconButton(onClick = { editando = true }) {
+                        Icon(Icons.Filled.Edit, contentDescription = "Editar diagnóstico")
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            if (editando) {
+                OutlinedTextField(
+                    value = texto,
+                    onValueChange = { texto = it },
+                    placeholder = { Text("Ej. Tendinitis de hombro") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                    TextButton(onClick = {
+                        texto = paciente.diagnostico ?: ""
+                        editando = false
+                    }) { Text("Cancelar") }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(onClick = {
+                        onGuardar(texto.trim())
+                        editando = false
+                    }) { Text("Guardar") }
+                }
+            } else {
+                Text(
+                    text = paciente.diagnostico?.takeIf { it.isNotBlank() } ?: "Sin diagnóstico registrado.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

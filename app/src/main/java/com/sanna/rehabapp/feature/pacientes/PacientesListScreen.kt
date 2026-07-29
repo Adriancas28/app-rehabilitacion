@@ -39,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
@@ -193,9 +194,11 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = paciente.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = paciente.email,
+                    text = paciente.diagnostico?.takeIf { it.isNotBlank() } ?: paciente.email,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Icon(
