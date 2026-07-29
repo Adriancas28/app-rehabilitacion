@@ -26,8 +26,6 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VideocamOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -156,7 +154,6 @@ fun EjecutarSesionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
-                        descripcion = uiState.ejercicio?.descripcion ?: "",
                         repeticionActual = uiState.repeticionActual,
                         totalRepeticiones = uiState.totalRepeticiones,
                         segundosRestantes = uiState.segundosRestantes,
@@ -220,14 +217,12 @@ private fun MensajeConIcono(icono: ImageVector, mensaje: String) {
     }
 }
 
-// HU06/HU10 (parcial): panel lateral con las instrucciones del ejercicio,
-// la repetición actual y el tiempo restante. La retroalimentación en vivo
-// por desviación (HU10-CA01/CA06) sigue pendiente para Sprint 4 — aquí solo
-// se muestra la instrucción estática del ejercicio (Ejercicio.descripcion).
+// HU06 — panel lateral con la repetición actual y el tiempo restante. Sin
+// texto de instrucciones estático: la retroalimentación real será por voz
+// en tiempo real (HU10-CA01/CA06, Sprint 4), no un texto fijo en pantalla.
 @Composable
 private fun PanelProgreso(
     modifier: Modifier,
-    descripcion: String,
     repeticionActual: Int,
     totalRepeticiones: Int,
     segundosRestantes: Int,
@@ -239,23 +234,6 @@ private fun PanelProgreso(
         modifier = modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Card(
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-            shape = MaterialTheme.shapes.large,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(14.dp)) {
-                Text(text = "Instrucciones", style = MaterialTheme.typography.titleSmall)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = descripcion.ifBlank { "Sigue el movimiento indicado por tu fisioterapeuta." },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
         if (totalRepeticiones > 1) {
             Text(
                 text = "Repetición $repeticionActual/$totalRepeticiones",
