@@ -361,6 +361,14 @@ y priorizados en 5 sprints.
   el resultado con lo medido hasta ese momento (mejor un resultado
   parcial que perder por completo la ejecución ya realizada). Distinto
   de "Salir", que abandona la pantalla sin registrar nada.
+- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que el paciente inicie el monitoreo de una sesión, entonces el
+  sistema lee en voz alta (texto a voz nativo de Android, en el
+  dispositivo, sin conexión) la descripción/instrucción del ejercicio una
+  sola vez al empezar — no en cada repetición. Distinto de HU10-CA06
+  (Sprint 4): esto lee la instrucción estática del ejercicio
+  (`Ejercicio.descripcion`), no genera frases de corrección en tiempo real
+  según el error detectado.
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
