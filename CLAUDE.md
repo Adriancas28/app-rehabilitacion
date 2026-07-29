@@ -495,6 +495,22 @@ y priorizados en 5 sprints.
 - CA03: Dado que seleccione un rango de fechas, entonces el sistema filtra los resultados mostrados.
 - CA04: Dado que el paciente realice nuevas sesiones, entonces el sistema incorpora los resultados recientes a la evolución.
 
+> **Implementado en Sprint 5** en `PacienteDetalleScreen` (fisio, no en
+> una pantalla nueva): la tarjeta "Progreso" ahora muestra, además del %
+> de sesiones completadas ya existente, el **promedio de calidad de
+> ejecución** (`porcentajeEjecucion` promedio de las sesiones
+> completadas — distinto del % de cumplimiento, que solo cuenta
+> completadas/asignadas). "Evolución/comparativa" (CA02) se cubre con la
+> lista de sesiones de abajo, cada una con su propio % — no se construyó
+> un gráfico de líneas nuevo, dado el alcance del sprint. Filtro por
+> período (Todo/Última semana/Último mes, CA03) afecta tanto el resumen
+> como la lista. CA04 es gratis por ser un listener en vivo, igual que el
+> resto de la app. De regalo, el paciente también ve un resumen análogo
+> de su propio progreso (% general, sesiones completadas, racha de días
+> consecutivos) en su propia pantalla de historial (`HistorialSesionesScreen`)
+> — no es parte de esta HU (que es del fisioterapeuta), pero es una
+> mejora razonable sobre HU13 que ya existía, no le hace daño a nadie.
+
 #### HU13 — Consultar historial terapéutico
 **Rol:** Paciente
 **Deseo:** Consultar mi historial terapéutico

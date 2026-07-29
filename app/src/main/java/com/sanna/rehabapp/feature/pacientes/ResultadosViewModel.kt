@@ -109,7 +109,9 @@ class ResultadosViewModel @Inject constructor(
     }
 }
 
-private fun cumplePeriodo(fecha: Date?, periodo: PeriodoFiltro): Boolean {
+// No es private: PacienteDetalleViewModel (HU12) reusa el mismo criterio
+// de filtro por período sobre un paciente puntual.
+fun cumplePeriodo(fecha: Date?, periodo: PeriodoFiltro): Boolean {
     if (periodo == PeriodoFiltro.TODOS || fecha == null) return true
     val dias = if (periodo == PeriodoFiltro.ULTIMA_SEMANA) 7 else 30
     val limite = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -dias) }.time
