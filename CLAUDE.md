@@ -336,6 +336,13 @@ y priorizados en 5 sprints.
   repeticiones asignadas. Todas las repeticiones de una misma sesión se
   registran juntas como un único resultado consolidado (HU08-CA04), no
   como sesiones separadas.
+- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
+  Dado que la sesión esté en ejecución, cuando el paciente seleccione
+  "Finalizar ejercicio" antes de completar el tiempo o las repeticiones
+  asignadas, entonces el sistema concluye la sesión igualmente y registra
+  el resultado con lo medido hasta ese momento (mejor un resultado
+  parcial que perder por completo la ejecución ya realizada). Distinto
+  de "Salir", que abandona la pantalla sin registrar nada.
 
 #### HU07 — Monitorear movimiento corporal
 **Rol:** Sistema
