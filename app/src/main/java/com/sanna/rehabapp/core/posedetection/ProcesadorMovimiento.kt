@@ -6,8 +6,6 @@ import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
-private const val VISIBILIDAD_MINIMA = 0.5f
-
 // HU08 — recibe cada resultado de MediaPipe durante la ejecución de un
 // ejercicio, mide las articulaciones definidas en su patronesReferencia, y
 // al finalizar (HU08-CA04) arma el ResultadoSesion agregado. Es el puente
@@ -30,23 +28,12 @@ class ProcesadorMovimiento(private val ejercicio: Ejercicio) {
         patron: PatronReferencia,
         landmarks: List<NormalizedLandmark>,
     ): MedicionArticulacion? {
-        val articulacion = patron.articulacion
-        val inicio = landmarks.getOrNull(articulacion.puntoInicial) ?: return null
-        val vertice = landmarks.getOrNull(articulacion.vertice) ?: return null
-        val fin = landmarks.getOrNull(articulacion.puntoFinal) ?: return null
-
-        // HU08-CA03: oclusión temporal de un punto anatómico — si la
-        // visibilidad del vértice es baja, se salta esta articulación en
-        // este frame puntual sin interrumpir el procesamiento del resto.
-        if (vertice.visibility().orElse(0f) < VISIBILIDAD_MINIMA) return null
-
-        val angulo = calcularAngulo(
-            inicio = Punto3D(inicio.x(), inicio.y(), inicio.z()),
-            vertice = Punto3D(vertice.x(), vertice.y(), vertice.z()),
-            fin = Punto3D(fin.x(), fin.y(), fin.z()),
-        )
+        // HU08-CA03: si la articulación está ocluida/fuera de cuadro en
+        // este frame puntual, medirAnguloDeArticulacion devuelve null y se
+        // salta sin interrumpir el procesamiento del resto.
+        val angulo = medirAnguloDeArticulacion(patron.articulacion, landmarks) ?: return null
         return MedicionArticulacion(
-            articulacion = articulacion,
+            articulacion = patron.articulacion,
             angulo = angulo,
             anguloMin = patron.anguloMin,
             anguloMax = patron.anguloMax,
