@@ -35,6 +35,7 @@ data class EjercicioFormUiState(
     val descripcion: String = "",
     val categoria: String = "",
     val duracionSegundos: String = "30",
+    val repeticiones: String = "1",
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
     val materialUrlActual: String = "",
     val archivoSeleccionado: Uri? = null,
@@ -85,6 +86,7 @@ class EjercicioFormViewModel @Inject constructor(
                         descripcion = ejercicio.descripcion,
                         categoria = ejercicio.categoria,
                         duracionSegundos = ejercicio.duracionSegundos.toString(),
+                        repeticiones = ejercicio.repeticiones.toString(),
                         patronesReferencia = ejercicio.patronesReferencia.map { patron ->
                             PatronReferenciaFila(
                                 articulacion = patron.articulacion,
@@ -106,6 +108,7 @@ class EjercicioFormViewModel @Inject constructor(
     fun onDescripcionCambiada(valor: String) = _uiState.update { it.copy(descripcion = valor, error = null) }
     fun onCategoriaCambiada(valor: String) = _uiState.update { it.copy(categoria = valor, error = null) }
     fun onDuracionCambiada(valor: String) = _uiState.update { it.copy(duracionSegundos = valor, error = null) }
+    fun onRepeticionesCambiadas(valor: String) = _uiState.update { it.copy(repeticiones = valor, error = null) }
     fun onArchivoSeleccionado(uri: Uri?) {
         val esVideo = uri != null && context.contentResolver.getType(uri)?.startsWith("video/") == true
         _uiState.update { it.copy(archivoSeleccionado = uri, esVideoSeleccionado = esVideo, error = null) }
@@ -197,6 +200,11 @@ class EjercicioFormViewModel @Inject constructor(
             _uiState.update { it.copy(error = "La duración debe ser un número de segundos mayor a cero.") }
             return
         }
+        val repeticiones = estado.repeticiones.toIntOrNull()
+        if (repeticiones == null || repeticiones <= 0) {
+            _uiState.update { it.copy(error = "Las repeticiones deben ser un número mayor a cero.") }
+            return
+        }
 
         // Filas incompletas (sin articulación o sin ambos ángulos) se ignoran
         // en silencio: el ROM es opcional en HU02, se puede completar después.
@@ -214,6 +222,7 @@ class EjercicioFormViewModel @Inject constructor(
             categoria = estado.categoria.trim(),
             materialUrl = estado.materialUrlActual,
             duracionSegundos = duracion,
+            repeticiones = repeticiones,
             patronesReferencia = patrones,
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,

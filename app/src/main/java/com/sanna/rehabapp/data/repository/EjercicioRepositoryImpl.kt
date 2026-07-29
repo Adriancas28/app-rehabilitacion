@@ -63,6 +63,7 @@ class EjercicioRepositoryImpl @Inject constructor(
             "categoria" to ejercicio.categoria,
             "materialUrl" to materialUrl,
             "duracionSegundos" to ejercicio.duracionSegundos,
+            "repeticiones" to ejercicio.repeticiones,
             "patronesReferencia" to ejercicio.patronesReferencia.map {
                 mapOf(
                     "articulacion" to it.articulacion.aFirestore(),
@@ -109,6 +110,7 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
         categoria = getString("categoria") ?: "",
         materialUrl = getString("materialUrl") ?: "",
         duracionSegundos = getLong("duracionSegundos")?.toInt() ?: 30,
+        repeticiones = getLong("repeticiones")?.toInt() ?: 1,
         patronesReferencia = patrones,
         creadoPor = getString("creadoPor") ?: "",
         fechaCreacion = getDate("fechaCreacion"),

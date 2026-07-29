@@ -117,13 +117,23 @@ fun EjercicioFormScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = uiState.duracionSegundos,
-                    onValueChange = viewModel::onDuracionCambiada,
-                    label = { Text("Duración de la sesión (segundos)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.duracionSegundos,
+                        onValueChange = viewModel::onDuracionCambiada,
+                        label = { Text("Duración por repetición (s)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OutlinedTextField(
+                        value = uiState.repeticiones,
+                        onValueChange = viewModel::onRepeticionesCambiadas,
+                        label = { Text("Repeticiones") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

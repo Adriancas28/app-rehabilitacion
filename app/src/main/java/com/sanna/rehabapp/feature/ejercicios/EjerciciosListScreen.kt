@@ -242,7 +242,7 @@ private fun TarjetaEjercicio(ejercicio: Ejercicio, onEditar: () -> Unit, onElimi
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = formatearDuracion(ejercicio.duracionSegundos),
+                    text = "${ejercicio.repeticiones} rep. · ${formatearDuracion(ejercicio.duracionSegundos)} c/u",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
