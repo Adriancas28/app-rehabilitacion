@@ -24,6 +24,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -42,6 +44,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,12 +56,23 @@ fun AdminPacienteFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var mostrarPassword by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
+    // Confirmación visible (Snackbar) antes de volver a la lista, para que
+    // el CRUD de paciente no sea una acción silenciosa.
     LaunchedEffect(uiState.guardadoExitoso) {
-        if (uiState.guardadoExitoso) onGuardado()
+        if (uiState.guardadoExitoso) {
+            // No se espera a que el Snackbar termine de mostrarse (duraría
+            // varios segundos) — se lanza aparte y se navega tras una
+            // pausa breve, para que alcance a verse antes de salir.
+            launch { snackbarHostState.showSnackbar(if (viewModel.esEdicion) "Paciente actualizado." else "Paciente creado.") }
+            delay(700)
+            onGuardado()
+        }
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(if (viewModel.esEdicion) "Editar paciente" else "Registrar paciente") },

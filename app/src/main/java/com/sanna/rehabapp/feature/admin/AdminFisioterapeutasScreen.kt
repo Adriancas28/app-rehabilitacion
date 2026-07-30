@@ -20,11 +20,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,104 +56,123 @@ fun AdminFisioterapeutasScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var fisioAEliminar by remember { mutableStateOf<Usuario?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    ScaffoldConBarraLateral(
-        menuVisible = menuVisible,
-        onCambiarMenuVisible = onCambiarMenuVisible,
-        items = listOf(
-            ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = false, onClick = onNavegarAPacientes),
-            ItemBarraLateral(
-                "Fisioterapeutas",
-                Icons.Filled.MedicalServices,
-                seleccionado = true,
-                onClick = {},
-            ),
-        ),
-        topBar = { onAlternarMenu ->
-            TopAppBar(
-                title = { Text("Fisioterapeutas") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+    // Confirmación visible (Snackbar) tras eliminar un fisioterapeuta —
+    // antes no daba ninguna señal al administrador.
+    LaunchedEffect(uiState.mensaje) {
+        uiState.mensaje?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.mensajeMostrado()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        ScaffoldConBarraLateral(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
+            items = listOf(
+                ItemBarraLateral(
+                    "Pacientes",
+                    Icons.Filled.People,
+                    seleccionado = false,
+                    onClick = onNavegarAPacientes,
                 ),
-                navigationIcon = {
-                    IconButton(onClick = onAlternarMenu) {
-                        Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
+                ItemBarraLateral(
+                    "Fisioterapeutas",
+                    Icons.Filled.MedicalServices,
+                    seleccionado = true,
+                    onClick = {},
+                ),
+            ),
+            topBar = { onAlternarMenu ->
+                TopAppBar(
+                    title = { Text("Fisioterapeutas") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    navigationIcon = {
+                        IconButton(onClick = onAlternarMenu) {
+                            Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = onRegistrarFisioterapeuta) {
+                            Icon(Icons.Filled.Add, contentDescription = "Registrar fisioterapeuta")
+                        }
+                        IconButton(onClick = {
+                            cerrarSesionViewModel.cerrarSesion()
+                            onCerrarSesion()
+                        }) {
+                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
+                        }
+                    },
+                )
+            },
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+            ) {
+                when {
+                    uiState.cargando -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
                     }
-                },
-                actions = {
-                    IconButton(onClick = onRegistrarFisioterapeuta) {
-                        Icon(Icons.Filled.Add, contentDescription = "Registrar fisioterapeuta")
-                    }
-                    IconButton(onClick = {
-                        cerrarSesionViewModel.cerrarSesion()
-                        onCerrarSesion()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
-                    }
-                },
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-        ) {
-            when {
-                uiState.cargando -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
-                }
 
-                uiState.fisioterapeutas.isEmpty() -> Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Filled.PersonOff,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(40.dp),
-                        )
-                        Text(
-                            text = "Aún no hay fisioterapeutas registrados.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 12.dp),
-                        )
+                    uiState.fisioterapeutas.isEmpty() -> Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Filled.PersonOff,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(40.dp),
+                            )
+                            Text(
+                                text = "Aún no hay fisioterapeutas registrados.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 12.dp),
+                            )
+                        }
                     }
-                }
 
-                else -> LazyColumn {
-                    items(uiState.fisioterapeutas, key = { it.uid }) { fisio ->
-                        val cantidadPacientes = uiState.pacientesPorFisioterapeuta[fisio.uid] ?: 0
-                        TarjetaUsuarioAdmin(
-                            usuario = fisio,
-                            lineaExtra = {
-                                Text(
-                                    text = if (cantidadPacientes == 1) {
-                                        "1 paciente asignado"
-                                    } else {
-                                        "$cantidadPacientes pacientes asignados"
-                                    },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            },
-                            onEditar = { onEditarFisioterapeuta(fisio.uid) },
-                            onEliminar = { fisioAEliminar = fisio },
-                        )
+                    else -> LazyColumn {
+                        items(uiState.fisioterapeutas, key = { it.uid }) { fisio ->
+                            val cantidadPacientes = uiState.pacientesPorFisioterapeuta[fisio.uid] ?: 0
+                            TarjetaUsuarioAdmin(
+                                usuario = fisio,
+                                lineaExtra = {
+                                    Text(
+                                        text = if (cantidadPacientes == 1) {
+                                            "1 paciente asignado"
+                                        } else {
+                                            "$cantidadPacientes pacientes asignados"
+                                        },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                },
+                                onEditar = { onEditarFisioterapeuta(fisio.uid) },
+                                onEliminar = { fisioAEliminar = fisio },
+                            )
+                        }
                     }
                 }
             }
         }
+
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 
     fisioAEliminar?.let { fisio ->
@@ -160,7 +182,7 @@ fun AdminFisioterapeutasScreen(
             text = { Text("¿Seguro que deseas eliminar la cuenta de \"${fisio.nombre}\"?") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.eliminar(fisio.uid)
+                    viewModel.eliminar(fisio.uid, fisio.nombre)
                     fisioAEliminar = null
                 }) { Text("Eliminar") }
             },

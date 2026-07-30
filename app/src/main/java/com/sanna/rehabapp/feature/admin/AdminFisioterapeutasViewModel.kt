@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,6 +20,8 @@ data class AdminFisioterapeutasUiState(
     // simétrico a lo que ya muestra AdminPacientesScreen del lado del paciente.
     val pacientesPorFisioterapeuta: Map<String, Int> = emptyMap(),
     val cargando: Boolean = true,
+    // Confirmación (Snackbar) de la última acción CRUD — eliminar.
+    val mensaje: String? = null,
 )
 
 // HU21 — gestionar cuentas de fisioterapeutas desde el panel de administrador.
@@ -46,11 +49,20 @@ class AdminFisioterapeutasViewModel @Inject constructor(
                 )
             }
                 .catch { }
-                .collect { estado -> _uiState.value = estado }
+                // Conserva el mensaje de confirmación pendiente aunque el
+                // listener en vivo vuelva a emitir mientras se muestra.
+                .collect { estado -> _uiState.update { actual -> estado.copy(mensaje = actual.mensaje) } }
         }
     }
 
-    fun eliminar(uid: String) {
-        viewModelScope.launch { adminRepository.eliminarUsuario(uid) }
+    fun eliminar(uid: String, nombre: String) {
+        viewModelScope.launch {
+            adminRepository.eliminarUsuario(uid).fold(
+                onSuccess = { _uiState.update { it.copy(mensaje = "Se eliminó a $nombre.") } },
+                onFailure = { _uiState.update { it.copy(mensaje = "No se pudo eliminar a $nombre.") } },
+            )
+        }
     }
+
+    fun mensajeMostrado() = _uiState.update { it.copy(mensaje = null) }
 }
