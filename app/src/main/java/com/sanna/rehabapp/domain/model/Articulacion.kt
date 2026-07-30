@@ -25,7 +25,21 @@ enum class Articulacion(
     // (mirar hacia arriba) y se cierra al bajarlo (mentón al pecho). Más
     // fácil de ejecutar solo frente a la cámara que los ejercicios de
     // pierna/brazo — útil para pruebas rápidas de HU06/07/08/10.
-    CUELLO("Cuello", puntoInicial = 24, vertice = 12, puntoFinal = 0);
+    CUELLO("Cuello", puntoInicial = 24, vertice = 12, puntoFinal = 0),
+
+    // Ángulo rodilla-tobillo-punta del pie: se abre en flexión dorsal
+    // (punta del pie hacia arriba) y se cierra en flexión plantar (punta
+    // hacia abajo) — catálogo de ejercicios predeterminados, sección 7/8.
+    TOBILLO_IZQUIERDO("Tobillo izquierdo", puntoInicial = 25, vertice = 27, puntoFinal = 31),
+    TOBILLO_DERECHO("Tobillo derecho", puntoInicial = 26, vertice = 28, puntoFinal = 32),
+
+    // Ángulo hombro-cadera-hombro (11-24-12): aproximación 2D de la
+    // rotación/inclinación de tronco vista de frente — no es goniometría
+    // exacta de rotación axial (eso requeriría profundidad/3D), pero
+    // cambia de forma consistente con el movimiento del ejercicio
+    // "Rotación de tronco (sentado)" del catálogo predeterminado, mismo
+    // criterio pragmático que ya se usó para CUELLO.
+    TRONCO("Tronco", puntoInicial = 11, vertice = 24, puntoFinal = 12);
 
     fun aFirestore(): String = name
 
