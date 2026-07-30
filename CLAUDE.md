@@ -11,8 +11,12 @@ historias de usuario y requisitos no funcionales, priorizados por sprint).
 3. Arquitectura de la app Android
 4. Stack tecnológico
 5. Modelo de datos (Firestore)
-6. Historias de Usuario y Requisitos No Funcionales
-7. Reglas del proyecto (no negociables)
+6. Modelo de datos relacional (lógico)
+7. Catálogo de tipos de ejercicio
+8. Catálogo de ejercicios predeterminados
+9. Catálogo de diagnósticos
+10. Historias de Usuario y Requisitos No Funcionales
+11. Reglas del proyecto (no negociables)
 
 ---
 
@@ -162,10 +166,15 @@ Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 usuarios/{uid}
   - nombre, email, rol ("paciente" | "fisioterapeuta" | "admin")
   - fisioterapeutaId          (solo si rol = paciente; a quién está asignado)
-  - tipoDiagnostico           (solo si rol = paciente; valor del enum
-                                TipoDiagnostico que elige el fisioterapeuta
-                                de un catálogo cerrado — HU01-CA06, revisado
-                                en Sprint 3 de texto libre a catálogo)
+  - diagnosticos: [{ codigo, fecha }]
+                              (solo si rol = paciente; puede tener más de uno
+                                a la vez — ej. osteoartrosis de rodilla +
+                                desacondicionamiento general. `codigo` es un
+                                valor del enum TipoDiagnostico que elige el
+                                fisioterapeuta de un catálogo cerrado de 13
+                                — HU01-CA06, ampliado de un solo valor a
+                                lista con catálogo clínico más específico.
+                                Ver sección 9, Catálogo de diagnósticos)
   - dni, edad                 (solo si rol = paciente; capturados por el
                                 administrador al registrarlo — HU20-CA02,
                                 revisión de Sprint 5)
@@ -203,7 +212,12 @@ usuarios/{uid}
       - fisioterapeutaId, texto, fecha
 
 ejercicios/{ejercicioId}
-  - nombre, descripcion, categoria
+  - nombre, descripcion
+  - categoria                (valor del enum CategoriaEjercicio —
+                              "MOVILIDAD" | "CONTROL_MOTOR", catálogo cerrado
+                              de 2 valores, ampliación acordada — antes texto
+                              libre. Ver sección 7, Catálogo de tipos de
+                              ejercicio)
   - materialUrl              (video/imagen en Firebase Storage)
   - duracionSegundos         (duración de CADA repetición, HU06-CA04)
   - repeticiones             (cuántas veces se repite el ciclo de
@@ -216,6 +230,12 @@ ejercicios/{ejercicioId}
                               necesita mapear cada patrón a una tripleta de
                               landmarks concreta de MediaPipe para calcular el
                               ángulo automáticamente)
+  - diagnosticosAplicables: [codigo1, codigo2, ...]
+                             (ampliación acordada: diagnósticos para los que
+                              este ejercicio se sugiere primero al asignar
+                              una sesión — HU03-CA07. No restringe la
+                              selección a cualquier otro ejercicio del
+                              catálogo, solo lo resalta. Ver sección 9)
   - creadoPor, fechaCreacion, activo
 ```
 
@@ -235,6 +255,13 @@ ejercicios/{ejercicioId}
   colección separada, porque es 1:1 y siempre se lee junto con la sesión
   (evita una lectura extra a Firestore).
 - Nombres de campos en español, consistentes con el lenguaje de las HU.
+- **`diagnosticos` y `diagnosticosAplicables` van como arrays embebidos**,
+  no como colecciones aparte: el catálogo de diagnósticos es fijo y pequeño
+  (13 valores, sección 9), así que crear una colección `diagnosticos/`
+  sería sobre-ingeniería. La sugerencia de ejercicios (HU03-CA07) se
+  resuelve client-side (el catálogo de ejercicios ya está cargado en la
+  pantalla de asignar sesión, son ~10 documentos) comparando ambos arrays,
+  sin necesidad de una query `array-contains-any` dedicada.
 
 ### Pendiente de validar con el equipo
 
@@ -244,10 +271,347 @@ ejercicios/{ejercicioId}
   administrador.
 - ¿Se necesita versionar `patronReferencia` de un ejercicio si cambia con el
   tiempo, o basta con el valor vigente?
--e 
+
 ---
 
-## 6. Historias de Usuario y Requisitos No Funcionales
+## 6. Modelo de datos relacional (lógico)
+
+> Este es el modelo relacional lógico (normalizado) del sistema, pensado para
+> razonar sobre entidades, integridad referencial y relaciones — es un nivel
+> de diseño distinto al modelo físico de Firestore (NoSQL, desnormalizado a
+> propósito). Ver la sección "Traducción a Firestore" al final para la
+> equivalencia entre ambos. El modelo de Firestore (el que realmente se
+> implementa en `/app`) está documentado en la sección 5.
+
+### Entidades
+
+Derivadas de las 21 Historias de Usuario del backlog (incluida la Épica 07,
+Administrar cuentas del sistema, agregada durante el desarrollo). Se
+agregaron entidades que no eran explícitas en el modelo Firestore pero que
+un modelo relacional normalizado requiere: **CategoriaEjercicio** y
+**TipoError** (catálogos, para no repetir texto libre), y se separaron
+**AnguloReferencia**/**DetalleAngulo** como tablas propias en vez de campos
+sueltos, porque un ejercicio tiene *varios* ángulos de referencia (uno por
+articulación), no uno solo.
+
+#### 1. Usuario
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| usuario_id | VARCHAR(28) | PK | Coincide con el UID de Firebase Auth |
+| nombre | VARCHAR(150) | | |
+| email | VARCHAR(150) | UNIQUE | |
+| rol | VARCHAR(20) | | CHECK: 'paciente' \| 'fisioterapeuta' \| 'admin' |
+| fecha_registro | TIMESTAMP | | |
+
+#### 2. Paciente
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| paciente_id | VARCHAR(28) | PK, FK → Usuario | Subtipo 1:1 de Usuario (rol='paciente') |
+| fisioterapeuta_id | VARCHAR(28) | FK → Usuario, NULL | El fisioterapeuta asignado (HU20-CA05: uno solo, hasta que se asigna no puede cambiarse desde el panel de admin) |
+| dni | VARCHAR(15) | UNIQUE | Capturado por el administrador al registrarlo (HU20-CA02) |
+| edad | INT | | |
+
+#### 3. CategoriaEjercicio
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| categoria_id | INT | PK | |
+| nombre | VARCHAR(50) | UNIQUE | Catálogo cerrado de 2 valores: "Movilidad", "Control motor" — sección 7 |
+
+#### 4. Ejercicio
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| ejercicio_id | VARCHAR(28) | PK | |
+| nombre | VARCHAR(150) | | |
+| descripcion | TEXT | | |
+| categoria_id | INT | FK → CategoriaEjercicio | |
+| material_url | VARCHAR(300) | | Referencia a Firebase Storage |
+| duracion_segundos | INT | | Duración de cada repetición (HU06-CA04) |
+| repeticiones | INT | | Veces que se repite el ciclo de monitoreo por sesión (HU02-CA08) |
+| creado_por | VARCHAR(28) | FK → Usuario | Debe ser un fisioterapeuta |
+| fecha_creacion | TIMESTAMP | | |
+| activo | BOOLEAN | | |
+
+#### 5. AnguloReferencia
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| angulo_ref_id | INT | PK | |
+| ejercicio_id | VARCHAR(28) | FK → Ejercicio | |
+| articulacion | VARCHAR(50) | | Valor del enum Articulacion (landmarks de MediaPipe) |
+| angulo_min | DECIMAL(5,2) | | ROM esperado (usado en HU08) |
+| angulo_max | DECIMAL(5,2) | | |
+| | | UNIQUE(ejercicio_id, articulacion) | |
+
+#### 6. Sesion
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| sesion_id | VARCHAR(28) | PK | |
+| paciente_id | VARCHAR(28) | FK → Paciente | |
+| ejercicio_id | VARCHAR(28) | FK → Ejercicio | |
+| fisioterapeuta_id | VARCHAR(28) | FK → Usuario | Quién la asignó |
+| fecha_asignacion | TIMESTAMP | | |
+| fecha_ejecucion | TIMESTAMP | NULL | Nula hasta completarse |
+| estado | VARCHAR(20) | | 'pendiente' \| 'completada' |
+| notas | TEXT | NULL | Indicación puntual del fisio al asignar (HU03-CA05) |
+| repeticiones | INT | NULL | Override puntual de `Ejercicio.repeticiones` (HU03-CA06) |
+| sincronizado | BOOLEAN | | Para HU19 |
+
+#### 7. TipoError
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| tipo_error_id | INT | PK | |
+| nombre | VARCHAR(100) | UNIQUE | "Rango incompleto", "Desviación angular" |
+
+#### 8. ResultadoSesion
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| resultado_id | VARCHAR(28) | PK | |
+| sesion_id | VARCHAR(28) | FK → Sesion, UNIQUE | Relación 1:1 |
+| porcentaje_ejecucion | DECIMAL(5,2) | | |
+| desviacion_promedio | DECIMAL(5,2) | | |
+| repeticiones_completadas | INT | | Puede ser < asignadas si se finalizó antes (HU06-CA07) |
+| repeticiones_asignadas | INT | | |
+| repeticiones_correctas | INT | | Repeticiones sin ningún error detectado |
+
+#### 9. DetalleAngulo
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| detalle_id | INT | PK | |
+| resultado_id | VARCHAR(28) | FK → ResultadoSesion | |
+| articulacion | VARCHAR(50) | | |
+| angulo_detectado | DECIMAL(5,2) | | Desglose por articulación (HU08-CA04) |
+| angulo_esperado | DECIMAL(5,2) | | |
+| desviacion | DECIMAL(5,2) | | |
+
+#### 10. ErrorSesion
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| error_sesion_id | INT | PK | |
+| resultado_id | VARCHAR(28) | FK → ResultadoSesion | |
+| tipo_error_id | INT | FK → TipoError | |
+| articulacion | VARCHAR(50) | | |
+| repeticiones | INT | | Cuántas veces ocurrió este error en la sesión (HU08-CA04) |
+
+#### 11. DetalleRepeticion
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| detalle_repeticion_id | INT | PK | |
+| resultado_id | VARCHAR(28) | FK → ResultadoSesion | |
+| numero | INT | | Número real de la repetición (considera reanudaciones, HU06-CA09) |
+| dentro_de_rango | BOOLEAN | | |
+
+#### 12. Recomendacion
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| recomendacion_id | VARCHAR(28) | PK | |
+| sesion_id | VARCHAR(28) | FK → Sesion | |
+| fisioterapeuta_id | VARCHAR(28) | FK → Usuario | Autor |
+| texto | TEXT | | |
+| fecha | TIMESTAMP | | |
+
+### Diagnóstico clínico y sugerencia de ejercicios
+
+Un paciente puede tener **más de un diagnóstico a la vez** (ej. osteoartrosis
+de rodilla + desacondicionamiento general), así que no se modela como un
+campo único en Paciente, sino como una relación N:M contra un catálogo.
+
+#### 13. TipoDiagnostico
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| diagnostico_id | INT | PK | |
+| nombre | VARCHAR(150) | UNIQUE | Catálogo completo en la sección 9 |
+| region_corporal | VARCHAR(50) | | Ej. "Rodilla", "Hombro", "Columna", "General" |
+
+#### 14. PacienteDiagnostico
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| paciente_id | VARCHAR(28) | PK compuesta, FK → Paciente | |
+| diagnostico_id | INT | PK compuesta, FK → TipoDiagnostico | |
+| fecha_diagnostico | DATE | | |
+
+#### 15. DiagnosticoEjercicioRecomendado
+| Campo | Tipo | Llave | Notas |
+|---|---|---|---|
+| diagnostico_id | INT | PK compuesta, FK → TipoDiagnostico | |
+| ejercicio_id | VARCHAR(28) | PK compuesta, FK → Ejercicio | |
+
+Con estas dos tablas N:M, al asignar una sesión (HU03-CA07) el sistema puede
+resolver "¿qué ejercicios sugiero primero para este paciente?" cruzando
+`PacienteDiagnostico` → `DiagnosticoEjercicioRecomendado` → `Ejercicio`, sin
+bloquear que el fisio elija cualquier otro ejercicio del catálogo.
+
+### Relaciones (cardinalidad)
+
+- Usuario (1) — (1) Paciente *(subtipo)*
+- Usuario/fisioterapeuta (1) — (N) Paciente *(asignación, HU20-CA05)*
+- Usuario/fisioterapeuta (1) — (N) Ejercicio *(creado_por)*
+- CategoriaEjercicio (1) — (N) Ejercicio
+- Ejercicio (1) — (N) AnguloReferencia
+- Paciente (1) — (N) Sesion
+- Ejercicio (1) — (N) Sesion
+- Usuario/fisioterapeuta (1) — (N) Sesion
+- Sesion (1) — (1) ResultadoSesion
+- ResultadoSesion (1) — (N) DetalleAngulo
+- ResultadoSesion (1) — (N) ErrorSesion *(TipoError (1) — (N) ErrorSesion)*
+- ResultadoSesion (1) — (N) DetalleRepeticion
+- Sesion (1) — (N) Recomendacion
+- Usuario/fisioterapeuta (1) — (N) Recomendacion
+- Paciente (N) — (M) TipoDiagnostico *(vía PacienteDiagnostico)*
+- TipoDiagnostico (N) — (M) Ejercicio *(vía DiagnosticoEjercicioRecomendado)*
+
+### Traducción a Firestore (lo que realmente se implementa)
+
+No son dos esquemas contradictorios: es el mismo diseño en dos niveles. Este
+es el mapeo que debe seguir el código en `/app` y las reglas en `/backend`.
+
+| Tabla relacional | En Firestore |
+|---|---|
+| Usuario, Paciente | `usuarios/{uid}` — fusionadas en un solo documento; `fisioterapeutaId`/`dni`/`edad` reemplazan a la tabla Paciente |
+| Ejercicio + AnguloReferencia | `ejercicios/{id}`, con `patronesReferencia` como lista embebida (no como tabla aparte) |
+| Sesion + ResultadoSesion + DetalleAngulo + ErrorSesion + DetalleRepeticion | `usuarios/{pacienteId}/sesiones/{id}`, con `resultado` embebido (relación 1:1, siempre se lee junto con la sesión) |
+| Recomendacion | Subcolección `usuarios/{pacienteId}/sesiones/{id}/recomendaciones/{id}` |
+| CategoriaEjercicio, TipoError | Se guardan como **string** dentro del documento, no como colección aparte — catálogos fijos de 2-5 valores, una colección separada sería sobre-ingeniería en NoSQL |
+| TipoDiagnostico, PacienteDiagnostico | `usuarios/{pacienteId}.diagnosticos: [{ codigo, fecha }]` — array embebido, mismo criterio |
+| DiagnosticoEjercicioRecomendado | `ejercicios/{id}.diagnosticosAplicables: [codigo1, codigo2, ...]` |
+
+**Por qué mantener ambos modelos:** en Firestore se gana velocidad de
+lectura (un solo `get()` trae la sesión completa con su resultado); en el
+modelo relacional se gana integridad referencial explícita y una forma más
+fácil de verificar que no falte ni sobre ninguna entidad. Este documento es
+la referencia para razonar sobre el dominio; la sección 5 es la referencia
+para lo que efectivamente se implementa.
+
+---
+
+## 7. Catálogo de tipos de ejercicio (categorías)
+
+La tesis define explícitamente el alcance de la app como ejercicios de
+**movilidad y control motor** (no fortalecimiento con resistencia, no
+cardio, no motricidad fina de manos/dedos — MediaPipe Pose trackea
+articulaciones grandes del cuerpo, no manos con precisión). Por eso el
+catálogo de ejercicios (sección 8) se organiza en **exactamente 2 tipos**.
+
+### Tipo 1: Movilidad
+
+Ejercicios orientados a mejorar o mantener el rango de movimiento articular
+(ROM) de una articulación específica. Se miden por el ángulo alcanzado en
+el movimiento, comparado contra un rango de referencia.
+
+### Tipo 2: Control motor
+
+Ejercicios orientados a la estabilidad, coordinación y control del
+movimiento corporal, generalmente involucrando más de una articulación a
+la vez.
+
+### Por qué solo estos 2 tipos (guardrail para el catálogo)
+
+Frontera deliberada del alcance, no un olvido. Si en el futuro se quiere
+agregar un ejercicio que no encaje claramente en "Movilidad" ni en "Control
+motor" (fortalecimiento con banda elástica, motricidad fina de mano),
+**eso es una señal para revisar el alcance con el asesor de tesis antes de
+crear un tercer tipo por conveniencia**.
+
+### Estructura de datos
+
+`ejercicios/{id}.categoria: "MOVILIDAD" | "CONTROL_MOTOR"` (enum
+`CategoriaEjercicio`, ampliación acordada — antes era texto libre).
+
+---
+
+## 8. Catálogo de ejercicios predeterminados
+
+Catálogo real (no de prueba) sembrado en Firestore vía
+`backend/seed/crear-catalogo-ejercicios.ts`. Elegido con 3 criterios:
+seguros y genéricos (no específicos de una sola patología), visibles desde
+una sola cámara sin que el cuerpo salga del encuadre, y que cubran las
+articulaciones ya soportadas por el enum `Articulacion`.
+
+| # | Ejercicio | Categoría | Articulación | Repeticiones | Rango de referencia (seed)* |
+|---|---|---|---|---|---|
+| 1 | Flexión de hombro | Movilidad | Hombro derecho | 3 | 70°–110° |
+| 2 | Abducción de hombro | Movilidad | Hombro derecho | 3 | 70°–110° |
+| 3 | Flexión de codo | Movilidad | Codo derecho | 3 | 60°–90° |
+| 4 | Marcha estacionaria | Movilidad | Cadera derecha | 6 | 100°–140° |
+| 5 | Flexión de rodilla (sentado) | Movilidad | Rodilla derecha | 6 | 90°–160° |
+| 6 | Flexión dorsal/plantar de tobillo | Movilidad | Tobillo derecho | 6 | 80°–100° |
+| 7 | Rotación de tronco (sentado) | Movilidad | Tronco | 6 | 60°–100° |
+| 8 | Mini sentadilla | Control motor | Rodilla derecha | 6 | 120°–150° |
+| 9 | Puente de glúteos | Control motor | Cadera derecha | 6 | 160°–180° |
+
+\* Estos ángulos están en la convención de este sistema (el ángulo crudo
+calculado por `AnguloCalculator` en el vértice de la articulación, no la
+goniometría clínica tradicional) — son un **punto de partida técnico**
+razonable, no una dosis clínica. El fisioterapeuta puede y debe refinarlos
+por paciente, ya sea editándolos a mano (HU02-CA05) o recalculándolos
+analizando un video real con "Calcular ROM automáticamente" (HU02-CA07) una
+vez que existan clips grabados para cada ejercicio — el seed deja
+`materialUrl` vacío a propósito, pendiente de que se graben esos videos.
+
+### Nota sobre el ejercicio "Equilibrio monopodal" (deliberadamente fuera del seed)
+
+No se mide por ángulo articular sino por estabilidad/tiempo sostenido — con
+el diseño actual de HU08/HU09 (comparación contra un ángulo esperado) no
+encaja igual que los otros 9. Queda fuera del catálogo sembrado; se
+agregaría en una segunda iteración con una métrica distinta (tiempo
+balanceado, oscilación del tronco), no por defecto.
+
+---
+
+## 9. Catálogo de diagnósticos
+
+Catálogo real del enum `TipoDiagnostico` (13 valores, ampliación acordada
+sobre el catálogo genérico anterior de 7). Igual que antes: **la app no
+genera diagnósticos** — el fisioterapeuta registra el que ya obtuvo de su
+evaluación clínica; el sistema solo lo usa para **sugerir** ejercicios
+relacionados (HU03-CA07), sin decidir ni bloquear nada por su cuenta.
+
+### Lista de diagnósticos (13), agrupados por región corporal
+
+| Región | Diagnóstico | Ejercicios sugeridos (del catálogo) |
+|---|---|---|
+| Hombro | Síndrome de pinzamiento subacromial | Flexión de hombro, Abducción de hombro |
+| Hombro | Capsulitis adhesiva (hombro congelado) | Flexión de hombro, Abducción de hombro |
+| Hombro | Rehabilitación post-quirúrgica de manguito rotador | Flexión de hombro, Abducción de hombro |
+| Codo | Rigidez postraumática de codo | Flexión de codo |
+| Cadera | Rehabilitación post-artroplastia de cadera | Marcha estacionaria, Puente de glúteos |
+| Cadera | Osteoartrosis de cadera | Marcha estacionaria, Puente de glúteos |
+| Rodilla | Post-reconstrucción de ligamento cruzado anterior | Flexión de rodilla, Mini sentadilla |
+| Rodilla | Osteoartrosis de rodilla | Flexión de rodilla, Mini sentadilla |
+| Rodilla | Síndrome de dolor femoropatelar | Flexión de rodilla, Mini sentadilla |
+| Tobillo | Esguince de tobillo (fase funcional) | Flexión dorsal/plantar de tobillo |
+| Columna | Lumbalgia mecánica / dolor lumbar inespecífico | Rotación de tronco, Puente de glúteos |
+| General | Debilidad muscular / desacondicionamiento físico | Mini sentadilla, Puente de glúteos |
+| General | Alteraciones del equilibrio / riesgo de caídas | Equilibrio monopodal (segunda iteración, sin ejercicio sembrado aún) |
+
+### Estructura de datos (Firestore)
+
+```
+usuarios/{pacienteId}
+  - diagnosticos: [
+      { codigo: "OSTEOARTROSIS_RODILLA", fecha: <Timestamp> },
+      { codigo: "DEBILIDAD_MUSCULAR", fecha: <Timestamp> }
+    ]
+
+ejercicios/{ejercicioId}
+  - diagnosticosAplicables: ["OSTEOARTROSIS_RODILLA", "POST_RECONSTRUCCION_LCA", ...]
+```
+
+La sugerencia de HU03-CA07 se resuelve **client-side**: la pantalla de
+asignar sesión ya tiene cargado el catálogo completo de ejercicios (~10
+documentos), así que compara `diagnosticosAplicables` de cada ejercicio
+contra los códigos en `usuarios/{pacienteId}.diagnosticos` sin necesitar
+una query aparte — los sugeridos se muestran primero en el selector
+(marcados con ★), sin impedir elegir cualquier otro.
+
+### Historias de usuario afectadas
+
+- **HU01-CA06** — el fisioterapeuta registra/actualiza uno o más
+  diagnósticos de un paciente.
+- **HU03-CA07** — el sistema resalta primero los ejercicios sugeridos
+  según el/los diagnóstico(s) del paciente al asignar una sesión.
+
+---
+
+## 10. Historias de Usuario y Requisitos No Funcionales
 
 Fuente de verdad del producto. 19 Historias de Usuario + 6 Requisitos No
 Funcionales, ya depurados (sin criterios de aceptación genéricos/duplicados)
@@ -268,14 +632,15 @@ y priorizados en 5 sprints.
 - CA05: Dado que no tenga pacientes asignados, cuando acceda al módulo, entonces el sistema muestra un mensaje de ausencia de pacientes.
 - CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis;
   revisada durante el propio Sprint 3: pasó de texto libre a catálogo
-  cerrado)*: Dado que consulte el detalle de un paciente, cuando elija su
-  diagnóstico de un catálogo cerrado de tipos frecuentes en rehabilitación
-  (ej. tendinitis de hombro, lesión de rodilla, lumbalgia, post-operatorio,
-  esguince de tobillo, fortalecimiento lumbar, otro), entonces el sistema
-  guarda ese valor y lo muestra junto al resto de su información
-  terapéutica (incluida la lista de pacientes). No es texto libre: el
-  fisioterapeuta selecciona de la lista, no redacta; esto permite
-  consistencia entre pacientes. No se deriva de ninguna otra historia.
+  cerrado; ampliada de nuevo más adelante: de un solo valor a una lista)*:
+  Dado que consulte el detalle de un paciente, cuando elija uno o más
+  diagnósticos de un catálogo cerrado de 13 valores agrupados por región
+  corporal (sección 9, Catálogo de diagnósticos), entonces el sistema los
+  guarda (cada uno con su propia fecha) y los muestra junto al resto de su
+  información terapéutica (incluida la lista de pacientes). No es texto
+  libre: el fisioterapeuta selecciona de la lista, no redacta; un paciente
+  puede tener más de un diagnóstico a la vez (ej. osteoartrosis de rodilla +
+  desacondicionamiento general).
 
 #### HU02 — Gestionar ejercicios terapéuticos
 **Rol:** Fisioterapeuta
@@ -302,6 +667,12 @@ y priorizados en 5 sprints.
   cada repetición (`duracionSegundos`, CA02). Este número es el que usa
   HU06 para repetir el ciclo de monitoreo esa cantidad de veces dentro
   de una misma sesión.
+- CA09 *(ampliación acordada, no en la versión original de la tesis)*: Dado
+  que registre o edite un ejercicio, cuando elija su categoría, entonces el
+  sistema restringe la opción a un catálogo cerrado de 2 valores (Movilidad
+  / Control motor — sección 7), no texto libre. Opcionalmente puede además
+  marcar uno o más diagnósticos para los que este ejercicio se sugiere
+  primero al asignar una sesión (`diagnosticosAplicables`, ver HU03-CA07).
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -327,6 +698,12 @@ y priorizados en 5 sprints.
   ya asignadas o futuras. El sistema también muestra la duración total
   estimada de la sesión (repeticiones × duración por repetición) como
   referencia antes de guardar.
+- CA07 *(ampliación acordada, no en la versión original de la tesis)*: Dado
+  que el paciente tenga uno o más diagnósticos registrados (HU01-CA06),
+  cuando el fisioterapeuta abra el selector de ejercicios para asignar,
+  entonces el sistema resalta primero (★) los ejercicios sugeridos para
+  esos diagnósticos (según `ejercicios/{id}.diagnosticosAplicables`, sección
+  9), sin impedir seleccionar cualquier otro ejercicio del catálogo.
 
 #### HU04 — Visualizar ejercicios asignados
 **Rol:** Paciente
@@ -674,13 +1051,13 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 - CA01: Dado que el administrador acceda al sistema, cuando seleccione "Pacientes" en el panel de administración, entonces el sistema muestra la lista de pacientes registrados.
 - CA02 *(revisión acordada, no en la versión original)*: Dado que desee
   registrar un paciente, cuando complete nombre, correo, contraseña, DNI,
-  edad y diagnóstico (del mismo catálogo cerrado de HU01-CA06), entonces el
-  sistema crea la cuenta con esos datos y la muestra en la lista. La
-  contraseña nunca se muestra en texto plano en el formulario — solo es
-  legible temporalmente si el administrador presiona el ícono de ojo
-  (mismo control en el formulario de fisioterapeuta, aunque ahí no aplican
-  DNI/edad/diagnóstico por no ser datos clínicos del propio fisio).
-- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes (incluidos DNI, edad y diagnóstico), entonces el sistema guarda los cambios.
+  edad y uno o más diagnósticos (del mismo catálogo cerrado de HU01-CA06),
+  entonces el sistema crea la cuenta con esos datos y la muestra en la
+  lista. La contraseña nunca se muestra en texto plano en el formulario —
+  solo es legible temporalmente si el administrador presiona el ícono de
+  ojo (mismo control en el formulario de fisioterapeuta, aunque ahí no
+  aplican DNI/edad/diagnóstico por no ser datos clínicos del propio fisio).
+- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes (incluidos DNI, edad y diagnóstico(s)), entonces el sistema guarda los cambios.
 - CA04: Dado que desee eliminar la cuenta de un paciente, cuando confirme la eliminación, entonces el sistema la elimina.
 - CA05: Dado que un paciente no tenga fisioterapeuta asignado, cuando el administrador seleccione uno desde la lista, entonces el sistema se lo asigna y la opción de asignar deja de estar disponible para ese paciente.
 - CA06 *(ampliación acordada, no en la versión original)*: Dado que consulte
@@ -819,7 +1196,7 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 
 ---
 
-## 7. Reglas del proyecto (no negociables)
+## 11. Reglas del proyecto (no negociables)
 
 1. Todo procesamiento de cámara/video es **local al dispositivo**; nunca se
    sube video ni imágenes a Firebase — solo datos numéricos (RNF06).
