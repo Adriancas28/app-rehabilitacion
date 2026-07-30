@@ -513,6 +513,20 @@ y priorizados en 5 sprints.
 > consecutivos) en su propia pantalla de historial (`HistorialSesionesScreen`)
 > — no es parte de esta HU (que es del fisioterapeuta), pero es una
 > mejora razonable sobre HU13 que ya existía, no le hace daño a nadie.
+>
+> **Ampliación posterior (corrección, no en la versión original):**
+> "Progreso por ejercicio" — una tarjeta nueva debajo del resumen general
+> que agrupa las sesiones completadas por ejercicio y muestra, para cada
+> uno, una barra de progreso (`LinearProgressIndicator`) con el promedio
+> de `porcentajeEjecucion` de ese ejercicio y cuántas sesiones lo
+> completaron. Esto sí es el equivalente con barras de la pantalla 10 del
+> mockup (antes solo se cubría con la lista de sesiones individuales, sin
+> agrupar por ejercicio). Respeta el mismo filtro de período que el resto
+> de la pantalla. También se agregó un acceso directo: cada tarjeta de
+> sesión completada tiene un ícono "Registrar recomendación" que navega
+> directo a `RegistrarRecomendacionScreen` (HU15) sin pasar primero por
+> el detalle de la sesión (HU18-CA02) — solo un atajo de navegación, la
+> lógica de HU15 no cambió.
 
 #### HU13 — Consultar historial terapéutico
 **Rol:** Paciente

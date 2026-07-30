@@ -57,6 +57,9 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onVerResultado = { pacienteId, sesionId ->
                 navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
             },
+            onRecomendar = { pacienteId, sesionId ->
+                navController.navigate(Rutas.recomendaciones(pacienteId, sesionId))
+            },
         )
     }
     composable(

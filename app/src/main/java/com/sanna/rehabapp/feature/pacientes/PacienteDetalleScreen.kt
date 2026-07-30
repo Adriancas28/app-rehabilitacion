@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MedicalInformation
+import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,6 +32,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -66,6 +68,9 @@ fun PacienteDetalleScreen(
     onEditarSesion: (pacienteId: String, sesionId: String) -> Unit,
     // HU18-CA02: ver el detalle de una sesión ya completada.
     onVerResultado: (pacienteId: String, sesionId: String) -> Unit,
+    // HU15 (acceso rápido): registrar una recomendación sin pasar primero
+    // por el detalle de la sesión.
+    onRecomendar: (pacienteId: String, sesionId: String) -> Unit,
     viewModel: PacienteDetalleViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -121,6 +126,28 @@ fun PacienteDetalleScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
+            // HU12-CA02 (ampliación): progreso total por cada ejercicio
+            // realizado, con barras (mockup pantalla 10).
+            if (uiState.progresoPorEjercicio.isNotEmpty()) {
+                Text(text = "Progreso por ejercicio", style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    shape = MaterialTheme.shapes.large,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        uiState.progresoPorEjercicio.forEachIndexed { indice, progreso ->
+                            BarraProgresoEjercicio(progreso)
+                            if (indice != uiState.progresoPorEjercicio.lastIndex) {
+                                Spacer(modifier = Modifier.height(14.dp))
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             // HU12-CA03: filtro por período — afecta tanto el resumen de
             // arriba como la lista de sesiones de abajo.
             Row {
@@ -164,6 +191,7 @@ fun PacienteDetalleScreen(
                                     onVerResultado(viewModel.pacienteId, sesion.id)
                                 }
                             },
+                            onRecomendar = { onRecomendar(viewModel.pacienteId, sesion.id) },
                         )
                     }
                 }
@@ -307,7 +335,48 @@ private fun TarjetaProgreso(completadas: Int, total: Int, porcentajePromedio: Fl
 }
 
 @Composable
-private fun TarjetaSesion(sesion: Sesion, ejercicio: Ejercicio?, onClick: () -> Unit) {
+private fun BarraProgresoEjercicio(progreso: ProgresoEjercicio) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = progreso.nombre,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "${progreso.porcentajePromedio.toInt()}%",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(modifier = Modifier.height(6.dp))
+        LinearProgressIndicator(
+            progress = { progreso.porcentajePromedio / 100f },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp),
+            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = if (progreso.sesionesCompletadas == 1) {
+                "1 sesión completada"
+            } else {
+                "${progreso.sesionesCompletadas} sesiones completadas"
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun TarjetaSesion(
+    sesion: Sesion,
+    ejercicio: Ejercicio?,
+    onClick: () -> Unit,
+    onRecomendar: () -> Unit,
+) {
     Card(
         onClick = onClick,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
@@ -339,6 +408,16 @@ private fun TarjetaSesion(sesion: Sesion, ejercicio: Ejercicio?, onClick: () -> 
                     )
                 }
             }
+            if (sesion.estado == EstadoSesion.COMPLETADA) {
+                IconButton(onClick = onRecomendar) {
+                    Icon(
+                        Icons.Filled.RateReview,
+                        contentDescription = "Registrar recomendación",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(4.dp))
             EstadoPill(completada = sesion.estado == EstadoSesion.COMPLETADA)
         }
     }

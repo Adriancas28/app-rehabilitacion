@@ -43,7 +43,37 @@ data class PacienteDetalleUiState(
         get() = sesionesFiltradas
             .mapNotNull { it.resultado?.porcentajeEjecucion }
             .let { valores -> if (valores.isEmpty()) 0f else valores.average().toFloat() }
+
+    // HU12-CA02 (ampliación acordada): progreso total por cada ejercicio
+    // que el paciente ha realizado, para mostrarlo como barras (mockup
+    // pantalla 10) — a diferencia de porcentajePromedio (un solo número
+    // global), esto agrupa por ejercicio.
+    val progresoPorEjercicio: List<ProgresoEjercicio>
+        get() = sesionesFiltradas
+            .filter { it.estado == EstadoSesion.COMPLETADA && it.resultado != null }
+            .groupBy { it.ejercicioId }
+            .mapNotNull { (ejercicioId, sesionesDelEjercicio) ->
+                val nombre = ejerciciosPorId[ejercicioId]?.nombre ?: return@mapNotNull null
+                val promedio = sesionesDelEjercicio
+                    .mapNotNull { it.resultado?.porcentajeEjecucion }
+                    .average()
+                    .toFloat()
+                ProgresoEjercicio(
+                    ejercicioId = ejercicioId,
+                    nombre = nombre,
+                    porcentajePromedio = promedio,
+                    sesionesCompletadas = sesionesDelEjercicio.size,
+                )
+            }
+            .sortedByDescending { it.porcentajePromedio }
 }
+
+data class ProgresoEjercicio(
+    val ejercicioId: String,
+    val nombre: String,
+    val porcentajePromedio: Float,
+    val sesionesCompletadas: Int,
+)
 
 // HU01-CA02/CA03 — detalle de un paciente: su información y sus sesiones.
 // HU03 — desde aquí también se asigna/edita una sesión (ver pacienteId).
