@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 // HU20-CA02/CA03: registrar y editar un paciente desde el panel de admin,
-// incluyendo DNI, edad y diagnóstico (revisión acordada).
+// incluyendo DNI, edad y uno o más diagnósticos (revisión acordada).
 @HiltViewModel
 class AdminPacienteFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
@@ -43,7 +43,7 @@ class AdminPacienteFormViewModel @Inject constructor(
                     email = usuario?.email ?: "",
                     dni = usuario?.dni ?: "",
                     edad = usuario?.edad?.toString() ?: "",
-                    tipoDiagnostico = usuario?.tipoDiagnostico,
+                    diagnosticosSeleccionados = usuario?.diagnosticos?.map { d -> d.tipo }?.toSet() ?: emptySet(),
                     cargando = false,
                 )
             }
@@ -55,20 +55,27 @@ class AdminPacienteFormViewModel @Inject constructor(
     fun onPasswordCambiado(valor: String) = _uiState.update { it.copy(password = valor, error = null) }
     fun onDniCambiado(valor: String) = _uiState.update { it.copy(dni = valor, error = null) }
     fun onEdadCambiado(valor: String) = _uiState.update { it.copy(edad = valor, error = null) }
-    fun onTipoDiagnosticoCambiado(valor: TipoDiagnostico) =
-        _uiState.update { it.copy(tipoDiagnostico = valor, error = null) }
+
+    fun onDiagnosticoAlternado(tipo: TipoDiagnostico) = _uiState.update { estado ->
+        val nuevos = if (tipo in estado.diagnosticosSeleccionados) {
+            estado.diagnosticosSeleccionados - tipo
+        } else {
+            estado.diagnosticosSeleccionados + tipo
+        }
+        estado.copy(diagnosticosSeleccionados = nuevos, error = null)
+    }
 
     fun guardar() {
         val estado = _uiState.value
         val edadInt = estado.edad.toIntOrNull()
         if (estado.nombre.isBlank() || estado.email.isBlank() ||
             (!esEdicion && estado.password.isBlank()) ||
-            estado.dni.isBlank() || edadInt == null || edadInt <= 0 || estado.tipoDiagnostico == null
+            estado.dni.isBlank() || edadInt == null || edadInt <= 0 || estado.diagnosticosSeleccionados.isEmpty()
         ) {
             _uiState.update { it.copy(error = "Completa todos los campos requeridos.") }
             return
         }
-        val tipoDiagnostico = estado.tipoDiagnostico
+        val diagnosticos = estado.diagnosticosSeleccionados.toList()
         viewModelScope.launch {
             _uiState.update { it.copy(guardando = true, error = null) }
             val resultado = if (esEdicion) {
@@ -78,7 +85,7 @@ class AdminPacienteFormViewModel @Inject constructor(
                     estado.email.trim(),
                     estado.dni.trim(),
                     edadInt,
-                    tipoDiagnostico,
+                    diagnosticos,
                 )
             } else {
                 adminRepository.crearPaciente(
@@ -87,7 +94,7 @@ class AdminPacienteFormViewModel @Inject constructor(
                     estado.password,
                     estado.dni.trim(),
                     edadInt,
-                    tipoDiagnostico,
+                    diagnosticos,
                 )
             }
             resultado.fold(

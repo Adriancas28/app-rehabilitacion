@@ -255,7 +255,7 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = paciente.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = paciente.tipoDiagnostico?.etiqueta ?: paciente.email,
+                    text = etiquetaDiagnosticos(paciente) ?: paciente.email,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -269,6 +269,15 @@ private fun TarjetaPaciente(paciente: Usuario, onClick: () -> Unit) {
             )
         }
     }
+}
+
+// HU01-CA06 (ampliación): un paciente puede tener varios diagnósticos; se
+// muestra el primero y, si hay más, cuántos adicionales.
+private fun etiquetaDiagnosticos(paciente: Usuario): String? {
+    val diagnosticos = paciente.diagnosticos
+    if (diagnosticos.isEmpty()) return null
+    val primero = diagnosticos.first().tipo.etiqueta
+    return if (diagnosticos.size == 1) primero else "$primero +${diagnosticos.size - 1} más"
 }
 
 private fun obtenerIniciales(nombre: String): String =

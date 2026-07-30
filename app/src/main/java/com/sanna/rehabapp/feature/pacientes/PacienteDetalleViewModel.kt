@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.model.Sesion
@@ -107,13 +108,20 @@ class PacienteDetalleViewModel @Inject constructor(
         }
     }
 
-    // HU01-CA06 — el fisioterapeuta elige el diagnóstico del paciente de un
-    // catálogo cerrado (TipoDiagnostico), no texto libre.
-    fun actualizarDiagnostico(tipoDiagnostico: TipoDiagnostico) {
+    // HU01-CA06 (ampliación) — el fisioterapeuta elige uno o más
+    // diagnósticos del paciente de un catálogo cerrado (TipoDiagnostico),
+    // no texto libre. Conserva la fecha original de los que ya estaban
+    // registrados; a los nuevos les asigna la fecha actual.
+    fun actualizarDiagnosticos(seleccionados: List<TipoDiagnostico>) {
+        val actuales = _uiState.value.paciente?.diagnosticos.orEmpty()
+        val fechaPorTipo = actuales.associate { it.tipo to it.fecha }
+        val nuevos = seleccionados.map { tipo ->
+            DiagnosticoRegistrado(tipo = tipo, fecha = fechaPorTipo[tipo] ?: java.util.Date())
+        }
         viewModelScope.launch {
-            usuarioRepository.actualizarDiagnostico(pacienteId, tipoDiagnostico).onSuccess {
+            usuarioRepository.actualizarDiagnosticos(pacienteId, nuevos).onSuccess {
                 _uiState.update { estado ->
-                    estado.copy(paciente = estado.paciente?.copy(tipoDiagnostico = tipoDiagnostico))
+                    estado.copy(paciente = estado.paciente?.copy(diagnosticos = nuevos))
                 }
             }
         }

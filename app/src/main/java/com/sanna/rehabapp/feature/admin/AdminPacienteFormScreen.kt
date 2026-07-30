@@ -1,8 +1,8 @@
 package com.sanna.rehabapp.feature.admin
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,13 +13,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -53,7 +52,6 @@ fun AdminPacienteFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var mostrarPassword by remember { mutableStateOf(false) }
-    var menuDiagnosticoAbierto by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.guardadoExitoso) {
         if (uiState.guardadoExitoso) onGuardado()
@@ -143,37 +141,11 @@ fun AdminPacienteFormScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(modifier = Modifier.height(12.dp))
-            Box(modifier = Modifier.fillMaxWidth()) {
-                OutlinedTextField(
-                    value = uiState.tipoDiagnostico?.etiqueta ?: "",
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Diagnóstico") },
-                    placeholder = { Text("Selecciona un diagnóstico") },
-                    trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .clickable { menuDiagnosticoAbierto = true },
-                )
-                DropdownMenu(
-                    expanded = menuDiagnosticoAbierto,
-                    onDismissRequest = { menuDiagnosticoAbierto = false },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    TipoDiagnostico.entries.forEach { tipo ->
-                        DropdownMenuItem(
-                            text = { Text(tipo.etiqueta) },
-                            onClick = {
-                                viewModel.onTipoDiagnosticoCambiado(tipo)
-                                menuDiagnosticoAbierto = false
-                            },
-                        )
-                    }
-                }
-            }
+            Text(text = "Diagnóstico(s)", style = MaterialTheme.typography.titleSmall)
+            SelectorDiagnosticos(
+                seleccionados = uiState.diagnosticosSeleccionados,
+                onAlternar = viewModel::onDiagnosticoAlternado,
+            )
 
             uiState.error?.let { mensaje ->
                 Spacer(modifier = Modifier.height(12.dp))
@@ -197,6 +169,37 @@ fun AdminPacienteFormScreen(
                     )
                 } else {
                     Text(if (viewModel.esEdicion) "Guardar cambios" else "Crear cuenta")
+                }
+            }
+        }
+    }
+}
+
+// HU01-CA06/HU20-CA02 (ampliación): un paciente puede tener varios
+// diagnósticos a la vez, agrupados por región corporal para que la lista
+// de 13 valores sea fácil de recorrer.
+@Composable
+private fun SelectorDiagnosticos(
+    seleccionados: Set<TipoDiagnostico>,
+    onAlternar: (TipoDiagnostico) -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        TipoDiagnostico.entries.groupBy { it.regionCorporal }.forEach { (region, diagnosticos) ->
+            Text(
+                text = region,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 10.dp, bottom = 2.dp),
+            )
+            diagnosticos.forEach { tipo ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onAlternar(tipo) },
+                ) {
+                    Checkbox(checked = tipo in seleccionados, onCheckedChange = { onAlternar(tipo) })
+                    Text(text = tipo.etiqueta, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
