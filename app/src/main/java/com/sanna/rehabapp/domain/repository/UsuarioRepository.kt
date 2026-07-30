@@ -1,6 +1,6 @@
 package com.sanna.rehabapp.domain.repository
 
-import com.sanna.rehabapp.domain.model.TipoDiagnostico
+import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
 import com.sanna.rehabapp.domain.model.Usuario
 import kotlinx.coroutines.flow.Flow
 
@@ -9,7 +9,9 @@ interface UsuarioRepository {
 
     fun observarPacientesDe(fisioterapeutaId: String): Flow<List<Usuario>>
 
-    // HU01-CA06 — el fisioterapeuta asigna/edita el diagnóstico de un
-    // paciente que tiene asignado, eligiéndolo de un catálogo cerrado.
-    suspend fun actualizarDiagnostico(pacienteId: String, tipoDiagnostico: TipoDiagnostico): Result<Unit>
+    // HU01-CA06 (ampliación) — el fisioterapeuta asigna/edita los
+    // diagnósticos de un paciente (uno o más), cada uno de un catálogo
+    // cerrado; reemplaza la lista completa (la UI ya calcula qué fechas
+    // conservar de los diagnósticos que seguían marcados).
+    suspend fun actualizarDiagnosticos(pacienteId: String, diagnosticos: List<DiagnosticoRegistrado>): Result<Unit>
 }

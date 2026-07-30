@@ -1,8 +1,10 @@
 package com.sanna.rehabapp.data.repository
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
+import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
@@ -37,15 +39,28 @@ class UsuarioRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
-    override suspend fun actualizarDiagnostico(pacienteId: String, tipoDiagnostico: TipoDiagnostico): Result<Unit> =
-        runCatching {
-            firestore.collection(COLECCION_USUARIOS)
-                .document(pacienteId)
-                .set(mapOf("tipoDiagnostico" to tipoDiagnostico.aFirestore()), SetOptions.merge())
-                .await()
-            Unit
-        }
+    override suspend fun actualizarDiagnosticos(
+        pacienteId: String,
+        diagnosticos: List<DiagnosticoRegistrado>,
+    ): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .set(mapOf("diagnosticos" to diagnosticos.aFirestore()), SetOptions.merge())
+            .await()
+        Unit
+    }
 }
+
+private fun List<DiagnosticoRegistrado>.aFirestore(): List<Map<String, Any>> = map {
+    mapOf("codigo" to it.tipo.aFirestore(), "fecha" to (it.fecha ?: java.util.Date()))
+}
+
+private fun List<*>?.aDiagnosticos(): List<DiagnosticoRegistrado> =
+    this?.mapNotNull { entrada ->
+        val mapa = entrada as? Map<*, *> ?: return@mapNotNull null
+        val tipo = TipoDiagnostico.desdeFirestoreOrNull(mapa["codigo"] as? String) ?: return@mapNotNull null
+        DiagnosticoRegistrado(tipo = tipo, fecha = (mapa["fecha"] as? Timestamp)?.toDate())
+    } ?: emptyList()
 
 private fun DocumentSnapshot.toUsuario(): Usuario? {
     if (!exists()) return null
@@ -56,7 +71,7 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
-        tipoDiagnostico = TipoDiagnostico.desdeFirestoreOrNull(getString("tipoDiagnostico")),
+        diagnosticos = (get("diagnosticos") as? List<*>).aDiagnosticos(),
         dni = getString("dni"),
         edad = (get("edad") as? Number)?.toInt(),
         fechaRegistro = getDate("fechaRegistro"),

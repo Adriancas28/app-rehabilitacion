@@ -2,10 +2,12 @@ package com.sanna.rehabapp.data.repository
 
 import android.content.Context
 import com.google.firebase.FirebaseApp
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
@@ -48,7 +50,7 @@ class AdminRepositoryImpl @Inject constructor(
         password: String,
         dni: String,
         edad: Int,
-        tipoDiagnostico: TipoDiagnostico,
+        diagnosticos: List<TipoDiagnostico>,
     ): Result<Unit> = crearCuenta(
         nombre,
         email,
@@ -57,7 +59,7 @@ class AdminRepositoryImpl @Inject constructor(
         datosAdicionales = mapOf(
             "dni" to dni,
             "edad" to edad,
-            "tipoDiagnostico" to tipoDiagnostico.aFirestore(),
+            "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
         ),
     )
 
@@ -117,7 +119,7 @@ class AdminRepositoryImpl @Inject constructor(
         email: String,
         dni: String,
         edad: Int,
-        tipoDiagnostico: TipoDiagnostico,
+        diagnosticos: List<TipoDiagnostico>,
     ): Result<Unit> = runCatching {
         firestore.collection(COLECCION_USUARIOS)
             .document(uid)
@@ -127,7 +129,7 @@ class AdminRepositoryImpl @Inject constructor(
                     "email" to email,
                     "dni" to dni,
                     "edad" to edad,
-                    "tipoDiagnostico" to tipoDiagnostico.aFirestore(),
+                    "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
                 ),
             )
             .await()
@@ -158,7 +160,11 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         email = getString("email") ?: "",
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
-        tipoDiagnostico = TipoDiagnostico.desdeFirestoreOrNull(getString("tipoDiagnostico")),
+        diagnosticos = (get("diagnosticos") as? List<*>)?.mapNotNull { entrada ->
+            val mapa = entrada as? Map<*, *> ?: return@mapNotNull null
+            val tipo = TipoDiagnostico.desdeFirestoreOrNull(mapa["codigo"] as? String) ?: return@mapNotNull null
+            DiagnosticoRegistrado(tipo = tipo, fecha = (mapa["fecha"] as? Timestamp)?.toDate())
+        } ?: emptyList(),
         dni = getString("dni"),
         edad = (get("edad") as? Number)?.toInt(),
         fechaRegistro = getDate("fechaRegistro"),

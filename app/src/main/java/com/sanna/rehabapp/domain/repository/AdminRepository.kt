@@ -12,15 +12,15 @@ interface AdminRepository {
     fun observarFisioterapeutas(): Flow<List<Usuario>>
 
     // HU20-CA02 (revisión): además de los datos de cuenta, el admin
-    // captura DNI, edad y diagnóstico/tipo de rehabilitación del paciente
-    // al registrarlo — no solo el fisioterapeuta las edita después.
+    // captura DNI, edad y uno o más diagnósticos del paciente al
+    // registrarlo — no solo el fisioterapeuta los edita después.
     suspend fun crearPaciente(
         nombre: String,
         email: String,
         password: String,
         dni: String,
         edad: Int,
-        tipoDiagnostico: TipoDiagnostico,
+        diagnosticos: List<TipoDiagnostico>,
     ): Result<Unit>
 
     suspend fun crearFisioterapeuta(nombre: String, email: String, password: String): Result<Unit>
@@ -35,7 +35,7 @@ interface AdminRepository {
         email: String,
         dni: String,
         edad: Int,
-        tipoDiagnostico: TipoDiagnostico,
+        diagnosticos: List<TipoDiagnostico>,
     ): Result<Unit>
 
     // Nota: solo elimina el documento en Firestore. El registro de Firebase
