@@ -139,9 +139,13 @@ fun AsignarSesionScreen(
                             enabled = false,
                         )
                     }
-                    uiState.ejercicios.forEach { ejercicio ->
+                    uiState.ejerciciosOrdenados.forEach { ejercicio ->
                         DropdownMenuItem(
-                            text = { Text(ejercicio.nombre) },
+                            text = {
+                                Text(
+                                    if (uiState.esSugerido(ejercicio)) "★ ${ejercicio.nombre}" else ejercicio.nombre,
+                                )
+                            },
                             onClick = {
                                 viewModel.onEjercicioSeleccionado(ejercicio.id)
                                 menuEjercicioAbierto = false

@@ -5,9 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.domain.model.Ejercicio
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
+import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.Date
 import javax.inject.Inject
@@ -23,6 +25,9 @@ val OPCIONES_REPETICIONES = listOf(1, 3, 6, 9, 12)
 
 data class AsignarSesionUiState(
     val ejercicios: List<Ejercicio> = emptyList(),
+    // HU03-CA05 (ampliación): diagnósticos del paciente, para resaltar
+    // primero los ejercicios sugeridos al elegir uno.
+    val diagnosticosPaciente: List<TipoDiagnostico> = emptyList(),
     val ejercicioSeleccionadoId: String? = null,
     val fechaAsignacion: Date? = null,
     val notas: String = "",
@@ -31,7 +36,15 @@ data class AsignarSesionUiState(
     val guardando: Boolean = false,
     val error: String? = null,
     val guardadoExitoso: Boolean = false,
-)
+) {
+    // Los ejercicios sugeridos para el/los diagnóstico(s) del paciente van
+    // primero, sin excluir al resto del catálogo (orden estable).
+    val ejerciciosOrdenados: List<Ejercicio>
+        get() = ejercicios.sortedByDescending { esSugerido(it) }
+
+    fun esSugerido(ejercicio: Ejercicio): Boolean =
+        diagnosticosPaciente.isNotEmpty() && ejercicio.diagnosticosAplicables.any { it in diagnosticosPaciente }
+}
 
 // HU03 — asignar (CA01, CA02) o editar (CA03) una sesión terapéutica.
 @HiltViewModel
@@ -40,6 +53,7 @@ class AsignarSesionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val ejercicioRepository: EjercicioRepository,
     private val sesionRepository: SesionRepository,
+    private val usuarioRepository: UsuarioRepository,
 ) : ViewModel() {
 
     private val pacienteId: String = checkNotNull(savedStateHandle[Rutas.ARG_PACIENTE_ID])
@@ -51,7 +65,15 @@ class AsignarSesionViewModel @Inject constructor(
 
     init {
         observarEjercicios()
+        cargarDiagnosticosPaciente()
         if (esEdicion) cargarSesion(sesionIdArg!!)
+    }
+
+    private fun cargarDiagnosticosPaciente() {
+        viewModelScope.launch {
+            val paciente = usuarioRepository.obtenerUsuario(pacienteId)
+            _uiState.update { it.copy(diagnosticosPaciente = paciente?.diagnosticos?.map { d -> d.tipo } ?: emptyList()) }
+        }
     }
 
     private fun observarEjercicios() {
