@@ -130,8 +130,20 @@ fun AdminFisioterapeutasScreen(
 
                 else -> LazyColumn {
                     items(uiState.fisioterapeutas, key = { it.uid }) { fisio ->
+                        val cantidadPacientes = uiState.pacientesPorFisioterapeuta[fisio.uid] ?: 0
                         TarjetaUsuarioAdmin(
                             usuario = fisio,
+                            lineaExtra = {
+                                Text(
+                                    text = if (cantidadPacientes == 1) {
+                                        "1 paciente asignado"
+                                    } else {
+                                        "$cantidadPacientes pacientes asignados"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            },
                             onEditar = { onEditarFisioterapeuta(fisio.uid) },
                             onEliminar = { fisioAEliminar = fisio },
                         )

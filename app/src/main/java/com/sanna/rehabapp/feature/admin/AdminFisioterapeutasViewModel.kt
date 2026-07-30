@@ -8,12 +8,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class AdminFisioterapeutasUiState(
     val fisioterapeutas: List<Usuario> = emptyList(),
+    // Relación uno (fisioterapeuta) a muchos (pacientes): cuántos pacientes
+    // tiene asignados cada fisioterapeuta, para mostrarlo en su tarjeta —
+    // simétrico a lo que ya muestra AdminPacientesScreen del lado del paciente.
+    val pacientesPorFisioterapeuta: Map<String, Int> = emptyMap(),
     val cargando: Boolean = true,
 )
 
@@ -28,11 +32,21 @@ class AdminFisioterapeutasViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            adminRepository.observarFisioterapeutas()
+            combine(
+                adminRepository.observarFisioterapeutas(),
+                adminRepository.observarPacientes(),
+            ) { fisioterapeutas, pacientes ->
+                AdminFisioterapeutasUiState(
+                    fisioterapeutas = fisioterapeutas,
+                    pacientesPorFisioterapeuta = pacientes
+                        .mapNotNull { it.fisioterapeutaId }
+                        .groupingBy { it }
+                        .eachCount(),
+                    cargando = false,
+                )
+            }
                 .catch { }
-                .collect { lista ->
-                    _uiState.update { it.copy(fisioterapeutas = lista, cargando = false) }
-                }
+                .collect { estado -> _uiState.value = estado }
         }
     }
 
