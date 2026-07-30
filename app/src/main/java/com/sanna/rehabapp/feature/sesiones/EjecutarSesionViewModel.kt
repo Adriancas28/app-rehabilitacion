@@ -26,6 +26,14 @@ import kotlinx.coroutines.launch
 
 private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 
+// HU06-CA02 (ampliación): cuenta regresiva de preparación antes de medir la
+// primera repetición, para que el paciente se acomode frente a la cámara.
+private const val SEGUNDOS_PREPARACION_INICIAL = 10
+
+// HU06-CA06 (ampliación): a partir de cuántos segundos de descanso restantes
+// se avisa por voz que viene la siguiente repetición.
+private const val SEGUNDOS_AVISO_SIGUIENTE_REPETICION = 3
+
 // HU10-CA06: no repetir la misma corrección por voz más seguido que esto
 // (evita hablar en cada frame mientras el error persiste).
 private const val INTERVALO_REPETIR_VOZ_MS = 4_000L
@@ -43,6 +51,10 @@ data class EjecutarSesionUiState(
     val repeticionesOverride: Int? = null,
     val cargando: Boolean = true,
     val sesionIniciada: Boolean = false,
+    // HU06-CA02 (ampliación): cuenta regresiva antes de que arranque la
+    // medición de la primera repetición.
+    val enPreparacion: Boolean = false,
+    val segundosPreparacion: Int = 0,
     val repeticionActual: Int = 1,
     // HU06-CA07/HU11: repeticiones que llegaron a completar su tiempo
     // completo (puede ser menos que totalRepeticiones si se finalizó antes).
@@ -139,6 +151,13 @@ class EjecutarSesionViewModel @Inject constructor(
         val totalRepeticiones = _uiState.value.totalRepeticiones
         _uiState.update { it.copy(sesionIniciada = true) }
         jobCicloRepeticiones = viewModelScope.launch {
+            _uiState.update { it.copy(enPreparacion = true, segundosPreparacion = SEGUNDOS_PREPARACION_INICIAL) }
+            while (_uiState.value.segundosPreparacion > 0) {
+                delay(1_000)
+                _uiState.update { it.copy(segundosPreparacion = it.segundosPreparacion - 1) }
+            }
+            _uiState.update { it.copy(enPreparacion = false) }
+
             for (repeticion in numeroRepeticionInicial..totalRepeticiones) {
                 _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
                 procesadorMovimiento?.marcarNuevaRepeticion()
@@ -151,7 +170,21 @@ class EjecutarSesionViewModel @Inject constructor(
                     _uiState.update { it.copy(enDescanso = true, segundosDescanso = SEGUNDOS_DESCANSO_ENTRE_REPETICIONES) }
                     while (_uiState.value.segundosDescanso > 0) {
                         delay(1_000)
-                        _uiState.update { it.copy(segundosDescanso = it.segundosDescanso - 1) }
+                        val restante = _uiState.value.segundosDescanso - 1
+                        _uiState.update { it.copy(segundosDescanso = restante) }
+                        // HU06-CA06 (ampliación): aviso por voz de que se
+                        // acerca la siguiente repetición, una sola vez, al
+                        // entrar a los últimos segundos del descanso.
+                        if (restante == SEGUNDOS_AVISO_SIGUIENTE_REPETICION) {
+                            _uiState.update {
+                                it.copy(
+                                    eventoVoz = EventoVoz(
+                                        "Prepárate, sigue la repetición ${repeticion + 1}.",
+                                        System.currentTimeMillis(),
+                                    ),
+                                )
+                            }
+                        }
                     }
                     _uiState.update { it.copy(enDescanso = false) }
                 }
@@ -165,9 +198,9 @@ class EjecutarSesionViewModel @Inject constructor(
     // HU10 — con esa misma medición se decide la retroalimentación en vivo.
     fun procesarResultadoPose(resultado: PoseLandmarkerResult) {
         val estado = _uiState.value
-        // En descanso entre repeticiones no se mide: el paciente no está
-        // ejecutando el ejercicio en ese momento.
-        if (!estado.sesionIniciada || estado.sesionCompletada || estado.enDescanso) return
+        // En preparación o en descanso entre repeticiones no se mide: el
+        // paciente todavía no está ejecutando el ejercicio en ese momento.
+        if (!estado.sesionIniciada || estado.sesionCompletada || estado.enDescanso || estado.enPreparacion) return
         val mediciones = procesadorMovimiento?.procesarResultado(resultado) ?: return
         actualizarRetroalimentacionEnVivo(mediciones)
     }

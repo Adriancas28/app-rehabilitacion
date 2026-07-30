@@ -355,7 +355,7 @@ y priorizados en 5 sprints.
 **Deseo:** Ejecutar una sesión terapéutica
 **Propósito:** Realizar los ejercicios asignados por el fisioterapeuta.
 - CA01: Dado que selecciona una sesión asignada, entonces el sistema muestra el ejercicio correspondiente.
-- CA02: Dado que inicia la sesión, cuando seleccione "Iniciar sesión", entonces el sistema habilita la ejecución.
+- CA02: Dado que inicia la sesión, cuando seleccione "Iniciar sesión", entonces el sistema habilita la ejecución. *(Ampliación acordada, no en la versión original: antes de empezar a medir la primera repetición, el sistema muestra una cuenta regresiva de preparación de 10 segundos — durante ese lapso la cámara ya está encendida pero el movimiento no se mide, para que el paciente tenga tiempo de acomodarse frente a ella.)*
 - CA03: Dado que ejecuta el ejercicio, cuando la cámara detecte movimiento, entonces el sistema inicia el monitoreo.
 - CA04: Dado que finaliza el tiempo establecido, entonces el sistema concluye la sesión.
 - CA05: Dado que completa la sesión, entonces el sistema la registra.
@@ -367,7 +367,12 @@ y priorizados en 5 sprints.
   sesión — CA04/CA05 solo aplican una vez completadas todas las
   repeticiones asignadas. Todas las repeticiones de una misma sesión se
   registran juntas como un único resultado consolidado (HU08-CA04), no
-  como sesiones separadas.
+  como sesiones separadas. *(Ampliación posterior: durante esa pausa, al
+  quedar 3 segundos restantes el sistema avisa una sola vez por voz — "Prepárate,
+  sigue la repetición N" — para que el paciente sepa que se acerca la
+  siguiente repetición sin tener que mirar la pantalla; el número
+  regresivo en sí se sigue mostrando visualmente, esto solo agrega el
+  aviso hablado.)*
 - CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
   Dado que la sesión esté en ejecución, cuando el paciente seleccione
   "Finalizar ejercicio" antes de completar el tiempo o las repeticiones

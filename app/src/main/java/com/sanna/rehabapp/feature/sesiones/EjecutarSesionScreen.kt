@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -180,6 +181,8 @@ fun EjecutarSesionScreen(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight(),
+                        enPreparacion = uiState.enPreparacion,
+                        segundosPreparacion = uiState.segundosPreparacion,
                         repeticionActual = uiState.repeticionActual,
                         totalRepeticiones = uiState.totalRepeticiones,
                         segundosRestantes = uiState.segundosRestantes,
@@ -271,6 +274,8 @@ private fun IconoEstadoCorreccion(enCorreccion: Boolean, modifier: Modifier = Mo
 @Composable
 private fun PanelProgreso(
     modifier: Modifier,
+    enPreparacion: Boolean,
+    segundosPreparacion: Int,
     repeticionActual: Int,
     totalRepeticiones: Int,
     segundosRestantes: Int,
@@ -278,6 +283,35 @@ private fun PanelProgreso(
     segundosDescanso: Int,
     onFinalizar: () -> Unit,
 ) {
+    if (enPreparacion) {
+        Column(
+            modifier = modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(text = "Prepárate", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .size(96.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "$segundosPreparacion s",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "El monitoreo comienza en breve…",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        return
+    }
     Column(
         modifier = modifier.padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
