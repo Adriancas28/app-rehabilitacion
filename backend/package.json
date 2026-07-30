@@ -5,7 +5,8 @@
   "description": "Scripts administrativos de Firebase para App Rehabilitacion (SANNA). No es un backend propio: Firebase (BaaS) resuelve autenticacion, datos y reglas de acceso.",
   "scripts": {
     "crear-usuario": "ts-node seed/crear-usuario.ts",
-    "seed": "ts-node seed/seed-data.ts"
+    "seed": "ts-node seed/seed-data.ts",
+    "crear-catalogo-ejercicios": "ts-node seed/crear-catalogo-ejercicios.ts"
   },
   "dependencies": {
     "firebase-admin": "^12.3.1"

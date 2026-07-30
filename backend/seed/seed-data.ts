@@ -31,7 +31,7 @@ async function seed() {
   await ejercicioRef.set({
     nombre: "Flexión de hombro",
     descripcion: "Elevar el brazo hacia adelante hasta 90 grados.",
-    categoria: "hombro",
+    categoria: "MOVILIDAD",
     materialUrl: "",
     patronReferencia: { anguloMin: 80, anguloMax: 100 },
     creadoPor: fisioterapeutaId,

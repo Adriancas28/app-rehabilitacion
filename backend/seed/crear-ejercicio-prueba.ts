@@ -59,7 +59,7 @@ async function crearEjercicioPrueba(argumentos: Argumentos): Promise<void> {
   await ejercicioRef.set({
     nombre: "Flexión de rodilla (prueba)",
     descripcion: "Ejercicio de prueba generado para probar el video de material terapéutico (HU05) y la ejecución con cámara (HU06/07/08). Flexiona y extiende la rodilla derecha durante la sesión.",
-    categoria: "Rodilla",
+    categoria: "MOVILIDAD",
     materialUrl,
     duracionSegundos: 10,
     patronesReferencia: [{ articulacion: "RODILLA_DERECHA", anguloMin: 90, anguloMax: 160 }],
