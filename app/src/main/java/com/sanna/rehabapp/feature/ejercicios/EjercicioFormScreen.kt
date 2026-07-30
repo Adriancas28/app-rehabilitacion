@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.RemoveCircleOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -53,6 +54,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.domain.model.Articulacion
+import com.sanna.rehabapp.domain.model.CategoriaEjercicio
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +65,7 @@ fun EjercicioFormScreen(
     viewModel: EjercicioFormViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var menuCategoriaAbierto by remember { mutableStateOf(false) }
     val selectorArchivo = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
     ) { uri -> viewModel.onArchivoSeleccionado(uri) }
@@ -110,12 +114,37 @@ fun EjercicioFormScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = uiState.categoria,
-                    onValueChange = viewModel::onCategoriaCambiada,
-                    label = { Text("Categoría") },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = uiState.categoria?.etiqueta ?: "",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Categoría") },
+                        placeholder = { Text("Selecciona una categoría") },
+                        trailingIcon = { Icon(Icons.Filled.ArrowDropDown, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable { menuCategoriaAbierto = true },
+                    )
+                    DropdownMenu(
+                        expanded = menuCategoriaAbierto,
+                        onDismissRequest = { menuCategoriaAbierto = false },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        CategoriaEjercicio.entries.forEach { categoria ->
+                            DropdownMenuItem(
+                                text = { Text(categoria.etiqueta) },
+                                onClick = {
+                                    viewModel.onCategoriaCambiada(categoria)
+                                    menuCategoriaAbierto = false
+                                },
+                            )
+                        }
+                    }
+                }
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
@@ -173,6 +202,35 @@ fun EjercicioFormScreen(
                             Icon(Icons.Filled.AutoAwesome, contentDescription = null, modifier = Modifier.width(18.dp))
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Calcular rango automáticamente desde el video")
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // HU03-CA05 (ampliación): diagnósticos para los que este
+            // ejercicio se sugiere primero al asignar una sesión.
+            SeccionFormulario(titulo = "Diagnósticos sugeridos (opcional)") {
+                TipoDiagnostico.entries.groupBy { it.regionCorporal }.forEach { (region, diagnosticos) ->
+                    Text(
+                        text = region,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+                    )
+                    diagnosticos.forEach { tipo ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onDiagnosticoAplicableAlternado(tipo) },
+                        ) {
+                            Checkbox(
+                                checked = tipo in uiState.diagnosticosAplicables,
+                                onCheckedChange = { viewModel.onDiagnosticoAplicableAlternado(tipo) },
+                            )
+                            Text(text = tipo.etiqueta, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }

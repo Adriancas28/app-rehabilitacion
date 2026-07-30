@@ -215,7 +215,7 @@ private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit,
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = ejercicio.nombre, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = item.fechaAsignacion?.let(::formatearFechaHora) ?: ejercicio.categoria,
+                        text = item.fechaAsignacion?.let(::formatearFechaHora) ?: ejercicio.categoria.etiqueta,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -364,7 +364,7 @@ private fun TarjetaEjercicioAsignado(ejercicio: Ejercicio, onClick: () -> Unit) 
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = ejercicio.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = ejercicio.categoria,
+                    text = ejercicio.categoria.etiqueta,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

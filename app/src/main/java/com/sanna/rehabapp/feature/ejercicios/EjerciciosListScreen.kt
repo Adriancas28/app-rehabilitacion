@@ -240,7 +240,7 @@ private fun TarjetaEjercicio(ejercicio: Ejercicio, onEditar: () -> Unit, onElimi
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = ejercicio.categoria,
+                    text = ejercicio.categoria.etiqueta,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,

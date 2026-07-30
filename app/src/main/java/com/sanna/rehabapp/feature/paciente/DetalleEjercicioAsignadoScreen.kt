@@ -100,7 +100,7 @@ fun DetalleEjercicioAsignadoScreen(
                     }
 
                     Text(
-                        text = ejercicio.categoria,
+                        text = ejercicio.categoria.etiqueta,
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )

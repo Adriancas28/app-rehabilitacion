@@ -8,8 +8,10 @@ import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.core.posedetection.AnalizadorVideoReferencia
 import com.sanna.rehabapp.domain.model.Articulacion
+import com.sanna.rehabapp.domain.model.CategoriaEjercicio
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,10 +35,13 @@ data class PatronReferenciaFila(
 data class EjercicioFormUiState(
     val nombre: String = "",
     val descripcion: String = "",
-    val categoria: String = "",
+    val categoria: CategoriaEjercicio? = null,
     val duracionSegundos: String = "30",
     val repeticiones: String = "1",
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
+    // HU03-CA05 (ampliación): diagnósticos para los que este ejercicio se
+    // sugiere primero al asignar una sesión (opcional).
+    val diagnosticosAplicables: Set<TipoDiagnostico> = emptySet(),
     val materialUrlActual: String = "",
     val archivoSeleccionado: Uri? = null,
     val esVideoSeleccionado: Boolean = false,
@@ -95,6 +100,7 @@ class EjercicioFormViewModel @Inject constructor(
                             )
                         },
                         materialUrlActual = ejercicio.materialUrl,
+                        diagnosticosAplicables = ejercicio.diagnosticosAplicables.toSet(),
                         cargando = false,
                     )
                 }
@@ -106,9 +112,17 @@ class EjercicioFormViewModel @Inject constructor(
 
     fun onNombreCambiado(valor: String) = _uiState.update { it.copy(nombre = valor, error = null) }
     fun onDescripcionCambiada(valor: String) = _uiState.update { it.copy(descripcion = valor, error = null) }
-    fun onCategoriaCambiada(valor: String) = _uiState.update { it.copy(categoria = valor, error = null) }
+    fun onCategoriaCambiada(valor: CategoriaEjercicio) = _uiState.update { it.copy(categoria = valor, error = null) }
     fun onDuracionCambiada(valor: String) = _uiState.update { it.copy(duracionSegundos = valor, error = null) }
     fun onRepeticionesCambiadas(valor: String) = _uiState.update { it.copy(repeticiones = valor, error = null) }
+    fun onDiagnosticoAplicableAlternado(tipo: TipoDiagnostico) = _uiState.update { estado ->
+        val nuevos = if (tipo in estado.diagnosticosAplicables) {
+            estado.diagnosticosAplicables - tipo
+        } else {
+            estado.diagnosticosAplicables + tipo
+        }
+        estado.copy(diagnosticosAplicables = nuevos)
+    }
     fun onArchivoSeleccionado(uri: Uri?) {
         val esVideo = uri != null && context.contentResolver.getType(uri)?.startsWith("video/") == true
         _uiState.update { it.copy(archivoSeleccionado = uri, esVideoSeleccionado = esVideo, error = null) }
@@ -186,7 +200,8 @@ class EjercicioFormViewModel @Inject constructor(
 
     fun guardar() {
         val estado = _uiState.value
-        if (estado.nombre.isBlank() || estado.descripcion.isBlank() || estado.categoria.isBlank()) {
+        val categoria = estado.categoria
+        if (estado.nombre.isBlank() || estado.descripcion.isBlank() || categoria == null) {
             _uiState.update { it.copy(error = "Completa nombre, descripción y categoría.") }
             return
         }
@@ -219,11 +234,12 @@ class EjercicioFormViewModel @Inject constructor(
             id = ejercicioIdArg ?: "",
             nombre = estado.nombre.trim(),
             descripcion = estado.descripcion.trim(),
-            categoria = estado.categoria.trim(),
+            categoria = categoria,
             materialUrl = estado.materialUrlActual,
             duracionSegundos = duracion,
             repeticiones = repeticiones,
             patronesReferencia = patrones,
+            diagnosticosAplicables = estado.diagnosticosAplicables.toList(),
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,
         )

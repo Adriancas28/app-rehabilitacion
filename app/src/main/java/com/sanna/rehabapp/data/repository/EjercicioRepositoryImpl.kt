@@ -8,8 +8,10 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.sanna.rehabapp.domain.model.Articulacion
+import com.sanna.rehabapp.domain.model.CategoriaEjercicio
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
+import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -60,7 +62,7 @@ class EjercicioRepositoryImpl @Inject constructor(
         val datos = mapOf(
             "nombre" to ejercicio.nombre,
             "descripcion" to ejercicio.descripcion,
-            "categoria" to ejercicio.categoria,
+            "categoria" to ejercicio.categoria.aFirestore(),
             "materialUrl" to materialUrl,
             "duracionSegundos" to ejercicio.duracionSegundos,
             "repeticiones" to ejercicio.repeticiones,
@@ -71,6 +73,7 @@ class EjercicioRepositoryImpl @Inject constructor(
                     "anguloMax" to it.anguloMax,
                 )
             },
+            "diagnosticosAplicables" to ejercicio.diagnosticosAplicables.map { it.aFirestore() },
             "creadoPor" to ejercicio.creadoPor,
             "fechaCreacion" to (ejercicio.fechaCreacion ?: FieldValue.serverTimestamp()),
             "activo" to ejercicio.activo,
@@ -100,6 +103,10 @@ class EjercicioRepositoryImpl @Inject constructor(
 
 private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
     if (!exists()) return null
+    // Ejercicios creados antes de este cambio pueden tener categoria como
+    // texto libre; ya no es un valor valido del enum y se descartan aqui,
+    // igual que el resto de catalogos cerrados del proyecto.
+    val categoria = CategoriaEjercicio.desdeFirestoreOrNull(getString("categoria")) ?: return null
     val patrones = (get("patronesReferencia") as? List<*>)
         ?.mapNotNull { (it as? Map<*, *>)?.toPatronReferencia() }
         ?: emptyList()
@@ -107,11 +114,14 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
         id = id,
         nombre = getString("nombre") ?: "",
         descripcion = getString("descripcion") ?: "",
-        categoria = getString("categoria") ?: "",
+        categoria = categoria,
         materialUrl = getString("materialUrl") ?: "",
         duracionSegundos = getLong("duracionSegundos")?.toInt() ?: 30,
         repeticiones = getLong("repeticiones")?.toInt() ?: 1,
         patronesReferencia = patrones,
+        diagnosticosAplicables = (get("diagnosticosAplicables") as? List<*>)
+            ?.mapNotNull { TipoDiagnostico.desdeFirestoreOrNull(it as? String) }
+            ?: emptyList(),
         creadoPor = getString("creadoPor") ?: "",
         fechaCreacion = getDate("fechaCreacion"),
         activo = getBoolean("activo") ?: true,
