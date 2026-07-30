@@ -166,6 +166,9 @@ usuarios/{uid}
                                 TipoDiagnostico que elige el fisioterapeuta
                                 de un catálogo cerrado — HU01-CA06, revisado
                                 en Sprint 3 de texto libre a catálogo)
+  - dni, edad                 (solo si rol = paciente; capturados por el
+                                administrador al registrarlo — HU20-CA02,
+                                revisión de Sprint 5)
   - fechaRegistro
 
   usuarios/{pacienteId}/sesiones/{sesionId}
@@ -650,10 +653,24 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 **Deseo:** Registrar, editar y eliminar cuentas de pacientes, y asignarles su fisioterapeuta correspondiente
 **Propósito:** Administrar a los pacientes atendidos por la clínica sin depender de herramientas de línea de comandos.
 - CA01: Dado que el administrador acceda al sistema, cuando seleccione "Pacientes" en el panel de administración, entonces el sistema muestra la lista de pacientes registrados.
-- CA02: Dado que desee registrar un paciente, cuando complete nombre, correo y contraseña, entonces el sistema crea la cuenta y la muestra en la lista.
-- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes, entonces el sistema guarda los cambios.
+- CA02 *(revisión acordada, no en la versión original)*: Dado que desee
+  registrar un paciente, cuando complete nombre, correo, contraseña, DNI,
+  edad y diagnóstico (del mismo catálogo cerrado de HU01-CA06), entonces el
+  sistema crea la cuenta con esos datos y la muestra en la lista. La
+  contraseña nunca se muestra en texto plano en el formulario — solo es
+  legible temporalmente si el administrador presiona el ícono de ojo
+  (mismo control en el formulario de fisioterapeuta, aunque ahí no aplican
+  DNI/edad/diagnóstico por no ser datos clínicos del propio fisio).
+- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes (incluidos DNI, edad y diagnóstico), entonces el sistema guarda los cambios.
 - CA04: Dado que desee eliminar la cuenta de un paciente, cuando confirme la eliminación, entonces el sistema la elimina.
 - CA05: Dado que un paciente no tenga fisioterapeuta asignado, cuando el administrador seleccione uno desde la lista, entonces el sistema se lo asigna y la opción de asignar deja de estar disponible para ese paciente.
+- CA06 *(ampliación acordada, no en la versión original)*: Dado que consulte
+  la lista de pacientes, cuando un paciente ya tenga fisioterapeuta
+  asignado, entonces el sistema muestra el nombre de ese fisioterapeuta en
+  su tarjeta (en vez del botón de asignar). De forma simétrica (relación
+  de uno a muchos: un fisioterapeuta puede tener varios pacientes), la
+  lista de fisioterapeutas (HU21) muestra en la tarjeta de cada uno cuántos
+  pacientes tiene asignados actualmente.
 
 #### HU21 — Gestionar cuentas de fisioterapeutas
 **Rol:** Administrador

@@ -42,8 +42,24 @@ class AdminRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
-    override suspend fun crearPaciente(nombre: String, email: String, password: String): Result<Unit> =
-        crearCuenta(nombre, email, password, Rol.PACIENTE)
+    override suspend fun crearPaciente(
+        nombre: String,
+        email: String,
+        password: String,
+        dni: String,
+        edad: Int,
+        tipoDiagnostico: TipoDiagnostico,
+    ): Result<Unit> = crearCuenta(
+        nombre,
+        email,
+        password,
+        Rol.PACIENTE,
+        datosAdicionales = mapOf(
+            "dni" to dni,
+            "edad" to edad,
+            "tipoDiagnostico" to tipoDiagnostico.aFirestore(),
+        ),
+    )
 
     override suspend fun crearFisioterapeuta(nombre: String, email: String, password: String): Result<Unit> =
         crearCuenta(nombre, email, password, Rol.FISIOTERAPEUTA)
@@ -59,6 +75,7 @@ class AdminRepositoryImpl @Inject constructor(
         email: String,
         password: String,
         rol: Rol,
+        datosAdicionales: Map<String, Any> = emptyMap(),
     ): Result<Unit> = runCatching {
         val appTemporal = obtenerAppTemporal()
         val authTemporal = FirebaseAuth.getInstance(appTemporal)
@@ -71,7 +88,7 @@ class AdminRepositoryImpl @Inject constructor(
                 "email" to email,
                 "rol" to rol.aFirestore(),
                 "fechaRegistro" to FieldValue.serverTimestamp(),
-            )
+            ) + datosAdicionales
             firestore.collection(COLECCION_USUARIOS).document(uid).set(datos).await()
             Unit
         } finally {
@@ -90,6 +107,29 @@ class AdminRepositoryImpl @Inject constructor(
         firestore.collection(COLECCION_USUARIOS)
             .document(uid)
             .update(mapOf("nombre" to nombre, "email" to email))
+            .await()
+        Unit
+    }
+
+    override suspend fun actualizarPaciente(
+        uid: String,
+        nombre: String,
+        email: String,
+        dni: String,
+        edad: Int,
+        tipoDiagnostico: TipoDiagnostico,
+    ): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS)
+            .document(uid)
+            .update(
+                mapOf(
+                    "nombre" to nombre,
+                    "email" to email,
+                    "dni" to dni,
+                    "edad" to edad,
+                    "tipoDiagnostico" to tipoDiagnostico.aFirestore(),
+                ),
+            )
             .await()
         Unit
     }
@@ -119,6 +159,8 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         rol = Rol.desdeFirestore(rolStr),
         fisioterapeutaId = getString("fisioterapeutaId"),
         tipoDiagnostico = TipoDiagnostico.desdeFirestoreOrNull(getString("tipoDiagnostico")),
+        dni = getString("dni"),
+        edad = (get("edad") as? Number)?.toInt(),
         fechaRegistro = getDate("fechaRegistro"),
     )
 }
