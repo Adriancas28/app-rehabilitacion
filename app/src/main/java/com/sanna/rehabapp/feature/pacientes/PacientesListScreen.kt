@@ -26,7 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraBusqueda
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
@@ -147,7 +146,7 @@ fun PacientesListScreen(
                             nombre = paciente.nombre,
                             subtitulo = etiquetaDiagnosticos(paciente) ?: paciente.email,
                             onClick = { onPacienteSeleccionado(paciente.uid) },
-                            modifier = Modifier.padding(vertical = 4.dp),
+                            modifier = Modifier.padding(vertical = Spacing.xs),
                             contenidoFinal = {
                                 Icon(
                                     Icons.Filled.ChevronRight,

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -32,6 +33,15 @@ fun BarraBusqueda(
             onValueChange = onValorCambiado,
             placeholder = { Text(placeholder) },
             leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            trailingIcon = if (valor.isNotEmpty()) {
+                {
+                    IconButton(onClick = { onValorCambiado("") }) {
+                        Icon(Icons.Filled.Clear, contentDescription = "Limpiar búsqueda")
+                    }
+                }
+            } else {
+                null
+            },
             singleLine = true,
             modifier = Modifier.weight(1f),
         )
