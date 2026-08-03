@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.TaskAlt
-import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,7 +59,7 @@ fun HistorialSesionesScreen(
             // completadas y racha de días consecutivos.
             Row(modifier = Modifier.fillMaxWidth()) {
                 TarjetaEstadistica(
-                    icono = Icons.Filled.TrendingUp,
+                    icono = Icons.AutoMirrored.Filled.TrendingUp,
                     valor = "${uiState.resumen.porcentajeGeneral.toInt()}%",
                     etiqueta = "Progreso general",
                     modifier = Modifier.weight(1f),
@@ -106,7 +106,7 @@ fun HistorialSesionesScreen(
                 else -> LazyColumn {
                     items(uiState.sesiones, key = { it.sesionId }) { item ->
                         TarjetaConIcono(
-                            icono = Icons.Filled.EventNote,
+                            icono = Icons.AutoMirrored.Filled.EventNote,
                             titulo = item.ejercicio.nombre,
                             subtitulo = item.sesion.fechaEjecucion?.let(::formatearFecha) ?: "Fecha no disponible",
                             onClick = { onSesionSeleccionada(item.sesionId) },
@@ -115,7 +115,7 @@ fun HistorialSesionesScreen(
                                     Box(
                                         modifier = Modifier
                                             .background(MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.small)
-                                            .padding(horizontal = Spacing.sm + 2.dp, vertical = 4.dp),
+                                            .padding(horizontal = Spacing.sm + 2.dp, vertical = Spacing.xs),
                                     ) {
                                         Text(
                                             text = "${resultado.porcentajeEjecucion.toInt()}%",

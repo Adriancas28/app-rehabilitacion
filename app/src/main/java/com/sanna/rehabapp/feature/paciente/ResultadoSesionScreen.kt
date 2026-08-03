@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.automirrored.filled.Comment
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -177,7 +177,7 @@ private fun TarjetaAngulo(angulo: AnguloDetectado) {
 private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
     TarjetaBase(relleno = Spacing.sm + 6.dp) {
         Row(verticalAlignment = Alignment.Top) {
-            Icon(Icons.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
         }

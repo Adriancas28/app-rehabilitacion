@@ -146,7 +146,7 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion, onEditar: () -> U
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
                 recomendacion.fecha?.let { fecha ->
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
                         text = formatearFecha(fecha),
                         style = MaterialTheme.typography.bodySmall,

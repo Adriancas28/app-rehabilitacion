@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -313,7 +313,7 @@ private fun TarjetaSesion(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.EventNote,
+                Icons.AutoMirrored.Filled.EventNote,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )

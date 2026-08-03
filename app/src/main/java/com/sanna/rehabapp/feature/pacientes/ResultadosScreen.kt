@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.EventNote
+import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.SearchOff
@@ -125,7 +125,7 @@ fun ResultadosScreen(
 @Composable
 private fun TarjetaResultado(item: SesionConDetalle, onClick: () -> Unit) {
     TarjetaConIcono(
-        icono = Icons.Filled.EventNote,
+        icono = Icons.AutoMirrored.Filled.EventNote,
         titulo = item.ejercicio?.nombre ?: "Ejercicio eliminado",
         subtitulo = item.nombrePaciente,
         onClick = onClick,
