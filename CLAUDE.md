@@ -1202,34 +1202,34 @@ CON EL OBJETIVO DE MANTENER MI INFORMACIÓN DE CONTACTO ACTUALIZADA Y TENER UN �
 **Criterios de Aceptación**
 
 CA01
-Dado que el paciente accede a la pantalla "Perfil",
-Cuando la pantalla termina de cargar,
-Entonces el sistema muestra su nombre, correo electrónico, DNI, edad, diagnóstico(s) registrado(s) y el fisioterapeuta asignado (si tiene uno) — los mismos atributos ya definidos en `Usuario`/`Paciente` (sección 5/6), sin campos nuevos.
+Dado que el paciente acceda al sistema,
+Cuando seleccione "Perfil",
+Entonces el sistema muestra su nombre, correo electrónico, DNI, edad, diagnóstico(s) registrado(s) y el fisioterapeuta asignado.
 
-CA02 *(ampliación acordada — antes solo el administrador podía editar el nombre de un paciente, HU20-CA03; ya es posible sin cambios en las Firestore Security Rules, que permiten al dueño del documento escribir en él)*
-Dado que el paciente está en la pantalla "Perfil",
+CA02
+Dado que el paciente consulte su perfil,
 Cuando edite su nombre y confirme el cambio,
 Entonces el sistema guarda el nuevo nombre.
 
 CA03
-Dado que el paciente está en la pantalla "Perfil",
+Dado que el paciente consulte su perfil,
 Cuando visualice su correo electrónico, DNI, edad, diagnóstico(s) y fisioterapeuta asignado,
-Entonces estos atributos se muestran en modo solo lectura, sin ningún control de edición — esos datos siguen siendo responsabilidad exclusiva del administrador (HU20) y, en el caso del diagnóstico, también del fisioterapeuta (HU01-CA06).
+Entonces el sistema los muestra en modo solo lectura, sin controles de edición.
 
 CA04
-Dado que el paciente está en la pantalla "Perfil",
-Cuando seleccione la opción "Cerrar sesión",
-Entonces el sistema muestra un diálogo de confirmación con el mensaje "¿Seguro que deseas cerrar sesión?".
+Dado que el paciente esté en la pantalla "Perfil",
+Cuando seleccione "Cerrar sesión",
+Entonces el sistema muestra un diálogo de confirmación.
 
 CA05
-Dado que el sistema muestra el diálogo de confirmación de cierre de sesión,
+Dado que el sistema muestre el diálogo de confirmación de cierre de sesión,
 Cuando el paciente confirme la acción,
-Entonces el sistema finaliza su sesión (RNF02-CA04) y lo redirige a la pantalla de Login.
+Entonces el sistema finaliza su sesión y lo redirige a la pantalla de Login.
 
 CA06
 Dado que el paciente navegue por cualquier otra pantalla de la aplicación,
 Cuando busque la opción de cerrar sesión,
-Entonces no la encuentra en ninguna otra pantalla — "Perfil" es la única pantalla desde la que el paciente puede cerrar sesión.
+Entonces no la encuentra — "Perfil" es la única pantalla desde la que el paciente puede cerrar sesión.
 
 #### HU23 — Consultar y editar mi perfil (Fisioterapeuta)
 
@@ -1247,34 +1247,34 @@ CON EL OBJETIVO DE MANTENER MI INFORMACIÓN DE CONTACTO ACTUALIZADA Y TENER UN �
 **Criterios de Aceptación**
 
 CA01
-Dado que el fisioterapeuta accede a la pantalla "Perfil",
-Cuando la pantalla termina de cargar,
-Entonces el sistema muestra su nombre y correo electrónico — los mismos atributos ya definidos en `Usuario` para este rol (sección 5/6), sin campos nuevos (el fisioterapeuta no tiene DNI/edad/diagnóstico; esos son exclusivos del paciente).
+Dado que el fisioterapeuta acceda al sistema,
+Cuando seleccione "Perfil",
+Entonces el sistema muestra su nombre y correo electrónico.
 
-CA02 *(ampliación acordada — antes solo el administrador podía editar el nombre de un fisioterapeuta, HU21-CA03; misma base técnica que HU22-CA02)*
-Dado que el fisioterapeuta está en la pantalla "Perfil",
+CA02
+Dado que el fisioterapeuta consulte su perfil,
 Cuando edite su nombre y confirme el cambio,
 Entonces el sistema guarda el nuevo nombre.
 
 CA03
-Dado que el fisioterapeuta está en la pantalla "Perfil",
+Dado que el fisioterapeuta consulte su perfil,
 Cuando visualice su correo electrónico,
-Entonces este atributo se muestra en modo solo lectura, sin ningún control de edición — su cambio sigue siendo responsabilidad exclusiva del administrador (HU21).
+Entonces el sistema lo muestra en modo solo lectura, sin controles de edición.
 
 CA04
-Dado que el fisioterapeuta está en la pantalla "Perfil",
-Cuando seleccione la opción "Cerrar sesión",
-Entonces el sistema muestra un diálogo de confirmación con el mensaje "¿Seguro que deseas cerrar sesión?".
+Dado que el fisioterapeuta esté en la pantalla "Perfil",
+Cuando seleccione "Cerrar sesión",
+Entonces el sistema muestra un diálogo de confirmación.
 
 CA05
-Dado que el sistema muestra el diálogo de confirmación de cierre de sesión,
+Dado que el sistema muestre el diálogo de confirmación de cierre de sesión,
 Cuando el fisioterapeuta confirme la acción,
-Entonces el sistema finaliza su sesión (RNF02-CA04) y lo redirige a la pantalla de Login.
+Entonces el sistema finaliza su sesión y lo redirige a la pantalla de Login.
 
 CA06
 Dado que el fisioterapeuta navegue por cualquier otra pantalla de la aplicación,
 Cuando busque la opción de cerrar sesión,
-Entonces no la encuentra en ninguna otra pantalla — "Perfil" es la única pantalla desde la que el fisioterapeuta puede cerrar sesión.
+Entonces no la encuentra — "Perfil" es la única pantalla desde la que el fisioterapeuta puede cerrar sesión.
 
 ---
 
