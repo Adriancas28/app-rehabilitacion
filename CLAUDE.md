@@ -149,7 +149,7 @@ aquí:
 | `SeccionFormulario` | `Tarjetas.kt` | Título + `TarjetaBase` — agrupar campos relacionados en un formulario largo |
 | `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña; `soloUnaLinea = false` + `lineasMinimas` para texto largo |
 | `CampoSoloLectura` | `Inputs.kt` | Contraparte de solo lectura de `CampoTexto` — etiqueta + valor, sin control de edición (Perfil, HU22/HU23) |
-| `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
+| `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos. `mostrarPunto = true` agrega un punto de color antes del texto (ej. "● Cámara en vivo" en HU06) |
 | `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
 | `FilaChipsFiltro<T>` | `FiltroChips.kt` | Fila de `FilterChip` de selección única — filtro por período/ejercicio, reemplaza el Row+FilterChip repetido a mano |
 | `ChecklistAgrupado<T>` | `ChecklistAgrupado.kt` | Selección múltiple agrupada (ej. diagnósticos por región) — checkbox + texto por opción, con encabezado de grupo |
@@ -159,7 +159,7 @@ aquí:
 | `TarjetaEjercicio` | `TarjetaEjercicio.kt` | Tarjeta de grid 2 columnas con menú "⋮" opcional |
 | `BarraSuperior` | `BarraSuperior.kt` | TopAppBar con el color/estilo del Design System |
 | `BarraBusqueda` | `BarraBusqueda.kt` | Búsqueda + botón de filtro opcional |
-| `ProgresoCircular` / `ProgresoLineal` | `ProgresoCircular.kt` | Anillo con cifra centrada / barra lineal — los dos indicadores de progreso |
+| `ProgresoCircular` / `ProgresoLineal` | `ProgresoCircular.kt` | Anillo con cifra centrada / barra lineal — los dos indicadores de progreso. `ProgresoCircular` acepta `texto`/`estiloTexto` opcionales para mostrar otra cifra además del porcentaje (ej. segundos restantes en HU06) |
 | `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |

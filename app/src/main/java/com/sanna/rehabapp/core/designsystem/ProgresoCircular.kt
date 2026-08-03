@@ -11,6 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -24,6 +25,8 @@ fun ProgresoCircular(
     modifier: Modifier = Modifier,
     tamano: Dp = 64.dp,
     grosor: Dp = 6.dp,
+    texto: String = "${(porcentaje * 100).toInt()}%",
+    estiloTexto: TextStyle = MaterialTheme.typography.labelLarge,
 ) {
     Box(modifier = modifier.size(tamano), contentAlignment = Alignment.Center) {
         CircularProgressIndicator(
@@ -32,7 +35,7 @@ fun ProgresoCircular(
             strokeWidth = grosor,
             trackColor = MaterialTheme.colorScheme.surfaceVariant,
         )
-        Text(text = "${(porcentaje * 100).toInt()}%", style = MaterialTheme.typography.labelLarge)
+        Text(text = texto, style = estiloTexto)
     }
 }
 

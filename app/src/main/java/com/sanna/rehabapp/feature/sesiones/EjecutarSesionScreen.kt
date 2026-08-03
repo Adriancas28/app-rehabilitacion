@@ -17,7 +17,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
@@ -30,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -47,14 +51,23 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
+import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.ProgresoCircular
+import com.sanna.rehabapp.core.designsystem.TipoBadge
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.core.tts.rememberLectorInstrucciones
+
+// HU06-CA02/CA06: mismos valores que EjecutarSesionViewModel — se usan
+// aquí únicamente para calcular el porcentaje del anillo de progreso
+// (visual), no para ninguna decisión de negocio.
+private const val SEGUNDOS_PREPARACION_INICIAL = 10
+private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 
 @Composable
 fun EjecutarSesionScreen(
@@ -96,7 +109,20 @@ fun EjecutarSesionScreen(
     }
 
     Scaffold(
-        topBar = { BarraSuperior(titulo = uiState.ejercicio?.nombre ?: "", onNavegarAtras = onVolver) },
+        topBar = {
+            BarraSuperior(
+                titulo = uiState.ejercicio?.nombre ?: "",
+                onNavegarAtras = onVolver,
+                acciones = {
+                    // Fiel al mockup original: "Salir" es un acceso adicional
+                    // a la misma acción que la flecha atrás — abandona sin
+                    // registrar, distinto de "Finalizar ejercicio" (CA07).
+                    TextButton(onClick = onVolver) {
+                        Text("Salir", color = MaterialTheme.colorScheme.onPrimary)
+                    }
+                },
+            )
+        },
     ) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
@@ -154,38 +180,69 @@ fun EjecutarSesionScreen(
                     )
                 }
 
-                // Cámara en vivo a un lado y el panel de progreso/instrucciones
-                // al otro — igual que el mockup de referencia (HU06/HU07).
-                else -> Row(modifier = Modifier.fillMaxSize()) {
-                    Box(
+                // Fiel al mockup original (HU06): video + instrucciones lado a
+                // lado en la mitad superior, repetición/temporizador/botón
+                // "Finalizar ejercicio" a todo el ancho debajo.
+                else -> Column(modifier = Modifier.fillMaxSize()) {
+                    Row(
                         modifier = Modifier
                             .weight(1f)
-                            .fillMaxHeight(),
+                            .fillMaxWidth()
+                            .padding(Spacing.md),
                     ) {
-                        CamaraConDeteccionPose(
-                            modifier = Modifier.fillMaxSize(),
-                            onResultado = viewModel::procesarResultadoPose,
-                            onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
-                        )
-                        // HU10-CA01/CA02: ícono mínimo, sin texto — la
-                        // corrección en sí la lleva la voz (CA06). El
-                        // paciente no puede leer la pantalla mientras se mueve.
-                        IconoEstadoCorreccion(
-                            enCorreccion = uiState.enCorreccion,
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(Spacing.sm + 2.dp),
-                        )
+                                .weight(1.3f)
+                                .fillMaxHeight()
+                                .clip(MaterialTheme.shapes.large),
+                        ) {
+                            CamaraConDeteccionPose(
+                                modifier = Modifier.fillMaxSize(),
+                                onResultado = viewModel::procesarResultadoPose,
+                                onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                            )
+                            BadgeEstado(
+                                texto = "Cámara en vivo",
+                                tipo = TipoBadge.EXITO,
+                                mostrarPunto = true,
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(Spacing.sm),
+                            )
+                            // HU10-CA01/CA02: ícono mínimo, sin texto — la
+                            // corrección en sí la lleva la voz (CA06). El
+                            // paciente no puede leer la pantalla mientras se mueve.
+                            IconoEstadoCorreccion(
+                                enCorreccion = uiState.enCorreccion,
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(Spacing.sm),
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(Spacing.md))
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            Text(text = "Instrucciones", style = MaterialTheme.typography.titleSmall)
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            Text(
+                                text = uiState.ejercicio?.descripcion.orEmpty(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     PanelProgreso(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
+                        modifier = Modifier.fillMaxWidth(),
                         enPreparacion = uiState.enPreparacion,
                         segundosPreparacion = uiState.segundosPreparacion,
                         repeticionActual = uiState.repeticionActual,
                         totalRepeticiones = uiState.totalRepeticiones,
                         segundosRestantes = uiState.segundosRestantes,
+                        duracionRepeticionSegundos = uiState.ejercicio?.duracionSegundos ?: 1,
                         enDescanso = uiState.enDescanso,
                         segundosDescanso = uiState.segundosDescanso,
                         onFinalizar = viewModel::finalizarAntesDeTiempo,
@@ -243,9 +300,8 @@ private fun IconoEstadoCorreccion(enCorreccion: Boolean, modifier: Modifier = Mo
     }
 }
 
-// HU06 — panel lateral con la repetición actual y el tiempo restante. Sin
-// texto de instrucciones estático: la retroalimentación real será por voz
-// en tiempo real (HU10-CA01/CA06, Sprint 4), no un texto fijo en pantalla.
+// HU06 — repetición actual + temporizador circular + botón de finalizar,
+// a todo el ancho debajo del video y las instrucciones (mockup original).
 @Composable
 private fun PanelProgreso(
     modifier: Modifier,
@@ -254,6 +310,7 @@ private fun PanelProgreso(
     repeticionActual: Int,
     totalRepeticiones: Int,
     segundosRestantes: Int,
+    duracionRepeticionSegundos: Int,
     enDescanso: Boolean,
     segundosDescanso: Int,
     onFinalizar: () -> Unit,
@@ -264,20 +321,15 @@ private fun PanelProgreso(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(text = "Prepárate", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Prepárate", style = MaterialTheme.typography.titleLarge)
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
-            Box(
-                modifier = Modifier
-                    .size(96.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "$segundosPreparacion s",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
+            ProgresoCircular(
+                porcentaje = 1f - (segundosPreparacion.toFloat() / SEGUNDOS_PREPARACION_INICIAL),
+                tamano = 120.dp,
+                grosor = 8.dp,
+                texto = "$segundosPreparacion s",
+                estiloTexto = MaterialTheme.typography.titleLarge,
+            )
             Spacer(modifier = Modifier.height(Spacing.sm))
             Text(
                 text = "El monitoreo comienza en breve…",
@@ -294,25 +346,23 @@ private fun PanelProgreso(
         if (totalRepeticiones > 1) {
             Text(
                 text = "Repetición $repeticionActual/$totalRepeticiones",
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleLarge,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
         }
 
-        Box(
-            modifier = Modifier
-                .size(96.dp)
-                .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = if (enDescanso) "$segundosDescanso s" else "$segundosRestantes s",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                )
-            }
+        val porcentaje = if (enDescanso) {
+            1f - (segundosDescanso.toFloat() / SEGUNDOS_DESCANSO_ENTRE_REPETICIONES)
+        } else {
+            1f - (segundosRestantes.toFloat() / duracionRepeticionSegundos.coerceAtLeast(1))
         }
+        ProgresoCircular(
+            porcentaje = porcentaje,
+            tamano = 120.dp,
+            grosor = 8.dp,
+            texto = if (enDescanso) "$segundosDescanso s" else "$segundosRestantes s",
+            estiloTexto = MaterialTheme.typography.titleLarge,
+        )
         Spacer(modifier = Modifier.height(Spacing.sm))
         Text(
             text = if (enDescanso) "Descansa, viene la repetición ${repeticionActual + 1}…" else "Monitoreando…",
@@ -326,7 +376,10 @@ private fun PanelProgreso(
             onClick = onFinalizar,
             esDestructivo = true,
             icono = Icons.Filled.Stop,
-            modifier = Modifier.width(220.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = Spacing.lg),
         )
+        Spacer(modifier = Modifier.height(Spacing.sm))
     }
 }
