@@ -19,14 +19,12 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.DialogoConfirmacion
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaEjercicio
@@ -151,23 +150,15 @@ fun EjerciciosListScreen(
     }
 
     ejercicioAEliminar?.let { ejercicio ->
-        AlertDialog(
-            onDismissRequest = { ejercicioAEliminar = null },
-            title = { Text("Eliminar ejercicio") },
-            text = {
-                Text("¿Seguro que deseas eliminar \"${ejercicio.nombre}\"? Esta acción no se puede deshacer.")
+        DialogoConfirmacion(
+            titulo = "Eliminar ejercicio",
+            mensaje = "¿Seguro que deseas eliminar \"${ejercicio.nombre}\"? Esta acción no se puede deshacer.",
+            textoConfirmar = "Eliminar",
+            onConfirmar = {
+                viewModel.eliminar(ejercicio.id)
+                ejercicioAEliminar = null
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.eliminar(ejercicio.id)
-                    ejercicioAEliminar = null
-                }) {
-                    Text("Eliminar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { ejercicioAEliminar = null }) { Text("Cancelar") }
-            },
+            onCancelar = { ejercicioAEliminar = null },
         )
     }
 }
