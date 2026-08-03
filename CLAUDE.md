@@ -148,6 +148,7 @@ aquí:
 | `TarjetaBase` | `Tarjetas.kt` | Card base — toda tarjeta nueva la envuelve, en vez de un `Card` suelto |
 | `SeccionFormulario` | `Tarjetas.kt` | Título + `TarjetaBase` — agrupar campos relacionados en un formulario largo |
 | `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña; `soloUnaLinea = false` + `lineasMinimas` para texto largo |
+| `CampoSoloLectura` | `Inputs.kt` | Contraparte de solo lectura de `CampoTexto` — etiqueta + valor, sin control de edición (Perfil, HU22/HU23) |
 | `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
 | `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
 | `FilaChipsFiltro<T>` | `FiltroChips.kt` | Fila de `FilterChip` de selección única — filtro por período/ejercicio, reemplaza el Row+FilterChip repetido a mano |
@@ -1275,6 +1276,24 @@ CA06
 Dado que el fisioterapeuta navegue por cualquier otra pantalla de la aplicación,
 Cuando busque la opción de cerrar sesión,
 Entonces no la encuentra — "Perfil" es la única pantalla desde la que el fisioterapeuta puede cerrar sesión.
+
+> **HU22/HU23 implementadas.** `feature/perfil/PerfilViewModel.kt` +
+> `PerfilScreen.kt` (`PerfilPacienteScreen`/`PerfilFisioterapeutaScreen`,
+> comparten el mismo `ContenidoPerfil` privado). `UsuarioRepository`
+> ganó `actualizarNombre(uid, nombre)` — mismo patrón que
+> `actualizarDiagnosticos`, sin cambios en Firestore Security Rules
+> (`esDueno(uid)` ya permitía el `update`). Nuevo componente de Design
+> System `CampoSoloLectura` (contraparte de solo lectura de
+> `CampoTexto`). Rutas `paciente/perfil` y `fisioterapeuta/perfil`
+> (`Rutas.PERFIL_PACIENTE`/`PERFIL_FISIOTERAPEUTA`) — una por rol, ya que
+> cada pantalla de Perfil recibe parámetros de navegación distintos
+> (el fisioterapeuta la ve como una pestaña más de su barra lateral; el
+> paciente, como pantalla de detalle con botón atrás). El ícono de
+> cerrar sesión se retiró de `PacientesListScreen` (HU01) y
+> `EjerciciosAsignadosScreen` (HU04); el administrador conserva su
+> logout, ahora como opción "Cerrar sesión" dentro de la barra de
+> navegación lateral (`AdminPacientesScreen`/`AdminFisioterapeutasScreen`),
+> con el mismo `DialogoConfirmacion` antes de cerrar sesión.
 
 ---
 

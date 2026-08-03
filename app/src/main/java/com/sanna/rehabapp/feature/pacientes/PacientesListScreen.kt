@@ -11,16 +11,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -33,7 +32,6 @@ import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaEstadistica
 import com.sanna.rehabapp.core.designsystem.TarjetaPersona
-import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
@@ -51,9 +49,8 @@ fun PacientesListScreen(
     onPacienteSeleccionado: (String) -> Unit,
     onNavegarAEjercicios: () -> Unit,
     onNavegarAResultados: () -> Unit,
-    onCerrarSesion: () -> Unit,
+    onNavegarAPerfil: () -> Unit,
     viewModel: PacientesViewModel = hiltViewModel(),
-    cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -74,20 +71,10 @@ fun PacientesListScreen(
                 seleccionado = false,
                 onClick = onNavegarAResultados,
             ),
+            ItemBarraLateral("Perfil", Icons.Filled.Person, seleccionado = false, onClick = onNavegarAPerfil),
         ),
         topBar = { onAlternarMenu ->
-            BarraSuperior(
-                titulo = "Pacientes",
-                onAlternarMenu = onAlternarMenu,
-                acciones = {
-                    IconButton(onClick = {
-                        cerrarSesionViewModel.cerrarSesion()
-                        onCerrarSesion()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
-                    }
-                },
-            )
+            BarraSuperior(titulo = "Pacientes", onAlternarMenu = onAlternarMenu)
         },
     ) { padding ->
         Column(

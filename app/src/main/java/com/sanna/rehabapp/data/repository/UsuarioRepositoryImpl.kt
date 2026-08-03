@@ -49,6 +49,14 @@ class UsuarioRepositoryImpl @Inject constructor(
             .await()
         Unit
     }
+
+    override suspend fun actualizarNombre(uid: String, nombre: String): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS)
+            .document(uid)
+            .set(mapOf("nombre" to nombre), SetOptions.merge())
+            .await()
+        Unit
+    }
 }
 
 private fun List<DiagnosticoRegistrado>.aFirestore(): List<Map<String, Any>> = map {

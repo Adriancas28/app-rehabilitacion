@@ -1,6 +1,9 @@
 package com.sanna.rehabapp.core.designsystem
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import com.sanna.rehabapp.core.theme.Spacing
 
 // Design System — campo de texto genérico. Toda pantalla nueva usa este
 // en vez de un OutlinedTextField suelto. Cuando `esPassword = true`,
@@ -86,4 +90,20 @@ fun CampoTexto(
         ),
         modifier = modifier.fillMaxWidth(),
     )
+}
+
+// Design System — contraparte de solo lectura de CampoTexto: etiqueta +
+// valor, sin ningún control de edición. Usar para atributos que el
+// usuario puede consultar pero no modificar (ej. Perfil, HU22/HU23).
+@Composable
+fun CampoSoloLectura(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(Spacing.xs))
+        Text(text = valor, style = MaterialTheme.typography.bodyLarge)
+    }
 }

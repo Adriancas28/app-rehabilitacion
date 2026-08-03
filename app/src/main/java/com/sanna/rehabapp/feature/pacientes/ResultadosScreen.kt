@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -48,6 +49,7 @@ fun ResultadosScreen(
     onCambiarMenuVisible: (Boolean) -> Unit,
     onNavegarAPacientes: () -> Unit,
     onNavegarAEjercicios: () -> Unit,
+    onNavegarAPerfil: () -> Unit,
     onVerResultado: (pacienteId: String, sesionId: String) -> Unit,
     viewModel: ResultadosViewModel = hiltViewModel(),
 ) {
@@ -65,6 +67,7 @@ fun ResultadosScreen(
                 onClick = onNavegarAEjercicios,
             ),
             ItemBarraLateral("Resultados", Icons.Filled.Assessment, seleccionado = true, onClick = {}),
+            ItemBarraLateral("Perfil", Icons.Filled.Person, seleccionado = false, onClick = onNavegarAPerfil),
         ),
         topBar = { onAlternarMenu -> BarraSuperior(titulo = "Resultados", onAlternarMenu = onAlternarMenu) },
     ) { padding ->

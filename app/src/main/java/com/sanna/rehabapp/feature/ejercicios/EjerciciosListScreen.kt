@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material3.DropdownMenuItem
@@ -54,6 +55,7 @@ fun EjerciciosListScreen(
     onEditarEjercicio: (String) -> Unit,
     onNavegarAPacientes: () -> Unit,
     onNavegarAResultados: () -> Unit,
+    onNavegarAPerfil: () -> Unit,
     viewModel: EjerciciosViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -76,6 +78,7 @@ fun EjerciciosListScreen(
                 seleccionado = false,
                 onClick = onNavegarAResultados,
             ),
+            ItemBarraLateral("Perfil", Icons.Filled.Person, seleccionado = false, onClick = onNavegarAPerfil),
         ),
         topBar = { onAlternarMenu ->
             BarraSuperior(

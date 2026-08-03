@@ -51,6 +51,7 @@ fun AdminFisioterapeutasScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var fisioAEliminar by remember { mutableStateOf<Usuario?>(null) }
+    var confirmandoCierreSesion by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Confirmación visible (Snackbar) tras eliminar un fisioterapeuta —
@@ -79,6 +80,12 @@ fun AdminFisioterapeutasScreen(
                     seleccionado = true,
                     onClick = {},
                 ),
+                ItemBarraLateral(
+                    "Cerrar sesión",
+                    Icons.AutoMirrored.Filled.Logout,
+                    seleccionado = false,
+                    onClick = { confirmandoCierreSesion = true },
+                ),
             ),
             topBar = { onAlternarMenu ->
                 BarraSuperior(
@@ -87,12 +94,6 @@ fun AdminFisioterapeutasScreen(
                     acciones = {
                         IconButton(onClick = onRegistrarFisioterapeuta) {
                             Icon(Icons.Filled.Add, contentDescription = "Registrar fisioterapeuta")
-                        }
-                        IconButton(onClick = {
-                            cerrarSesionViewModel.cerrarSesion()
-                            onCerrarSesion()
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                         }
                     },
                 )
@@ -138,6 +139,20 @@ fun AdminFisioterapeutasScreen(
         }
 
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (confirmandoCierreSesion) {
+        DialogoConfirmacion(
+            titulo = "Cerrar sesión",
+            mensaje = "¿Seguro que deseas cerrar sesión?",
+            textoConfirmar = "Cerrar sesión",
+            onConfirmar = {
+                confirmandoCierreSesion = false
+                cerrarSesionViewModel.cerrarSesion()
+                onCerrarSesion()
+            },
+            onCancelar = { confirmandoCierreSesion = false },
+        )
     }
 
     fisioAEliminar?.let { fisio ->

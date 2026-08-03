@@ -16,6 +16,7 @@ import com.sanna.rehabapp.feature.pacientes.FisioResultadoSesionScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
 import com.sanna.rehabapp.feature.pacientes.ResultadosScreen
+import com.sanna.rehabapp.feature.perfil.PerfilFisioterapeutaScreen
 
 fun NavGraphBuilder.fisioterapeutaDestinos(
     navController: NavHostController,
@@ -35,10 +36,8 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onNavegarAResultados = {
                 navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
             },
-            onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_FISIOTERAPEUTA) { launchSingleTop = true }
             },
         )
     }
@@ -118,6 +117,9 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onNavegarAResultados = {
                 navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
             },
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_FISIOTERAPEUTA) { launchSingleTop = true }
+            },
         )
     }
     composable(Rutas.RESULTADOS) {
@@ -131,8 +133,32 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onNavegarAEjercicios = {
                 navController.navigate(Rutas.EJERCICIOS) { launchSingleTop = true }
             },
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_FISIOTERAPEUTA) { launchSingleTop = true }
+            },
             onVerResultado = { pacienteId, sesionId ->
                 navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
+            },
+        )
+    }
+    composable(Rutas.PERFIL_FISIOTERAPEUTA) {
+        var menuVisible by menuBarraLateralVisible
+        PerfilFisioterapeutaScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
+            onNavegarAPacientes = {
+                navController.navigate(Rutas.PACIENTES) { launchSingleTop = true }
+            },
+            onNavegarAEjercicios = {
+                navController.navigate(Rutas.EJERCICIOS) { launchSingleTop = true }
+            },
+            onNavegarAResultados = {
+                navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
+            },
+            onCerrarSesion = {
+                navController.navigate(Rutas.LOGIN) {
+                    popUpTo(Rutas.RAIZ) { inclusive = true }
+                }
             },
         )
     }

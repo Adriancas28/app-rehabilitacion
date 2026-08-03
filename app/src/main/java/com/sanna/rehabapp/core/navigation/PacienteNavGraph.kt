@@ -1,6 +1,5 @@
 package com.sanna.rehabapp.core.navigation
 
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
@@ -9,11 +8,11 @@ import com.sanna.rehabapp.feature.paciente.DetalleEjercicioAsignadoScreen
 import com.sanna.rehabapp.feature.paciente.EjerciciosAsignadosScreen
 import com.sanna.rehabapp.feature.paciente.HistorialSesionesScreen
 import com.sanna.rehabapp.feature.paciente.ResultadoSesionScreen
+import com.sanna.rehabapp.feature.perfil.PerfilPacienteScreen
 import com.sanna.rehabapp.feature.sesiones.EjecutarSesionScreen
 
 fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
     composable(Rutas.INICIO_PACIENTE) {
-        val cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel()
         EjerciciosAsignadosScreen(
             onEjercicioSeleccionado = { sesionId ->
                 navController.navigate(Rutas.detalleEjercicioAsignado(sesionId))
@@ -24,8 +23,15 @@ fun NavGraphBuilder.pacienteDestinos(navController: NavHostController) {
             onNavegarAHistorial = {
                 navController.navigate(Rutas.HISTORIAL_SESIONES)
             },
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_PACIENTE)
+            },
+        )
+    }
+    composable(Rutas.PERFIL_PACIENTE) {
+        PerfilPacienteScreen(
+            onVolver = { navController.popBackStack() },
             onCerrarSesion = {
-                cerrarSesionViewModel.cerrarSesion()
                 navController.navigate(Rutas.LOGIN) {
                     popUpTo(Rutas.RAIZ) { inclusive = true }
                 }

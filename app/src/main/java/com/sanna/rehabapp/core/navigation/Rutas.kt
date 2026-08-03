@@ -33,6 +33,14 @@ object Rutas {
     const val HISTORIAL_SESIONES = "paciente/historial"
     const val RESULTADO_SESION = "paciente/historial/{sesionId}"
 
+    // HU22/HU23 — Perfil de cuenta propia; "Cerrar sesión" vive únicamente
+    // aquí (una ruta por rol porque cada pantalla de Perfil recibe
+    // parámetros de navegación distintos: el fisioterapeuta la ve como una
+    // pestaña más de su barra lateral, el paciente como una pantalla de
+    // detalle con botón atrás).
+    const val PERFIL_PACIENTE = "paciente/perfil"
+    const val PERFIL_FISIOTERAPEUTA = "fisioterapeuta/perfil"
+
     const val ADMIN_PACIENTES = "admin/pacientes"
     const val ADMIN_PACIENTE_FORMULARIO = "admin/pacientes/formulario?usuarioId={usuarioId}"
     const val ADMIN_FISIOTERAPEUTAS = "admin/fisioterapeutas"

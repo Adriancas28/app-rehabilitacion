@@ -61,6 +61,7 @@ fun AdminPacientesScreen(
     val uiState by viewModel.uiState.collectAsState()
     var pacienteAEliminar by remember { mutableStateOf<Usuario?>(null) }
     var pacienteAAsignar by remember { mutableStateOf<Usuario?>(null) }
+    var confirmandoCierreSesion by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Confirmación visible (Snackbar) tras cualquier acción CRUD sobre un
@@ -84,6 +85,12 @@ fun AdminPacientesScreen(
                     seleccionado = false,
                     onClick = onNavegarAFisioterapeutas,
                 ),
+                ItemBarraLateral(
+                    "Cerrar sesión",
+                    Icons.AutoMirrored.Filled.Logout,
+                    seleccionado = false,
+                    onClick = { confirmandoCierreSesion = true },
+                ),
             ),
             topBar = { onAlternarMenu ->
                 BarraSuperior(
@@ -92,12 +99,6 @@ fun AdminPacientesScreen(
                     acciones = {
                         IconButton(onClick = onRegistrarPaciente) {
                             Icon(Icons.Filled.Add, contentDescription = "Registrar paciente")
-                        }
-                        IconButton(onClick = {
-                            cerrarSesionViewModel.cerrarSesion()
-                            onCerrarSesion()
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
                         }
                     },
                 )
@@ -147,6 +148,20 @@ fun AdminPacientesScreen(
         }
 
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+
+    if (confirmandoCierreSesion) {
+        DialogoConfirmacion(
+            titulo = "Cerrar sesión",
+            mensaje = "¿Seguro que deseas cerrar sesión?",
+            textoConfirmar = "Cerrar sesión",
+            onConfirmar = {
+                confirmandoCierreSesion = false
+                cerrarSesionViewModel.cerrarSesion()
+                onCerrarSesion()
+            },
+            onCancelar = { confirmandoCierreSesion = false },
+        )
     }
 
     pacienteAEliminar?.let { paciente ->

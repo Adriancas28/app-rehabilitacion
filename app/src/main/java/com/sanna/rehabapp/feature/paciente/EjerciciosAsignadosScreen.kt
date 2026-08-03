@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
@@ -38,7 +38,6 @@ import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaConIcono
-import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
 import com.sanna.rehabapp.core.theme.AmbarAlertaContenedor
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.core.theme.Spacing
@@ -51,9 +50,8 @@ fun EjerciciosAsignadosScreen(
     onEjercicioSeleccionado: (sesionId: String) -> Unit,
     onIniciarSesionDirecta: (sesionId: String) -> Unit,
     onNavegarAHistorial: () -> Unit,
-    onCerrarSesion: () -> Unit,
+    onNavegarAPerfil: () -> Unit,
     viewModel: EjerciciosAsignadosViewModel = hiltViewModel(),
-    cerrarSesionViewModel: CerrarSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val primerNombre = uiState.nombrePaciente.trim().substringBefore(" ")
@@ -76,11 +74,8 @@ fun EjerciciosAsignadosScreen(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = {
-                    cerrarSesionViewModel.cerrarSesion()
-                    onCerrarSesion()
-                }) {
-                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = "Cerrar sesión")
+                IconButton(onClick = onNavegarAPerfil) {
+                    Icon(Icons.Filled.Person, contentDescription = "Perfil")
                 }
             }
         },

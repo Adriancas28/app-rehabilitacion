@@ -14,4 +14,8 @@ interface UsuarioRepository {
     // cerrado; reemplaza la lista completa (la UI ya calcula qué fechas
     // conservar de los diagnósticos que seguían marcados).
     suspend fun actualizarDiagnosticos(pacienteId: String, diagnosticos: List<DiagnosticoRegistrado>): Result<Unit>
+
+    // HU22-CA02/HU23-CA02 — el propio paciente/fisioterapeuta edita su
+    // nombre desde la pantalla de Perfil.
+    suspend fun actualizarNombre(uid: String, nombre: String): Result<Unit>
 }
