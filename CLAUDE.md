@@ -154,7 +154,7 @@ aquí:
 | `TarjetaEjercicio` | `TarjetaEjercicio.kt` | Tarjeta de grid 2 columnas con menú "⋮" opcional |
 | `BarraSuperior` | `BarraSuperior.kt` | TopAppBar con el color/estilo del Design System |
 | `BarraBusqueda` | `BarraBusqueda.kt` | Búsqueda + botón de filtro opcional |
-| `ProgresoCircular` | `ProgresoCircular.kt` | Anillo de % con la cifra centrada |
+| `ProgresoCircular` / `ProgresoLineal` | `ProgresoCircular.kt` | Anillo con cifra centrada / barra lineal — los dos indicadores de progreso |
 | `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
