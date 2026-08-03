@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,10 +17,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PrivacyTip
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,6 +28,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.TarjetaBase
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.domain.model.Rol
 
 private val PUNTOS_CONSENTIMIENTO = listOf(
@@ -58,7 +56,7 @@ fun ConsentimientoScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(Spacing.lg)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(
@@ -74,21 +72,18 @@ fun ConsentimientoScreen(
                 modifier = Modifier.size(32.dp),
             )
         }
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
         Text(text = "Consentimiento informado", style = MaterialTheme.typography.headlineSmall)
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.sm))
         Text(
             text = "Antes de continuar, es importante que sepas cómo tratamos tu " +
                 "información, conforme a la Ley N.° 29733 de Protección de Datos Personales:",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+        TarjetaBase {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.sm + 6.dp)) {
                 PUNTOS_CONSENTIMIENTO.forEach { punto ->
                     Row {
                         Icon(
@@ -97,30 +92,18 @@ fun ConsentimientoScreen(
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(20.dp),
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(Spacing.sm + 2.dp))
                         Text(text = punto, style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
         }
-        Spacer(modifier = Modifier.height(28.dp))
-        Button(
+        Spacer(modifier = Modifier.height(Spacing.lg + 4.dp))
+        BotonPrimario(
+            texto = "Acepto y quiero continuar",
             onClick = viewModel::aceptar,
-            enabled = !uiState.aceptando && uiState.rolResuelto != null,
-            shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-        ) {
-            if (uiState.aceptando) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    strokeWidth = 2.dp,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                )
-            } else {
-                Text("Acepto y quiero continuar", style = MaterialTheme.typography.titleMedium)
-            }
-        }
+            habilitado = !uiState.aceptando && uiState.rolResuelto != null,
+            cargando = uiState.aceptando,
+        )
     }
 }
