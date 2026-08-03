@@ -1162,6 +1162,50 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 
 ---
 
+### ÉPICA 08: Gestionar perfil de usuario
+
+*(Ampliación acordada, no en la versión original de la tesis — Sprint 6.
+Antes, un paciente/fisioterapeuta no tenía ninguna pantalla para ver ni
+editar su propia cuenta; toda edición pasaba exclusivamente por el panel
+de Administrador, HU20/HU21. Estas dos HU agregan una pantalla de
+"Perfil" de autoservicio, sin tocar el modelo de datos ni agregar campos
+nuevos — solo expone en una pantalla propia los atributos que ya existen
+en `Usuario`/`Paciente` (sección 5/6), respetando exactamente quién puede
+editar cada uno según las reglas ya vigentes.*
+
+*Decisión de navegación asociada: "Cerrar sesión" se centraliza
+únicamente en esta pantalla de Perfil — se retira el ícono/acceso directo
+de cerrar sesión de `PacientesListScreen` (HU01, fisioterapeuta) y de
+`EjerciciosAsignadosScreen` (HU04, paciente), que hoy lo muestran en su
+barra superior. **Pendiente de decisión, no resuelto en este documento:**
+el panel de Administrador (`AdminPacientesScreen`/
+`AdminFisioterapeutasScreen`) también muestra hoy un ícono de cerrar
+sesión en su barra superior, pero ninguna de estas dos HU cubre al rol
+Administrador — de aplicar la misma regla, el admin se quedaría sin forma
+de cerrar sesión. Hasta que se decida (mantener el logout actual del
+admin tal cual, fuera del alcance de HU22/HU23, o crear una HU23-bis de
+"Perfil del Administrador"), el logout del admin no se toca.*
+
+#### HU22 — Consultar y editar mi perfil (Paciente)
+**Rol:** Paciente
+**Deseo:** Consultar la información de mi propia cuenta y editar los datos que me correspondan
+**Propósito:** Mantener mi información de contacto actualizada y tener un único lugar para gestionar mi cuenta, incluido el cierre de sesión.
+- CA01: Dado que el paciente acceda a "Perfil", entonces el sistema muestra su nombre, correo electrónico, DNI, edad, diagnóstico(s) registrado(s) y el fisioterapeuta asignado (si tiene uno) — los mismos atributos ya definidos en `Usuario`/`Paciente` (sección 5/6), sin campos nuevos.
+- CA02 *(ampliación acordada — antes solo el administrador podía editar el nombre de un paciente, HU20-CA03; técnicamente ya es posible sin cambios en las Firestore Security Rules, que ya permiten al dueño del documento escribir en él)*: Dado que consulte su perfil, cuando edite su nombre y confirme, entonces el sistema guarda el cambio.
+- CA03: Dado que consulte su perfil, entonces el correo electrónico, DNI, edad, diagnóstico(s) y fisioterapeuta asignado se muestran en modo solo lectura, sin controles de edición — esos datos siguen siendo responsabilidad exclusiva del administrador (HU20) y, en el caso del diagnóstico, también del fisioterapeuta (HU01-CA06).
+- CA04: Dado que el paciente esté en la pantalla de Perfil, cuando seleccione "Cerrar sesión", entonces el sistema finaliza su sesión (RNF02-CA04) y lo redirige a Login. Esta es la única pantalla desde la que el paciente puede cerrar sesión.
+
+#### HU23 — Consultar y editar mi perfil (Fisioterapeuta)
+**Rol:** Fisioterapeuta
+**Deseo:** Consultar la información de mi propia cuenta y editar los datos que me correspondan
+**Propósito:** Mantener mi información de contacto actualizada y tener un único lugar para gestionar mi cuenta, incluido el cierre de sesión.
+- CA01: Dado que el fisioterapeuta acceda a "Perfil", entonces el sistema muestra su nombre y correo electrónico — los mismos atributos ya definidos en `Usuario` para este rol (sección 5/6), sin campos nuevos (el fisioterapeuta no tiene DNI/edad/diagnóstico; esos son exclusivos del paciente).
+- CA02 *(ampliación acordada — antes solo el administrador podía editar el nombre de un fisioterapeuta, HU21-CA03; misma base técnica que HU22-CA02)*: Dado que consulte su perfil, cuando edite su nombre y confirme, entonces el sistema guarda el cambio.
+- CA03: Dado que consulte su perfil, entonces el correo electrónico se muestra en modo solo lectura — su cambio sigue siendo responsabilidad exclusiva del administrador (HU21).
+- CA04: Dado que el fisioterapeuta esté en la pantalla de Perfil, cuando seleccione "Cerrar sesión", entonces el sistema finaliza su sesión (RNF02-CA04) y lo redirige a Login. Esta es la única pantalla desde la que el fisioterapeuta puede cerrar sesión.
+
+---
+
 ### Requisitos No Funcionales
 
 #### RNF01 — Disponibilidad operativa del sistema
@@ -1177,12 +1221,14 @@ El sistema deberá garantizar disponibilidad operativa, incluyendo funcionamient
 > en el dispositivo, sin red. No se agrega código nuevo.
 
 #### RNF02 — Seguridad de acceso a la información terapéutica
-> Nota: no existe una HU propia de "Iniciar/cerrar sesión" — la pantalla de
-> Login y el botón de Logout que aparecen en toda la app implementan
-> directamente los CA de este RNF (CA01 login, CA02 redirección por rol,
-> CA04 logout), no una historia de usuario aparte. No hay pantalla de
-> auto-registro ni recuperación de contraseña: las cuentas se crean por el
-> Administrador (HU20/HU21) o el script `crear-usuario.ts`.
+> Nota: no existe una HU propia de "Iniciar sesión" — la pantalla de Login
+> implementa directamente CA01 (login) y CA02 (redirección por rol) de
+> este RNF. **Cerrar sesión (CA04) ya no es un botón repetido en cada
+> pantalla** (ver ÉPICA 08, Sprint 6): para paciente y fisioterapeuta se
+> centralizó en la pantalla de Perfil (HU22-CA04/HU23-CA04); el logout del
+> administrador queda pendiente de decisión (ver nota en ÉPICA 08). No hay
+> pantalla de auto-registro ni recuperación de contraseña: las cuentas se
+> crean por el Administrador (HU20/HU21) o el script `crear-usuario.ts`.
 - CA01: El sistema valida correctamente la autenticación.
 - CA02: El sistema restringe el acceso según el tipo de usuario (rol).
 - CA03: La información almacenada debe mantenerse protegida.
@@ -1255,7 +1301,19 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 | 5 | E06 | HU19 | Sincronizar información terapéutica | Media |
 | 5 | RNF | RNF01 | Disponibilidad operativa del sistema | Crítica |
 | 5 | RNF | RNF04 | Integridad de la información terapéutica | Alta |
+| 6 | E08 | HU22 | Consultar y editar mi perfil (Paciente) | Media |
+| 6 | E08 | HU23 | Consultar y editar mi perfil (Fisioterapeuta) | Media |
 
+> Nota (Sprint 6, agregado tras el cierre del proyecto original de 5
+> sprints, mismo patrón que la Épica 07 con HU20/HU21): HU22/HU23 no
+> estaban en el backlog original de 19 HU — se agregan como ampliación
+> acordada para dar autoservicio de perfil a paciente y fisioterapeuta,
+> reutilizando el modelo de datos y el Design System existentes sin
+> modificarlos. Trae consigo un ajuste de UI (no de HU) en las pantallas
+> de HU01 y HU04, que pierden su ícono de cerrar sesión en favor de la
+> nueva pantalla de Perfil — ver el detalle en ÉPICA 08 y en la nota
+> actualizada de RNF02.
+>
 > Nota: el plan original repartía esto en 6 sprints; se comprimió a 5.
 > HU15/HU16 (recomendaciones) se adelantaron al sprint 4 junto con
 > HU09-10 porque ya dependen de que exista una sesión con resultado real
