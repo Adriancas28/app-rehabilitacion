@@ -153,6 +153,7 @@ aquí:
 | `ChecklistAgrupado<T>` | `ChecklistAgrupado.kt` | Selección múltiple agrupada (ej. diagnósticos por región) — checkbox + texto por opción, con encabezado de grupo |
 | `TarjetaEstadistica` | `TarjetaEstadistica.kt` | Ícono + cifra grande + etiqueta, para dashboards |
 | `TarjetaPersona` | `TarjetaPersona.kt` | Avatar+nombre+subtítulo+slots — generaliza fila de paciente/fisioterapeuta/admin |
+| `TarjetaConIcono` | `TarjetaConIcono.kt` | Avatar de ícono (círculo de color, no iniciales) + título/subtítulo + slots de contenido final e inferior — tarjetas de "acción" tipo fila: próxima sesión, sesión reanudable, acceso rápido, ejercicio asignado |
 | `TarjetaEjercicio` | `TarjetaEjercicio.kt` | Tarjeta de grid 2 columnas con menú "⋮" opcional |
 | `BarraSuperior` | `BarraSuperior.kt` | TopAppBar con el color/estilo del Design System |
 | `BarraBusqueda` | `BarraBusqueda.kt` | Búsqueda + botón de filtro opcional |
@@ -166,8 +167,7 @@ aquí:
 
 Componentes visuales que **ya existen dentro de una pantalla concreta y no
 se han extraído todavía** (se migran cuando se rediseñe esa pantalla, no
-antes): tarjeta de "próxima sesión" (dashboard paciente), fila de accesos
-rápidos, tarjeta de mensaje del fisioterapeuta, ícono mínimo de corrección
+antes): tarjeta de mensaje del fisioterapeuta, ícono mínimo de corrección
 de HU10, tabs de Resumen/Evolución/Historial.
 
 **Iconografía:** íconos de línea/outline (no rellenos) — casa, personas,
