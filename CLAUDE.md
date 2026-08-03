@@ -161,7 +161,7 @@ aquí:
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
 | NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Solo pendiente ajustar paleta/iconografía al aplicarlo a pantallas |
-| Selector de fecha | `feature/pacientes/FechaDatePicker.kt` (ya existía) | Helpers de conversión UTC↔local; el `DatePickerDialog` en sí sigue inline en `AsignarSesionScreen` |
+| `BotonSelectorFecha` | `SelectorFecha.kt` | Botón que abre un `DatePickerDialog`; resuelve internamente la conversión de zona horaria UTC↔local (antes vivía inline en `AsignarSesionScreen`) |
 | Gráfico de línea (evolución semanal) | *pendiente* | No existe todavía — se construye cuando se aplique a la pantalla de Progreso |
 
 Componentes visuales que **ya existen dentro de una pantalla concreta y no
