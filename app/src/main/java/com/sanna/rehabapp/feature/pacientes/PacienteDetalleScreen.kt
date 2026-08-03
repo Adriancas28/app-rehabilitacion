@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -35,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.BotonOutline
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
 import com.sanna.rehabapp.core.designsystem.FilaChipsFiltro
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
@@ -207,18 +208,24 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (List<TipoDiagnosti
             )
             Spacer(modifier = Modifier.height(Spacing.sm))
             Row {
-                TextButton(onClick = {
-                    seleccionados = paciente.diagnosticos.map { it.tipo }.toSet()
-                    editando = false
-                }) { Text("Cancelar") }
+                BotonOutline(
+                    texto = "Cancelar",
+                    onClick = {
+                        seleccionados = paciente.diagnosticos.map { it.tipo }.toSet()
+                        editando = false
+                    },
+                    modifier = Modifier.weight(1f),
+                )
                 Spacer(modifier = Modifier.width(Spacing.sm))
-                TextButton(
-                    enabled = seleccionados.isNotEmpty(),
+                BotonPrimario(
+                    texto = "Guardar",
                     onClick = {
                         onGuardar(seleccionados.toList())
                         editando = false
                     },
-                ) { Text("Guardar") }
+                    habilitado = seleccionados.isNotEmpty(),
+                    modifier = Modifier.weight(1f),
+                )
             }
         } else if (paciente.diagnosticos.isEmpty()) {
             Text(
@@ -302,7 +309,7 @@ private fun TarjetaSesion(
     TarjetaBase(
         onClick = onClick,
         relleno = Spacing.sm + 6.dp,
-        modifier = Modifier.padding(vertical = 4.dp),
+        modifier = Modifier.padding(vertical = Spacing.xs),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
