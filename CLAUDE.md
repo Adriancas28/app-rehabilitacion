@@ -137,18 +137,35 @@ botones pill completo, inputs ~12px, badges de estado pill completo);
 padding interno ~16px en tarjetas; separación vertical uniforme entre
 ítems de lista.
 
-**Inventario de componentes reutilizables:** TopAppBar de color primario;
-NavigationRail lateral (ya existe como `ScaffoldConBarraLateral`, solo
-cambia paleta/iconografía); tarjeta de estadística (ícono + cifra grande +
-etiqueta); fila de lista con badge de estado; barra de búsqueda + botón de
-filtro separado; tarjeta de ejercicio en grid 2 columnas; selectores tipo
-dropdown de formulario; selector de fecha/hora lado a lado; campo
-calculado de solo lectura; botón primario pill full-width + botón
-secundario outline; anillo circular de progreso/porcentaje; tarjeta de
-"próxima sesión"; fila de accesos rápidos (3 iconos redondos); tarjeta de
-mensaje del fisioterapeuta; ícono mínimo de corrección (ya construido,
-HU10, solo cambia de paleta); tabs (Resumen/Evolución/Historial); gráfico
-de línea simple para evolución semanal (nuevo, no existía antes).
+**Inventario de componentes reutilizables** — viven en
+`app/core/designsystem/` (paquete nuevo). Antes de crear un componente
+nuevo, o de tocar una pantalla existente, revisar primero si ya hay uno
+aquí:
+
+| Componente | Archivo | Notas |
+|---|---|---|
+| `BotonPrimario` / `BotonSecundario` / `BotonOutline` | `Botones.kt` | Forma pill fija, no depende de `MaterialTheme.shapes` |
+| `TarjetaBase` | `Tarjetas.kt` | Card base — toda tarjeta nueva la envuelve, en vez de un `Card` suelto |
+| `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
+| `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
+| `TarjetaEstadistica` | `TarjetaEstadistica.kt` | Ícono + cifra grande + etiqueta, para dashboards |
+| `TarjetaPersona` | `TarjetaPersona.kt` | Avatar+nombre+subtítulo+slots — generaliza fila de paciente/fisioterapeuta/admin |
+| `TarjetaEjercicio` | `TarjetaEjercicio.kt` | Tarjeta de grid 2 columnas con menú "⋮" opcional |
+| `BarraSuperior` | `BarraSuperior.kt` | TopAppBar con el color/estilo del Design System |
+| `BarraBusqueda` | `BarraBusqueda.kt` | Búsqueda + botón de filtro opcional |
+| `ProgresoCircular` | `ProgresoCircular.kt` | Anillo de % con la cifra centrada |
+| `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
+| `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
+| `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
+| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Solo pendiente ajustar paleta/iconografía al aplicarlo a pantallas |
+| Selector de fecha | `feature/pacientes/FechaDatePicker.kt` (ya existía) | Helpers de conversión UTC↔local; el `DatePickerDialog` en sí sigue inline en `AsignarSesionScreen` |
+| Gráfico de línea (evolución semanal) | *pendiente* | No existe todavía — se construye cuando se aplique a la pantalla de Progreso |
+
+Componentes visuales que **ya existen dentro de una pantalla concreta y no
+se han extraído todavía** (se migran cuando se rediseñe esa pantalla, no
+antes): tarjeta de "próxima sesión" (dashboard paciente), fila de accesos
+rápidos, tarjeta de mensaje del fisioterapeuta, ícono mínimo de corrección
+de HU10, tabs de Resumen/Evolución/Historial.
 
 **Iconografía:** íconos de línea/outline (no rellenos) — casa, personas,
 pesa, calendario, gráfico, engranaje, campana, lupa, embudo/filtro, flecha
