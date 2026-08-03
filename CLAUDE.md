@@ -146,6 +146,7 @@ aquí:
 |---|---|---|
 | `BotonPrimario` / `BotonSecundario` / `BotonOutline` | `Botones.kt` | Forma pill fija, no depende de `MaterialTheme.shapes` |
 | `TarjetaBase` | `Tarjetas.kt` | Card base — toda tarjeta nueva la envuelve, en vez de un `Card` suelto |
+| `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña internamente |
 | `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
 | `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
 | `TarjetaEstadistica` | `TarjetaEstadistica.kt` | Ícono + cifra grande + etiqueta, para dashboards |

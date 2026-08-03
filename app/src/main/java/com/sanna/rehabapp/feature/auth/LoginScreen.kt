@@ -14,39 +14,30 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.R
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.CampoTexto
+import com.sanna.rehabapp.core.theme.Spacing
 
 @Composable
 fun LoginScreen(
@@ -54,7 +45,6 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var mostrarPassword by remember { mutableStateOf(false) }
 
     LaunchedEffect(uiState.loginExitoso) {
         if (uiState.loginExitoso) onLoginExitoso()
@@ -65,7 +55,7 @@ fun LoginScreen(
         // así el logo queda centrado en la franja superior, hasta más o menos
         // la mitad de la pantalla, en vez de quedar pegado arriba en
         // dispositivos más altos. En el mockup esa franja es una foto; acá
-        // usamos el verde de marca ya que no tenemos una foto real todavía.
+        // usamos el color primario ya que no tenemos una foto real todavía.
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -89,7 +79,7 @@ fun LoginScreen(
                         .size(140.dp)
                         .clip(RoundedCornerShape(32.dp)),
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
                     text = "Rehabilitación en casa",
                     style = MaterialTheme.typography.bodyMedium,
@@ -103,44 +93,26 @@ fun LoginScreen(
                 .weight(1.2f)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .padding(horizontal = Spacing.lg, vertical = Spacing.xl),
         ) {
-            OutlinedTextField(
-                value = uiState.email,
-                onValueChange = viewModel::onEmailChange,
-                label = { Text("Correo electrónico") },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Filled.Email, contentDescription = null) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth(),
+            CampoTexto(
+                valor = uiState.email,
+                onValorCambiado = viewModel::onEmailChange,
+                etiqueta = "Correo electrónico",
+                iconoInicial = Icons.Filled.Email,
+                tipoTeclado = KeyboardType.Email,
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            OutlinedTextField(
-                value = uiState.password,
-                onValueChange = viewModel::onPasswordChange,
-                label = { Text("Contraseña") },
-                singleLine = true,
-                leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
-                visualTransformation = if (mostrarPassword) {
-                    VisualTransformation.None
-                } else {
-                    PasswordVisualTransformation()
-                },
-                trailingIcon = {
-                    IconButton(onClick = { mostrarPassword = !mostrarPassword }) {
-                        Icon(
-                            imageVector = if (mostrarPassword) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
-                            contentDescription = if (mostrarPassword) "Ocultar contraseña" else "Ver contraseña",
-                        )
-                    }
-                },
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier.fillMaxWidth(),
+            Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xs))
+            CampoTexto(
+                valor = uiState.password,
+                onValorCambiado = viewModel::onPasswordChange,
+                etiqueta = "Contraseña",
+                iconoInicial = Icons.Filled.Lock,
+                esPassword = true,
             )
 
             uiState.error?.let { mensaje ->
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(Spacing.xs))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -148,7 +120,7 @@ fun LoginScreen(
                             MaterialTheme.colorScheme.errorContainer,
                             shape = MaterialTheme.shapes.medium,
                         )
-                        .padding(12.dp),
+                        .padding(Spacing.sm + Spacing.xs),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
@@ -156,7 +128,7 @@ fun LoginScreen(
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onErrorContainer,
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(Spacing.sm))
                         Text(
                             text = mensaje,
                             color = MaterialTheme.colorScheme.onErrorContainer,
@@ -166,25 +138,13 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-            Button(
+            Spacer(modifier = Modifier.height(Spacing.lg))
+            BotonPrimario(
+                texto = "Iniciar sesión",
                 onClick = viewModel::iniciarSesion,
-                enabled = !uiState.cargando,
-                shape = MaterialTheme.shapes.medium,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-            ) {
-                if (uiState.cargando) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        strokeWidth = 2.dp,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                } else {
-                    Text("Iniciar sesión", style = MaterialTheme.typography.titleMedium)
-                }
-            }
+                habilitado = !uiState.cargando,
+                cargando = uiState.cargando,
+            )
         }
     }
 }
