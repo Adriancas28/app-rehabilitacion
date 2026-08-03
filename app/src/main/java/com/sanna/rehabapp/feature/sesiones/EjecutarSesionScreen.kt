@@ -104,7 +104,7 @@ fun EjecutarSesionScreen(
 
                 uiState.error != null -> EstadoCentrado {
                     MensajeConIcono(Icons.Filled.VideocamOff, uiState.error ?: "")
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
@@ -114,7 +114,7 @@ fun EjecutarSesionScreen(
                         Icons.Filled.VideocamOff,
                         "Este dispositivo no tiene cámara disponible, así que no puede ejecutar sesiones con monitoreo.",
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
@@ -123,7 +123,7 @@ fun EjecutarSesionScreen(
                         Icons.Filled.CameraAlt,
                         "Se necesita permiso de cámara para monitorear el ejercicio.",
                     )
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(
                         texto = "Conceder permiso",
                         onClick = { solicitarPermiso.launch(Manifest.permission.CAMERA) },
@@ -133,7 +133,7 @@ fun EjecutarSesionScreen(
 
                 uiState.sesionCompletada -> EstadoCentrado {
                     MensajeConIcono(Icons.Filled.CheckCircle, "Sesión completada")
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
@@ -174,7 +174,7 @@ fun EjecutarSesionScreen(
                             enCorreccion = uiState.enCorreccion,
                             modifier = Modifier
                                 .align(Alignment.TopStart)
-                                .padding(10.dp),
+                                .padding(Spacing.sm + 2.dp),
                         )
                     }
                     PanelProgreso(
@@ -205,14 +205,14 @@ private fun EstadoCentrado(contenido: @Composable () -> Unit) {
 
 @Composable
 private fun MensajeConIcono(icono: ImageVector, mensaje: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(24.dp)) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(Spacing.lg)) {
         Icon(
             icono,
             contentDescription = null,
             modifier = Modifier.height(40.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
         Text(
             text = mensaje,
             style = MaterialTheme.typography.bodyMedium,
@@ -260,12 +260,12 @@ private fun PanelProgreso(
 ) {
     if (enPreparacion) {
         Column(
-            modifier = modifier.padding(16.dp),
+            modifier = modifier.padding(Spacing.md),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(text = "Prepárate", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -278,7 +278,7 @@ private fun PanelProgreso(
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm))
             Text(
                 text = "El monitoreo comienza en breve…",
                 style = MaterialTheme.typography.bodySmall,
@@ -288,7 +288,7 @@ private fun PanelProgreso(
         return
     }
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier.padding(Spacing.md),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (totalRepeticiones > 1) {
@@ -296,7 +296,7 @@ private fun PanelProgreso(
                 text = "Repetición $repeticionActual/$totalRepeticiones",
                 style = MaterialTheme.typography.titleSmall,
             )
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
         }
 
         Box(
@@ -313,7 +313,7 @@ private fun PanelProgreso(
                 )
             }
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(Spacing.sm))
         Text(
             text = if (enDescanso) "Descansa, viene la repetición ${repeticionActual + 1}…" else "Monitoreando…",
             style = MaterialTheme.typography.bodySmall,
