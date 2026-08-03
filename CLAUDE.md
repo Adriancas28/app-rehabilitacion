@@ -162,7 +162,7 @@ aquí:
 | `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
-| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Solo pendiente ajustar paleta/iconografía al aplicarlo a pantallas |
+| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Su `topBar` ya usa `BarraSuperior` (con `onAlternarMenu`) en todas las pantallas que lo consumen (fisio y admin) |
 | `BotonSelectorFecha` | `SelectorFecha.kt` | Botón que abre un `DatePickerDialog`; resuelve internamente la conversión de zona horaria UTC↔local (antes vivía inline en `AsignarSesionScreen`) |
 | Gráfico de línea (evolución semanal) | *pendiente* | No existe todavía — se construye cuando se aplique a la pantalla de Progreso |
 

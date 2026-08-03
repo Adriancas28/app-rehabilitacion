@@ -1,35 +1,24 @@
 package com.sanna.rehabapp.feature.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonOff
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,8 +26,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,14 +35,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.DialogoConfirmacion
+import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.EstadoVacio
+import com.sanna.rehabapp.core.designsystem.TarjetaPersona
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.domain.model.Usuario
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminPacientesScreen(
     menuVisible: Boolean,
@@ -95,20 +86,10 @@ fun AdminPacientesScreen(
                 ),
             ),
             topBar = { onAlternarMenu ->
-                TopAppBar(
-                    title = { Text("Pacientes") },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                        navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                        actionIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                    navigationIcon = {
-                        IconButton(onClick = onAlternarMenu) {
-                            Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
-                        }
-                    },
-                    actions = {
+                BarraSuperior(
+                    titulo = "Pacientes",
+                    onAlternarMenu = onAlternarMenu,
+                    acciones = {
                         IconButton(onClick = onRegistrarPaciente) {
                             Icon(Icons.Filled.Add, contentDescription = "Registrar paciente")
                         }
@@ -126,35 +107,15 @@ fun AdminPacientesScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .padding(16.dp),
+                    .padding(Spacing.md),
             ) {
                 when {
-                    uiState.cargando -> Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    uiState.cargando -> EstadoCargando()
 
-                    uiState.pacientes.isEmpty() -> Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Filled.PersonOff,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(40.dp),
-                            )
-                            Text(
-                                text = "Aún no hay pacientes registrados.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 12.dp),
-                            )
-                        }
-                    }
+                    uiState.pacientes.isEmpty() -> EstadoVacio(
+                        icono = Icons.Filled.PersonOff,
+                        mensaje = "Aún no hay pacientes registrados.",
+                    )
 
                     else -> LazyColumn {
                         items(uiState.pacientes, key = { it.uid }) { paciente ->
@@ -189,19 +150,15 @@ fun AdminPacientesScreen(
     }
 
     pacienteAEliminar?.let { paciente ->
-        AlertDialog(
-            onDismissRequest = { pacienteAEliminar = null },
-            title = { Text("Eliminar paciente") },
-            text = { Text("¿Seguro que deseas eliminar la cuenta de \"${paciente.nombre}\"?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.eliminar(paciente.uid, paciente.nombre)
-                    pacienteAEliminar = null
-                }) { Text("Eliminar") }
+        DialogoConfirmacion(
+            titulo = "Eliminar paciente",
+            mensaje = "¿Seguro que deseas eliminar la cuenta de \"${paciente.nombre}\"?",
+            textoConfirmar = "Eliminar",
+            onConfirmar = {
+                viewModel.eliminar(paciente.uid, paciente.nombre)
+                pacienteAEliminar = null
             },
-            dismissButton = {
-                TextButton(onClick = { pacienteAEliminar = null }) { Text("Cancelar") }
-            },
+            onCancelar = { pacienteAEliminar = null },
         )
     }
 
@@ -235,6 +192,8 @@ fun AdminPacientesScreen(
     }
 }
 
+// Compartida con AdminFisioterapeutasScreen — misma fila de avatar+nombre+
+// email+línea extra opcional, con menú "⋮" de editar/eliminar.
 @Composable
 internal fun TarjetaUsuarioAdmin(
     usuario: Usuario,
@@ -244,39 +203,12 @@ internal fun TarjetaUsuarioAdmin(
 ) {
     var menuAbierto by remember { mutableStateOf(false) }
 
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, shape = CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = obtenerIniciales(usuario.nombre),
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = usuario.nombre, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = usuario.email,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                lineaExtra?.invoke()
-            }
+    TarjetaPersona(
+        nombre = usuario.nombre,
+        subtitulo = usuario.email,
+        lineaExtra = lineaExtra,
+        modifier = Modifier.padding(vertical = Spacing.xs),
+        contenidoFinal = {
             Box {
                 IconButton(onClick = { menuAbierto = true }) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones")
@@ -300,14 +232,6 @@ internal fun TarjetaUsuarioAdmin(
                     )
                 }
             }
-        }
-    }
+        },
+    )
 }
-
-private fun obtenerIniciales(nombre: String): String =
-    nombre.trim()
-        .split(" ")
-        .filter { it.isNotBlank() }
-        .take(2)
-        .mapNotNull { it.firstOrNull()?.uppercaseChar() }
-        .joinToString("")
