@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,6 +46,10 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    // Validación client-side mínima (campos no vacíos) para evitar un
+    // round-trip al backend innecesario; las credenciales incorrectas
+    // se siguen validando del lado del servidor (uiState.error).
+    val puedeEnviar = uiState.email.isNotBlank() && uiState.password.isNotBlank()
 
     LaunchedEffect(uiState.loginExitoso) {
         if (uiState.loginExitoso) onLoginExitoso()
@@ -101,6 +106,7 @@ fun LoginScreen(
                 etiqueta = "Correo electrónico",
                 iconoInicial = Icons.Filled.Email,
                 tipoTeclado = KeyboardType.Email,
+                imeAction = ImeAction.Next,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + Spacing.xs))
             CampoTexto(
@@ -109,6 +115,8 @@ fun LoginScreen(
                 etiqueta = "Contraseña",
                 iconoInicial = Icons.Filled.Lock,
                 esPassword = true,
+                imeAction = ImeAction.Done,
+                alPresionarIme = { if (puedeEnviar) viewModel.iniciarSesion() },
             )
 
             uiState.error?.let { mensaje ->
@@ -142,7 +150,7 @@ fun LoginScreen(
             BotonPrimario(
                 texto = "Iniciar sesión",
                 onClick = viewModel::iniciarSesion,
-                habilitado = !uiState.cargando,
+                habilitado = puedeEnviar && !uiState.cargando,
                 cargando = uiState.cargando,
             )
         }
