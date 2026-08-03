@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -27,13 +26,9 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.VideocamOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -52,7 +47,12 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
+import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.BotonOutline
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.core.tts.rememberLectorInstrucciones
 
@@ -95,17 +95,17 @@ fun EjecutarSesionScreen(
         uiState.eventoVoz?.let { leerInstrucciones(it.mensaje) }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        EncabezadoSesion(nombreEjercicio = uiState.ejercicio?.nombre ?: "", onSalir = onVolver)
-
-        Box(modifier = Modifier.weight(1f)) {
+    Scaffold(
+        topBar = { BarraSuperior(titulo = uiState.ejercicio?.nombre ?: "", onNavegarAtras = onVolver) },
+    ) { padding ->
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when {
-                uiState.cargando -> EstadoCentrado { CircularProgressIndicator() }
+                uiState.cargando -> EstadoCargando()
 
                 uiState.error != null -> EstadoCentrado {
                     MensajeConIcono(Icons.Filled.VideocamOff, uiState.error ?: "")
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = onVolver) { Text("Volver") }
+                    BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
                 !tieneCamaraDisponible(contexto) -> EstadoCentrado {
@@ -115,7 +115,7 @@ fun EjecutarSesionScreen(
                         "Este dispositivo no tiene cámara disponible, así que no puede ejecutar sesiones con monitoreo.",
                     )
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = onVolver) { Text("Volver") }
+                    BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
                 !permisoConcedido -> EstadoCentrado {
@@ -124,15 +124,17 @@ fun EjecutarSesionScreen(
                         "Se necesita permiso de cámara para monitorear el ejercicio.",
                     )
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = { solicitarPermiso.launch(Manifest.permission.CAMERA) }) {
-                        Text("Conceder permiso")
-                    }
+                    BotonPrimario(
+                        texto = "Conceder permiso",
+                        onClick = { solicitarPermiso.launch(Manifest.permission.CAMERA) },
+                        modifier = Modifier.width(220.dp),
+                    )
                 }
 
                 uiState.sesionCompletada -> EstadoCentrado {
                     MensajeConIcono(Icons.Filled.CheckCircle, "Sesión completada")
                     Spacer(modifier = Modifier.height(20.dp))
-                    Button(onClick = onVolver) { Text("Volver") }
+                    BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
 
                 !uiState.sesionIniciada -> Box(modifier = Modifier.fillMaxSize()) {
@@ -141,17 +143,15 @@ fun EjecutarSesionScreen(
                         onResultado = viewModel::procesarResultadoPose,
                         onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
                     )
-                    Button(
+                    BotonPrimario(
+                        texto = "Iniciar sesión",
                         onClick = viewModel::iniciarSesion,
+                        icono = Icons.Filled.PlayArrow,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 32.dp)
-                            .height(56.dp),
-                    ) {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Iniciar sesión", style = MaterialTheme.typography.titleMedium)
-                    }
+                            .width(220.dp),
+                    )
                 }
 
                 // Cámara en vivo a un lado y el panel de progreso/instrucciones
@@ -193,31 +193,6 @@ fun EjecutarSesionScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun EncabezadoSesion(nombreEjercicio: String, onSalir: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.primary)
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        IconButton(onClick = onSalir) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Salir",
-                tint = MaterialTheme.colorScheme.onPrimary,
-            )
-        }
-        Text(
-            text = nombreEjercicio,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.weight(1f),
-        )
     }
 }
 
@@ -345,15 +320,13 @@ private fun PanelProgreso(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
-        OutlinedButton(
+        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+        BotonOutline(
+            texto = "Finalizar ejercicio",
             onClick = onFinalizar,
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
-            modifier = Modifier.height(44.dp),
-        ) {
-            Icon(Icons.Filled.Stop, contentDescription = null, modifier = Modifier.width(18.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text("Finalizar ejercicio")
-        }
+            esDestructivo = true,
+            icono = Icons.Filled.Stop,
+            modifier = Modifier.width(220.dp),
+        )
     }
 }
