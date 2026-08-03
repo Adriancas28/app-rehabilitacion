@@ -105,6 +105,68 @@ de usuario.
 - Empezar en un solo módulo Gradle organizado por capas; no sobre-modularizar
   para un equipo de 2 personas.
 
+### Design System (rediseño visual completo, ampliación acordada)
+
+A partir de este punto del proyecto, **una imagen de referencia de 10
+pantallas (mockup) es el Design System oficial y obligatorio** de toda la
+app. Regla permanente: ninguna pantalla nueva o existente puede inventar un
+estilo propio — todas reutilizan estos mismos tokens y componentes, de
+forma que la app entera se vea diseñada por un solo equipo. Antes de crear
+un componente nuevo, verificar si ya existe uno reutilizable aquí. Este
+rediseño es **solo visual**: no cambia lógica de negocio ni las HU
+existentes, salvo los ajustes puntuales señalados abajo.
+
+**Paleta:**
+| Rol | Color aprox. | Uso |
+|---|---|---|
+| Primario | Verde-teal medio (`~#12A79B`) | TopAppBar, botones primarios, ícono activo del nav, logo, anillos de progreso, checks de éxito |
+| Éxito | Verde (variante clara del primario) | Pills "Activo"/"Correcta", check verde |
+| Advertencia | Ámbar | Pill/ícono "Corrige" |
+| Error | Rojo/coral | Botón outline "Finalizar ejercicio", contador "Errores", alertas |
+| Texto primario | Gris carbón (~#1F2937) | Títulos, nombres, cifras |
+| Texto secundario | Gris medio (~#6B7280) | Subtítulos, fechas |
+| Fondo de pantalla | Gris muy claro (~#F5F6F8) | Detrás de las tarjetas |
+| Superficie | Blanco | Tarjetas, inputs |
+
+**Tipografía:** sans-serif estándar (tipo Inter/Roboto). Título de pantalla
+bold ~18-20px; cifras destacadas en tarjetas de stats bold ~24px; cuerpo
+regular ~14px; etiquetas secundarias regular ~12px gris.
+
+**Forma/espaciado:** esquinas muy redondeadas en todo (tarjetas ~16px,
+botones pill completo, inputs ~12px, badges de estado pill completo);
+padding interno ~16px en tarjetas; separación vertical uniforme entre
+ítems de lista.
+
+**Inventario de componentes reutilizables:** TopAppBar de color primario;
+NavigationRail lateral (ya existe como `ScaffoldConBarraLateral`, solo
+cambia paleta/iconografía); tarjeta de estadística (ícono + cifra grande +
+etiqueta); fila de lista con badge de estado; barra de búsqueda + botón de
+filtro separado; tarjeta de ejercicio en grid 2 columnas; selectores tipo
+dropdown de formulario; selector de fecha/hora lado a lado; campo
+calculado de solo lectura; botón primario pill full-width + botón
+secundario outline; anillo circular de progreso/porcentaje; tarjeta de
+"próxima sesión"; fila de accesos rápidos (3 iconos redondos); tarjeta de
+mensaje del fisioterapeuta; ícono mínimo de corrección (ya construido,
+HU10, solo cambia de paleta); tabs (Resumen/Evolución/Historial); gráfico
+de línea simple para evolución semanal (nuevo, no existía antes).
+
+**Iconografía:** íconos de línea/outline (no rellenos) — casa, personas,
+pesa, calendario, gráfico, engranaje, campana, lupa, embudo/filtro, flecha
+atrás, más, ojo, check-circle, alerta-circle, cámara.
+
+**Confirmado explícitamente al adoptar este Design System (para no
+reabrir estas decisiones sin querer durante el rediseño):**
+- El login del mockup muestra selector "Tipo de usuario", "Registrarse" y
+  "¿Olvidaste tu contraseña?" — **se copia solo el estilo visual**, sin
+  construir esas 3 funciones (RNF02 sigue igual: cuentas creadas por el
+  Admin, sin auto-registro ni recuperación de contraseña).
+- La pantalla de monitoreo del mockup muestra un esqueleto con checklist
+  de texto por articulación — **se mantiene el diseño minimalista actual**
+  de HU10 (ícono mínimo + voz), sin reincorporar ese checklist visual.
+- "Ejecutar sesión" y "Monitoreo corporal" del mockup son la misma
+  pantalla ya construida (cámara + panel lateral simultáneos), no dos
+  pantallas separadas — no se cambia el flujo de navegación de HU06/HU07.
+
 ---
 
 ## 4. Stack tecnológico
