@@ -36,6 +36,7 @@ fun CampoTexto(
     esPassword: Boolean = false,
     tipoTeclado: KeyboardType = KeyboardType.Text,
     soloUnaLinea: Boolean = true,
+    lineasMinimas: Int = 1,
     habilitado: Boolean = true,
     mensajeError: String? = null,
 ) {
@@ -46,6 +47,7 @@ fun CampoTexto(
         onValueChange = onValorCambiado,
         label = { Text(etiqueta) },
         singleLine = soloUnaLinea,
+        minLines = lineasMinimas,
         enabled = habilitado,
         isError = mensajeError != null,
         supportingText = mensajeError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },

@@ -83,18 +83,25 @@ fun BotonOutline(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
+    cargando: Boolean = false,
     esDestructivo: Boolean = false,
     icono: ImageVector? = null,
 ) {
     OutlinedButton(
         onClick = onClick,
-        enabled = habilitado,
+        enabled = habilitado && !cargando,
         shape = FormaPillBoton,
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = if (esDestructivo) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
         ),
         modifier = Modifier.fillMaxWidth().height(AlturaBoton).then(modifier),
     ) {
+        if (cargando) {
+            CircularProgressIndicator(modifier = Modifier.height(18.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(texto, style = MaterialTheme.typography.titleSmall)
+            return@OutlinedButton
+        }
         if (icono != null) {
             Icon(icono, contentDescription = null, modifier = Modifier.height(18.dp))
             Spacer(modifier = Modifier.width(8.dp))

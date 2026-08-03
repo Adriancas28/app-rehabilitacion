@@ -1,6 +1,5 @@
 package com.sanna.rehabapp.feature.pacientes
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +16,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.RateReview
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -39,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.ProgresoLineal
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
@@ -205,40 +204,15 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (List<TipoDiagnosti
         }
         Spacer(modifier = Modifier.height(Spacing.sm))
         if (editando) {
-            TipoDiagnostico.entries.groupBy { it.regionCorporal }.forEach { (region, diagnosticos) ->
-                Text(
-                    text = region,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = Spacing.sm, bottom = 2.dp),
-                )
-                diagnosticos.forEach { tipo ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                seleccionados = if (tipo in seleccionados) {
-                                    seleccionados - tipo
-                                } else {
-                                    seleccionados + tipo
-                                }
-                            },
-                    ) {
-                        Checkbox(
-                            checked = tipo in seleccionados,
-                            onCheckedChange = {
-                                seleccionados = if (tipo in seleccionados) {
-                                    seleccionados - tipo
-                                } else {
-                                    seleccionados + tipo
-                                }
-                            },
-                        )
-                        Text(text = tipo.etiqueta, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
+            ChecklistAgrupado(
+                opciones = TipoDiagnostico.entries,
+                seleccionados = seleccionados,
+                agruparPor = { it.regionCorporal },
+                etiquetaDeOpcion = { it.etiqueta },
+                onAlternar = { tipo ->
+                    seleccionados = if (tipo in seleccionados) seleccionados - tipo else seleccionados + tipo
+                },
+            )
             Spacer(modifier = Modifier.height(Spacing.sm))
             Row {
                 TextButton(onClick = {

@@ -146,9 +146,11 @@ aquí:
 |---|---|---|
 | `BotonPrimario` / `BotonSecundario` / `BotonOutline` | `Botones.kt` | Forma pill fija, no depende de `MaterialTheme.shapes` |
 | `TarjetaBase` | `Tarjetas.kt` | Card base — toda tarjeta nueva la envuelve, en vez de un `Card` suelto |
-| `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña internamente |
+| `SeccionFormulario` | `Tarjetas.kt` | Título + `TarjetaBase` — agrupar campos relacionados en un formulario largo |
+| `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña; `soloUnaLinea = false` + `lineasMinimas` para texto largo |
 | `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
 | `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
+| `ChecklistAgrupado<T>` | `ChecklistAgrupado.kt` | Selección múltiple agrupada (ej. diagnósticos por región) — checkbox + texto por opción, con encabezado de grupo |
 | `TarjetaEstadistica` | `TarjetaEstadistica.kt` | Ícono + cifra grande + etiqueta, para dashboards |
 | `TarjetaPersona` | `TarjetaPersona.kt` | Avatar+nombre+subtítulo+slots — generaliza fila de paciente/fisioterapeuta/admin |
 | `TarjetaEjercicio` | `TarjetaEjercicio.kt` | Tarjeta de grid 2 columnas con menú "⋮" opcional |
