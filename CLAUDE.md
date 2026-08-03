@@ -150,6 +150,7 @@ aquí:
 | `CampoTexto` | `Inputs.kt` | Input genérico; `esPassword = true` resuelve el toggle de ver/ocultar contraseña; `soloUnaLinea = false` + `lineasMinimas` para texto largo |
 | `BadgeEstado` (enum `TipoBadge`: EXITO/ADVERTENCIA/ERROR/NEUTRO) | `Badges.kt` | Pill de estado — reemplaza `EstadoPill` y equivalentes sueltos |
 | `SelectorDropdown<T>` | `SelectorDropdown.kt` | Genérico — reemplaza el patrón repetido Box+OutlinedTextField+clickable+DropdownMenu |
+| `FilaChipsFiltro<T>` | `FiltroChips.kt` | Fila de `FilterChip` de selección única — filtro por período/ejercicio, reemplaza el Row+FilterChip repetido a mano |
 | `ChecklistAgrupado<T>` | `ChecklistAgrupado.kt` | Selección múltiple agrupada (ej. diagnósticos por región) — checkbox + texto por opción, con encabezado de grupo |
 | `TarjetaEstadistica` | `TarjetaEstadistica.kt` | Ícono + cifra grande + etiqueta, para dashboards |
 | `TarjetaPersona` | `TarjetaPersona.kt` | Avatar+nombre+subtítulo+slots — generaliza fila de paciente/fisioterapeuta/admin |

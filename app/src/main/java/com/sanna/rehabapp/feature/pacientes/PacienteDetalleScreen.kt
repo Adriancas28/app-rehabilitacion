@@ -17,8 +17,6 @@ import androidx.compose.material.icons.filled.EventNote
 import androidx.compose.material.icons.filled.MedicalInformation
 import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +36,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
+import com.sanna.rehabapp.core.designsystem.FilaChipsFiltro
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.ProgresoLineal
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
@@ -124,19 +123,12 @@ fun PacienteDetalleScreen(
 
             // HU12-CA03: filtro por período — afecta tanto el resumen de
             // arriba como la lista de sesiones de abajo.
-            Row {
-                PeriodoFiltro.entries.forEach { periodo ->
-                    FilterChip(
-                        selected = uiState.filtroPeriodo == periodo,
-                        onClick = { viewModel.onFiltroPeriodoCambiado(periodo) },
-                        label = { Text(periodo.etiqueta) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                        ),
-                    )
-                    Spacer(modifier = Modifier.width(Spacing.sm))
-                }
-            }
+            FilaChipsFiltro(
+                opciones = PeriodoFiltro.entries,
+                seleccionado = uiState.filtroPeriodo,
+                etiquetaDeOpcion = { it.etiqueta },
+                onSeleccionar = viewModel::onFiltroPeriodoCambiado,
+            )
             Spacer(modifier = Modifier.height(Spacing.md))
 
             Text(text = "Sesiones registradas", style = MaterialTheme.typography.titleSmall)

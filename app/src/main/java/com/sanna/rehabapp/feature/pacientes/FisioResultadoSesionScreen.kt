@@ -5,30 +5,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,13 +25,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.ProgresoCircular
+import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.AnguloDetectado
 import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FisioResultadoSesionScreen(
     onVolver: () -> Unit,
@@ -52,29 +46,10 @@ fun FisioResultadoSesionScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(uiState.ejercicio?.nombre ?: "Resultado") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onVolver) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                    }
-                },
-            )
-        },
+        topBar = { BarraSuperior(titulo = uiState.ejercicio?.nombre ?: "Resultado", onNavegarAtras = onVolver) },
     ) { padding ->
         when {
-            uiState.cargando -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            uiState.cargando -> EstadoCargando(modifier = Modifier.fillMaxSize().padding(padding))
 
             uiState.resultado == null -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -92,43 +67,38 @@ fun FisioResultadoSesionScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
+                        .padding(Spacing.md)
                         .verticalScroll(rememberScrollState()),
                 ) {
                     TarjetaResumen(resultado)
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
                     if (resultado.detallePorRepeticion.isNotEmpty()) {
                         Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm))
                         resultado.detallePorRepeticion.forEach { detalle ->
                             TarjetaDetalleRepeticion(detalle)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.sm))
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
 
                     if (resultado.angulosDetectados.isNotEmpty()) {
                         Text(text = "Ángulos por articulación", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm))
                         resultado.angulosDetectados.forEach { angulo ->
                             TarjetaAngulo(angulo)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.sm))
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Button(
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    BotonPrimario(
+                        texto = "Registrar recomendación",
                         onClick = { onRegistrarRecomendacion(viewModel.pacienteId, viewModel.sesionId) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Icon(Icons.Filled.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Registrar recomendación")
-                    }
+                        icono = Icons.Filled.Add,
+                    )
                 }
             }
         }
@@ -137,28 +107,10 @@ fun FisioResultadoSesionScreen(
 
 @Composable
 private fun TarjetaResumen(resultado: ResultadoSesion) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(modifier = Modifier.size(64.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { (resultado.porcentajeEjecucion / 100f).coerceIn(0f, 1f) },
-                    modifier = Modifier.size(64.dp),
-                    strokeWidth = 6.dp,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Text(
-                    text = "${resultado.porcentajeEjecucion.toInt()}%",
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
+    TarjetaBase {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgresoCircular(porcentaje = resultado.porcentajeEjecucion / 100f)
+            Spacer(modifier = Modifier.width(Spacing.md))
             Column {
                 Text(
                     text = "Repeticiones ${resultado.repeticionesCompletadas}/${resultado.repeticionesAsignadas}",
@@ -184,21 +136,14 @@ private fun TarjetaResumen(resultado: ResultadoSesion) {
 // por cada repetición, si estuvo bien o qué error puntual tuvo.
 @Composable
 private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = if (detalle.dentroDeRango) Icons.Filled.Check else Icons.Filled.Warning,
                 contentDescription = null,
                 tint = if (detalle.dentroDeRango) VerdeExitoTexto else AmbarAlertaTexto,
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Repetición ${detalle.numero}", style = MaterialTheme.typography.bodyMedium)
                 if (detalle.dentroDeRango) {
@@ -223,15 +168,8 @@ private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
 
 @Composable
 private fun TarjetaAngulo(angulo: AnguloDetectado) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = angulo.articulacion, style = MaterialTheme.typography.bodyMedium)
                 angulo.anguloEsperado?.let { esperado ->

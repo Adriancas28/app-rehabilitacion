@@ -8,27 +8,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -36,12 +25,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.BotonOutline
+import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.ProgresoCircular
+import com.sanna.rehabapp.core.designsystem.TarjetaBase
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.domain.model.AnguloDetectado
 import com.sanna.rehabapp.domain.model.ErrorDetectado
 import com.sanna.rehabapp.domain.model.Recomendacion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultadoSesionScreen(
     onVolver: () -> Unit,
@@ -52,29 +47,10 @@ fun ResultadoSesionScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(uiState.ejercicio?.nombre ?: "Resultado") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-                navigationIcon = {
-                    IconButton(onClick = onVolver) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
-                    }
-                },
-            )
-        },
+        topBar = { BarraSuperior(titulo = uiState.ejercicio?.nombre ?: "Resultado", onNavegarAtras = onVolver) },
     ) { padding ->
         when {
-            uiState.cargando -> Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator()
-            }
+            uiState.cargando -> EstadoCargando(modifier = Modifier.fillMaxSize().padding(padding))
 
             uiState.resultado == null -> Box(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -92,37 +68,37 @@ fun ResultadoSesionScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
-                        .padding(16.dp)
+                        .padding(Spacing.md)
                         .verticalScroll(rememberScrollState()),
                 ) {
                     TarjetaPorcentaje(resultado)
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
                     if (resultado.angulosDetectados.isNotEmpty()) {
                         Text(text = "Ángulos por articulación", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm))
                         resultado.angulosDetectados.forEach { angulo ->
                             TarjetaAngulo(angulo)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.sm))
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
 
                     if (resultado.erroresDetectados.isNotEmpty()) {
                         Text(text = "Observaciones", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm))
                         resultado.erroresDetectados.forEach { error ->
                             TarjetaError(error)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.sm))
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
 
                     // HU16-CA01/CA02/CA04 — a diferencia de "Observaciones",
                     // esta sección siempre se muestra, con un mensaje de
                     // ausencia si todavía no hay recomendaciones (CA04).
                     Text(text = "Recomendaciones de tu fisioterapeuta", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(Spacing.sm))
                     if (uiState.recomendaciones.isEmpty()) {
                         Text(
                             text = "Tu fisioterapeuta aún no registró recomendaciones para esta sesión.",
@@ -132,27 +108,13 @@ fun ResultadoSesionScreen(
                     } else {
                         uiState.recomendaciones.forEach { recomendacion ->
                             TarjetaRecomendacion(recomendacion)
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(Spacing.sm))
                         }
                     }
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Button(
-                        onClick = onVerProgreso,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Text("Ver mi progreso")
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedButton(
-                        onClick = onVolverAlInicio,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                    ) {
-                        Text("Volver al inicio")
-                    }
+                    Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+                    BotonPrimario(texto = "Ver mi progreso", onClick = onVerProgreso)
+                    Spacer(modifier = Modifier.height(Spacing.sm + 2.dp))
+                    BotonOutline(texto = "Volver al inicio", onClick = onVolverAlInicio)
                 }
             }
         }
@@ -161,28 +123,10 @@ fun ResultadoSesionScreen(
 
 @Composable
 private fun TarjetaPorcentaje(resultado: ResultadoSesion) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(modifier = Modifier.size(64.dp), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { (resultado.porcentajeEjecucion / 100f).coerceIn(0f, 1f) },
-                    modifier = Modifier.size(64.dp),
-                    strokeWidth = 6.dp,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                )
-                Text(
-                    text = "${resultado.porcentajeEjecucion.toInt()}%",
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
+    TarjetaBase {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgresoCircular(porcentaje = resultado.porcentajeEjecucion / 100f)
+            Spacer(modifier = Modifier.width(Spacing.md))
             Column {
                 // HU06-CA07: si se finalizó antes de tiempo, repeticionesCompletadas
                 // es menor a repeticionesAsignadas — se ve reflejado aquí.
@@ -208,15 +152,8 @@ private fun TarjetaPorcentaje(resultado: ResultadoSesion) {
 
 @Composable
 private fun TarjetaAngulo(angulo: AnguloDetectado) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = angulo.articulacion, style = MaterialTheme.typography.bodyMedium)
                 angulo.anguloEsperado?.let { esperado ->
@@ -238,17 +175,10 @@ private fun TarjetaAngulo(angulo: AnguloDetectado) {
 
 @Composable
 private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.Top) {
             Icon(Icons.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
         }
     }
@@ -256,17 +186,10 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
 
 @Composable
 private fun TarjetaError(error: ErrorDetectado) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "${error.articulacion} — ${error.tipo}", style = MaterialTheme.typography.bodyMedium)
                 Text(
