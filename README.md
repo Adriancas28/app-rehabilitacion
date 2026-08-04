@@ -33,24 +33,39 @@ Monorepo con dos carpetas raíz independientes:
 ## Alta de usuarios (pacientes y fisioterapeutas)
 
 La app **no tiene pantalla de auto-registro**: las cuentas ya deben existir
-en Firebase Auth + Firestore antes de que alguien pueda iniciar sesión. Se
-crean con un script administrativo en `/backend`, nunca desde el propio
-dispositivo del paciente o fisioterapeuta:
+en Firebase Auth + Firestore antes de que alguien pueda iniciar sesión.
+
+- **Pacientes y fisioterapeutas:** se crean directamente desde el panel de
+  Administrador dentro de la propia app (rol `admin`, ver HU20/HU21 en
+  [`CLAUDE.md`](./CLAUDE.md)) — ya no depende del script para el uso diario.
+- **La primera cuenta de administrador** (bootstrap, sin UI propia) se crea
+  con un script administrativo en `/backend`:
 
 ```bash
 cd backend
 npm install
 GOOGLE_APPLICATION_CREDENTIALS=./service-account.json \
   npx ts-node seed/crear-usuario.ts \
-  --nombre "Juan Pérez" --email juan.perez@correo.com \
-  --rol paciente --fisioterapeutaId <uid-del-fisioterapeuta>
+  --nombre "Admin SANNA" --email admin@sanna.pe --rol admin
 ```
 
-El script imprime la contraseña generada por consola; se entrega al
-usuario por correo o WhatsApp. Para un fisioterapeuta se omite
-`--fisioterapeutaId` y se usa `--rol fisioterapeuta`.
+El mismo script sigue funcionando para `--rol paciente` (requiere
+`--fisioterapeutaId <uid>`) y `--rol fisioterapeuta`, por si se prefiere
+la vía de línea de comandos. Imprime la contraseña generada por consola;
+se entrega al usuario por correo o WhatsApp.
 
 ## Roles
 
 - **Paciente:** ejecuta ejercicios asignados y recibe retroalimentación en tiempo real.
 - **Fisioterapeuta:** asigna rutinas y hace seguimiento del progreso de sus pacientes.
+- **Administrador:** gestiona las cuentas de pacientes y fisioterapeutas
+  (alta, edición, baja) y asigna el fisioterapeuta responsable de cada
+  paciente, sin depender de herramientas de línea de comandos.
+
+## Design System
+
+Todas las pantallas siguen un Design System único (paleta, tipografía,
+espaciado e iconografía) con componentes reutilizables en
+`app/core/designsystem/`. Antes de tocar una pantalla o crear un
+componente nuevo, revisar el inventario en la sección 3 de
+[`CLAUDE.md`](./CLAUDE.md).
