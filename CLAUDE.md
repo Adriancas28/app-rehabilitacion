@@ -87,6 +87,16 @@ primera tarea, no asumir que ya existe nada de lo siguiente:
 **Convención de nombres:** package base sugerido `com.sanna.rehabapp`
 (ajustar solo si ya existe un nombre definitivo acordado con el equipo).
 
+> Nota (limpieza final pre-entrega): este árbol es el plan inicial de
+> esqueleto, no un espejo 1:1 del árbol actual (que además ganó
+> `feature/admin/`, `feature/perfil/`, `core/designsystem/`, `core/theme/`,
+> `core/tts/`, `core/consent/`, entre otros, sobre la marcha). Dos carpetas
+> planeadas aquí nunca se usaron y se eliminaron en la limpieza final:
+> `data/remote/firestore/` (el acceso a Firestore terminó viviendo directo
+> en `data/repository/*Impl.kt`) y `feature/seguimiento/` (HU12/HU14 se
+> implementaron dentro de `feature/pacientes/`/`feature/paciente/` — ver su
+> nota de implementación en la sección 10).
+
 **Primer paso sugerido para Claude Code:** generar este esqueleto (proyecto
 Android con Gradle + Hilt + Compose configurado, y proyecto Firebase con
 `firebase init` sobre `/backend`) antes de empezar a implementar historias
