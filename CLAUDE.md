@@ -1263,13 +1263,16 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   simultáneo"). Sin dato, se mide el lado derecho por defecto.
 - CA08 *(ampliación acordada, no en la versión original — recomendación
   del modelo E-R-SANNA)*: Dado que consulte la lista de pacientes, cuando
-  seleccione "Desactivar" en el menú de un paciente, entonces el sistema
-  marca su cuenta como inactiva (`activo = false`) sin eliminarla — el
-  paciente no puede volver a iniciar sesión mientras esté inactiva, pero
-  su historial de sesiones y resultados se conserva. El administrador
-  puede revertirlo seleccionando "Activar". Esta acción convive con
-  "Eliminar" (CA04): son dos opciones distintas, no un reemplazo — eliminar
-  borra el registro; desactivar solo bloquea el acceso de forma reversible.
+  seleccione "Desactivar" en el menú de un paciente y confirme en el
+  diálogo (mismo `DialogoConfirmacion` que "Eliminar"), entonces el
+  sistema marca su cuenta como inactiva (`activo = false`) sin
+  eliminarla — el paciente no puede volver a iniciar sesión mientras esté
+  inactiva, pero su historial de sesiones y resultados se conserva. El
+  administrador puede revertirlo seleccionando "Activar" (con el mismo
+  paso de confirmación). Esta acción convive con "Eliminar" (CA04): son
+  dos opciones distintas, no un reemplazo — eliminar borra el registro;
+  desactivar solo bloquea el acceso de forma reversible. Toda cuenta
+  nueva se crea activa por defecto (`crearCuenta`, HU20-CA02/HU21-CA02).
 
 #### HU21 — Gestionar cuentas de fisioterapeutas
 **Rol:** Administrador
@@ -1290,7 +1293,8 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 - CA05 *(ampliación acordada, no en la versión original — recomendación
   del modelo E-R-SANNA, simétrica a HU20-CA08)*: Dado que consulte la
   lista de fisioterapeutas, cuando seleccione "Desactivar" en el menú de
-  uno de ellos, entonces el sistema marca su cuenta como inactiva
+  uno de ellos y confirme en el diálogo (mismo `DialogoConfirmacion` que
+  "Eliminar"), entonces el sistema marca su cuenta como inactiva
   (`activo = false`) sin eliminarla — no puede volver a iniciar sesión
   mientras esté inactiva, pero sus datos (ejercicios creados, sesiones
   asignadas, recomendaciones) se conservan. El administrador puede

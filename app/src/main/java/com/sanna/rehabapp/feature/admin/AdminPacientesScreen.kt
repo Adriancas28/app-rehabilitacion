@@ -64,6 +64,7 @@ fun AdminPacientesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var pacienteAEliminar by remember { mutableStateOf<Usuario?>(null) }
+    var pacienteACambiarActivo by remember { mutableStateOf<Usuario?>(null) }
     var pacienteAAsignar by remember { mutableStateOf<Usuario?>(null) }
     var confirmandoCierreSesion by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -144,7 +145,7 @@ fun AdminPacientesScreen(
                                 },
                                 onEditar = { onEditarPaciente(paciente.uid) },
                                 onEliminar = { pacienteAEliminar = paciente },
-                                onCambiarActivo = { viewModel.cambiarEstadoActivo(paciente.uid, paciente.nombre, !paciente.activo) },
+                                onCambiarActivo = { pacienteACambiarActivo = paciente },
                             )
                         }
                     }
@@ -179,6 +180,24 @@ fun AdminPacientesScreen(
                 pacienteAEliminar = null
             },
             onCancelar = { pacienteAEliminar = null },
+        )
+    }
+
+    pacienteACambiarActivo?.let { paciente ->
+        val activar = !paciente.activo
+        DialogoConfirmacion(
+            titulo = if (activar) "Activar paciente" else "Desactivar paciente",
+            mensaje = if (activar) {
+                "¿Seguro que deseas activar la cuenta de \"${paciente.nombre}\"? Podrá volver a iniciar sesión."
+            } else {
+                "¿Seguro que deseas desactivar la cuenta de \"${paciente.nombre}\"? No podrá iniciar sesión hasta que la actives de nuevo."
+            },
+            textoConfirmar = if (activar) "Activar" else "Desactivar",
+            onConfirmar = {
+                viewModel.cambiarEstadoActivo(paciente.uid, paciente.nombre, activar)
+                pacienteACambiarActivo = null
+            },
+            onCancelar = { pacienteACambiarActivo = null },
         )
     }
 

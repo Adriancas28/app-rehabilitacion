@@ -51,6 +51,7 @@ fun AdminFisioterapeutasScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var fisioAEliminar by remember { mutableStateOf<Usuario?>(null) }
+    var fisioACambiarActivo by remember { mutableStateOf<Usuario?>(null) }
     var confirmandoCierreSesion by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -131,7 +132,7 @@ fun AdminFisioterapeutasScreen(
                                 },
                                 onEditar = { onEditarFisioterapeuta(fisio.uid) },
                                 onEliminar = { fisioAEliminar = fisio },
-                                onCambiarActivo = { viewModel.cambiarEstadoActivo(fisio.uid, fisio.nombre, !fisio.activo) },
+                                onCambiarActivo = { fisioACambiarActivo = fisio },
                             )
                         }
                     }
@@ -166,6 +167,24 @@ fun AdminFisioterapeutasScreen(
                 fisioAEliminar = null
             },
             onCancelar = { fisioAEliminar = null },
+        )
+    }
+
+    fisioACambiarActivo?.let { fisio ->
+        val activar = !fisio.activo
+        DialogoConfirmacion(
+            titulo = if (activar) "Activar fisioterapeuta" else "Desactivar fisioterapeuta",
+            mensaje = if (activar) {
+                "¿Seguro que deseas activar la cuenta de \"${fisio.nombre}\"? Podrá volver a iniciar sesión."
+            } else {
+                "¿Seguro que deseas desactivar la cuenta de \"${fisio.nombre}\"? No podrá iniciar sesión hasta que la actives de nuevo."
+            },
+            textoConfirmar = if (activar) "Activar" else "Desactivar",
+            onConfirmar = {
+                viewModel.cambiarEstadoActivo(fisio.uid, fisio.nombre, activar)
+                fisioACambiarActivo = null
+            },
+            onCancelar = { fisioACambiarActivo = null },
         )
     }
 }
