@@ -25,7 +25,10 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.CampoTexto
 import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
+import com.sanna.rehabapp.core.designsystem.SelectorDropdown
 import com.sanna.rehabapp.core.theme.Spacing
+import com.sanna.rehabapp.domain.model.Genero
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -103,6 +106,29 @@ fun AdminPacienteFormScreen(
                 onValorCambiado = viewModel::onEdadCambiado,
                 etiqueta = "Edad",
                 tipoTeclado = KeyboardType.Number,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            SelectorDropdown(
+                valorSeleccionado = uiState.genero,
+                opciones = Genero.entries,
+                etiquetaDeOpcion = { it.etiqueta },
+                onSeleccionar = viewModel::onGeneroCambiado,
+                etiqueta = "Género",
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            CampoTexto(
+                valor = uiState.numeroContacto,
+                onValorCambiado = viewModel::onNumeroContactoCambiado,
+                etiqueta = "Número de contacto",
+                tipoTeclado = KeyboardType.Phone,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            SelectorDropdown(
+                valorSeleccionado = uiState.ladoAfectado,
+                opciones = LadoAfectado.entries,
+                etiquetaDeOpcion = { it.etiqueta },
+                onSeleccionar = viewModel::onLadoCambiado,
+                etiqueta = "Lado afectado",
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             Text(text = "Diagnóstico(s)", style = MaterialTheme.typography.titleSmall)

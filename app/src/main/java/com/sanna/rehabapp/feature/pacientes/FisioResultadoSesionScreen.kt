@@ -132,27 +132,29 @@ private fun TarjetaResumen(resultado: ResultadoSesion) {
     }
 }
 
-// HU18-CA04: lo que el fisioterapeuta usa para decidir qué recomendar —
-// por cada repetición, si estuvo bien o qué error puntual tuvo.
+// HU18-CA04 (actualización del modelo de datos): lo que el fisioterapeuta
+// usa para decidir qué recomendar — por cada repetición, el porcentaje de
+// ejecución calculado automáticamente por la IA (en vez del sí/no
+// original) y, cuando hubo desviación, qué error puntual tuvo.
 @Composable
 private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
+    val dentroDeRango = detalle.porcentajeEjecucion >= 100f
     TarjetaBase(relleno = Spacing.sm + 6.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = if (detalle.dentroDeRango) Icons.Filled.Check else Icons.Filled.Warning,
+                imageVector = if (dentroDeRango) Icons.Filled.Check else Icons.Filled.Warning,
                 contentDescription = null,
-                tint = if (detalle.dentroDeRango) VerdeExitoTexto else AmbarAlertaTexto,
+                tint = if (dentroDeRango) VerdeExitoTexto else AmbarAlertaTexto,
             )
             Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "Repetición ${detalle.numero}", style = MaterialTheme.typography.bodyMedium)
-                if (detalle.dentroDeRango) {
-                    Text(
-                        text = "Dentro de rango",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
+                Text(
+                    text = "Ejecución: ${detalle.porcentajeEjecucion.toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (!dentroDeRango) {
                     detalle.errores.forEach { error ->
                         Text(
                             text = "${error.articulacion} — ${error.tipo}",

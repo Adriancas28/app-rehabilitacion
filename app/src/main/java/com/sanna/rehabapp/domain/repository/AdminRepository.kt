@@ -1,5 +1,7 @@
 package com.sanna.rehabapp.domain.repository
 
+import com.sanna.rehabapp.domain.model.Genero
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 import kotlinx.coroutines.flow.Flow
@@ -11,9 +13,9 @@ interface AdminRepository {
 
     fun observarFisioterapeutas(): Flow<List<Usuario>>
 
-    // HU20-CA02 (revisión): además de los datos de cuenta, el admin
-    // captura DNI, edad y uno o más diagnósticos del paciente al
-    // registrarlo — no solo el fisioterapeuta los edita después.
+    // HU20-CA02 (actualizado): además de los datos de cuenta, el admin
+    // captura DNI, edad, género, número de contacto y uno o más
+    // diagnósticos del paciente al registrarlo.
     suspend fun crearPaciente(
         nombre: String,
         email: String,
@@ -21,14 +23,28 @@ interface AdminRepository {
         dni: String,
         edad: Int,
         diagnosticos: List<TipoDiagnostico>,
+        ladoAfectado: LadoAfectado,
+        genero: Genero,
+        numeroContacto: String,
     ): Result<Unit>
 
-    suspend fun crearFisioterapeuta(nombre: String, email: String, password: String): Result<Unit>
+    // HU21-CA02 (actualizado): especialidad y número de colegiatura son
+    // opcionales, el resto de datos son obligatorios.
+    suspend fun crearFisioterapeuta(
+        nombre: String,
+        email: String,
+        password: String,
+        edad: Int,
+        genero: Genero,
+        numeroContacto: String,
+        especialidad: String?,
+        numeroColegiatura: String?,
+    ): Result<Unit>
 
     suspend fun actualizarUsuario(uid: String, nombre: String, email: String): Result<Unit>
 
-    // HU20-CA03: editar los datos propios de un paciente (a diferencia de
-    // actualizarUsuario, que sirve para ambos roles).
+    // HU20-CA03 (actualizado): editar los datos propios de un paciente (a
+    // diferencia de actualizarUsuario, que sirve para ambos roles).
     suspend fun actualizarPaciente(
         uid: String,
         nombre: String,
@@ -36,6 +52,22 @@ interface AdminRepository {
         dni: String,
         edad: Int,
         diagnosticos: List<TipoDiagnostico>,
+        ladoAfectado: LadoAfectado,
+        genero: Genero,
+        numeroContacto: String,
+    ): Result<Unit>
+
+    // HU21-CA03 (actualizado): editar los datos propios de un
+    // fisioterapeuta.
+    suspend fun actualizarFisioterapeuta(
+        uid: String,
+        nombre: String,
+        email: String,
+        edad: Int,
+        genero: Genero,
+        numeroContacto: String,
+        especialidad: String?,
+        numeroColegiatura: String?,
     ): Result<Unit>
 
     // Nota: solo elimina el documento en Firestore. El registro de Firebase

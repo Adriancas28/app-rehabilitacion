@@ -12,6 +12,10 @@ fun fraseCorrectiva(medicion: MedicionArticulacion): String {
     return when (medicion.tipoDeError) {
         "Rango incompleto" -> "Flexiona más $articulo $nombre."
         "Desviación angular" -> "No fuerces tanto $articulo $nombre."
+        // HU20 (ampliación): ejercicios con lado afectado "Ambos" pensados
+        // para alternar un brazo a la vez (ej. HOM-01) -- no es un error
+        // de rango, es de coordinación, así que no menciona la articulación.
+        "Movimiento simultáneo" -> "Levanta un brazo a la vez, no los dos juntos."
         else -> "Corrige $articulo $nombre."
     }
 }

@@ -11,10 +11,12 @@ import com.sanna.rehabapp.core.posedetection.fraseCorrectiva
 import com.sanna.rehabapp.core.posedetection.mergearResultados
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
+import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -83,6 +85,7 @@ class EjecutarSesionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
+    private val usuarioRepository: UsuarioRepository,
 ) : ViewModel() {
 
     private val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
@@ -119,7 +122,11 @@ class EjecutarSesionViewModel @Inject constructor(
             val sesion = sesionRepository.obtenerSesion(idPaciente, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
             if (ejercicio != null) {
-                procesadorMovimiento = ProcesadorMovimiento(ejercicio)
+                // HU20 (ampliación): se mide el lado que el administrador
+                // indicó como afectado para este paciente, no siempre el
+                // derecho con el que se definió el ejercicio.
+                val ladoAfectado = usuarioRepository.obtenerUsuario(idPaciente)?.ladoAfectado ?: LadoAfectado.DERECHO
+                procesadorMovimiento = ProcesadorMovimiento(ejercicio, ladoAfectado)
                 val totalRepeticiones = sesion?.repeticiones ?: ejercicio.repeticiones
                 val resultadoAnterior = sesion?.resultado
                 if (resultadoAnterior != null && resultadoAnterior.repeticionesCompletadas < totalRepeticiones) {

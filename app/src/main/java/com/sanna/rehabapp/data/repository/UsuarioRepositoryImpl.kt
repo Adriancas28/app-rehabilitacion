@@ -5,6 +5,8 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
+import com.sanna.rehabapp.domain.model.Genero
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
@@ -83,5 +85,10 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         dni = getString("dni"),
         edad = (get("edad") as? Number)?.toInt(),
         fechaRegistro = getDate("fechaRegistro"),
+        ladoAfectado = LadoAfectado.desdeFirestoreOrNull(getString("ladoAfectado")) ?: LadoAfectado.DERECHO,
+        genero = Genero.desdeFirestoreOrNull(getString("genero")),
+        numeroContacto = getString("numeroContacto"),
+        especialidad = getString("especialidad"),
+        numeroColegiatura = getString("numeroColegiatura"),
     )
 }

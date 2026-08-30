@@ -20,7 +20,7 @@ class MergeResultadoSesionTest {
         detallePorRepeticion = listOf(
             DetalleRepeticion(
                 numero = 1,
-                dentroDeRango = false,
+                porcentajeEjecucion = 0f,
                 errores = listOf(ErrorDetectado("Cuello", "Rango incompleto", repeticiones = 5)),
             ),
         ),
@@ -37,8 +37,8 @@ class MergeResultadoSesionTest {
             repeticionesAsignadas = 3,
             repeticionesCorrectas = 2,
             detallePorRepeticion = listOf(
-                DetalleRepeticion(numero = 2, dentroDeRango = true, errores = emptyList()),
-                DetalleRepeticion(numero = 3, dentroDeRango = true, errores = emptyList()),
+                DetalleRepeticion(numero = 2, porcentajeEjecucion = 100f, errores = emptyList()),
+                DetalleRepeticion(numero = 3, porcentajeEjecucion = 100f, errores = emptyList()),
             ),
         )
 
@@ -71,7 +71,7 @@ class MergeResultadoSesionTest {
             detallePorRepeticion = listOf(
                 DetalleRepeticion(
                     numero = 2,
-                    dentroDeRango = false,
+                    porcentajeEjecucion = 0f,
                     errores = listOf(ErrorDetectado("Cuello", "Rango incompleto", repeticiones = 3)),
                 ),
             ),

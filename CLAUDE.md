@@ -265,13 +265,44 @@ usuarios/{uid}
                                 a la vez — ej. osteoartrosis de rodilla +
                                 desacondicionamiento general. `codigo` es un
                                 valor del enum TipoDiagnostico que elige el
-                                fisioterapeuta de un catálogo cerrado de 13
-                                — HU01-CA06, ampliado de un solo valor a
-                                lista con catálogo clínico más específico.
-                                Ver sección 9, Catálogo de diagnósticos)
-  - dni, edad                 (solo si rol = paciente; capturados por el
-                                administrador al registrarlo — HU20-CA02,
-                                revisión de Sprint 5)
+                                fisioterapeuta de un catálogo cerrado de 3
+                                — HU01-CA06. Ver sección 9, Catálogo de
+                                diagnósticos)
+  - dni                       (solo si rol = paciente)
+  - edad                      (ambos roles — capturados por el administrador
+                                al registrarlo, HU20-CA02/HU21-CA02)
+  - genero: "MASCULINO" | "FEMENINO" | "OTRO"
+                              (ambos roles; actualización del modelo de
+                                datos, no en la versión original —
+                                HU20-CA02/HU21-CA02)
+  - numeroContacto            (ambos roles; misma actualización)
+  - especialidad, numeroColegiatura
+                              (solo si rol = fisioterapeuta; opcionales
+                                incluso para ese rol — HU21-CA02)
+  - ladoAfectado: "DERECHO" | "IZQUIERDO" | "AMBOS"
+                              (solo si rol = paciente; ampliación acordada,
+                                no en la versión original. Un único valor
+                                por paciente, no por diagnóstico — lo elige
+                                el administrador al registrarlo/editarlo
+                                (HU20-CA02/CA03, mismo formulario que el
+                                checklist de diagnósticos), nunca lo infiere
+                                el sistema. El motoreo (HU07/HU08) lo usa
+                                para medir la articulación del lado real del
+                                paciente en vez de asumir siempre el derecho
+                                con el que se define `patronesReferencia`
+                                — ver `Articulacion.espejo()`. Con "AMBOS"
+                                (ejercicios pensados para alternar un lado a
+                                la vez, ej. HOM-01), el sistema mide los dos
+                                lados en cada frame y reporta el que tenga
+                                mayor ángulo (el que se está levantando en
+                                ese instante); si los dos superan el
+                                `anguloMin` del patrón al mismo tiempo, se
+                                detecta que el paciente mueve ambos lados
+                                juntos en vez de alternar, y se marca como
+                                error de coordinación ("Movimiento
+                                simultáneo") en vez de una comparación de
+                                rango normal. Sin dato, se mide el lado con
+                                el que se definió el ejercicio (derecho))
   - fechaRegistro
 
   usuarios/{pacienteId}/sesiones/{sesionId}
@@ -293,12 +324,19 @@ usuarios/{uid}
                               menor a asignadas si se finalizó antes de
                               tiempo, HU06-CA07; correctas cuenta las
                               repeticiones sin ningún error detectado),
-        detallePorRepeticion: [{ numero, dentroDeRango, errores }]
-                             (HU18-CA04, Sprint 4: desglose por repetición
-                              que ve el fisioterapeuta antes de
-                              recomendar, HU15. `errores` es el mismo tipo
-                              que `erroresDetectados` de arriba pero
-                              acotado a esa repetición puntual, no agregado)
+        detallePorRepeticion: [{ numero, porcentajeEjecucion, errores }]
+                             (HU18-CA04: desglose por repetición que ve el
+                              fisioterapeuta antes de recomendar, HU15.
+                              `porcentajeEjecucion` reemplaza al booleano
+                              `dentroDeRango` original — actualización del
+                              modelo de datos: en vez de "sí/no cumplió",
+                              muestra qué porcentaje de esa repetición
+                              estuvo dentro del rango esperado, calculado
+                              con el mismo criterio que el % global de la
+                              sesión pero acotado a esa repetición.
+                              `errores` es el mismo tipo que
+                              `erroresDetectados` de arriba pero acotado a
+                              esa repetición puntual, no agregado)
       }
     - sincronizado: bool      (para el manejo offline de RNF01 / HU19)
 
@@ -330,7 +368,14 @@ ejercicios/{ejercicioId}
                               una sesión — HU03-CA07. No restringe la
                               selección a cualquier otro ejercicio del
                               catálogo, solo lo resalta. Ver sección 9)
-  - creadoPor, fechaCreacion, activo
+  - creadoPor, fechaCreacion
+  - activo                     (HU02-CA10, actualización del modelo de
+                                datos: el fisioterapeuta desactiva un
+                                ejercicio en vez de eliminarlo cuando ya
+                                tiene sesiones históricas asociadas — se
+                                oculta del selector de asignación, HU03,
+                                pero conserva su historial; reactivable en
+                                cualquier momento)
 ```
 
 ### Decisiones de diseño
@@ -613,84 +658,106 @@ crear un tercer tipo por conveniencia**.
 
 ## 8. Catálogo de ejercicios predeterminados
 
-Catálogo real (no de prueba) sembrado en Firestore vía
-`backend/seed/crear-catalogo-ejercicios.ts`. Elegido con 3 criterios:
-seguros y genéricos (no específicos de una sola patología), visibles desde
-una sola cámara sin que el cuerpo salga del encuadre, y que cubran las
-articulaciones ya soportadas por el enum `Articulacion`.
+Catálogo del MVP (reemplaza por completo al catálogo anterior de 9
+ejercicios, no es una ampliación) sembrado en Firestore vía
+`backend/seed/crear-catalogo-ejercicios.ts`. Fuente:
+`Catalogo_Ejercicios_MVP_SANNA_Especificaciones.docx` — 12 ejercicios para
+las 3 condiciones de la sección 9, elegidos combinando frecuencia clínica
+documentada (ver sección 9) con viabilidad técnica real: qué movimientos
+se pueden representar de forma confiable con landmarks y métricas
+geométricas de MediaPipe Pose/BlazePose, según literatura de pose
+estimation citada en el documento fuente. El código (LUM-01, OAR-02, ...)
+es solo de trazabilidad con el documento fuente — no se guarda en
+Firestore.
 
-| # | Ejercicio | Categoría | Articulación | Repeticiones | Rango de referencia (seed)* |
-|---|---|---|---|---|---|
-| 1 | Flexión de hombro | Movilidad | Hombro derecho | 3 | 70°–110° |
-| 2 | Abducción de hombro | Movilidad | Hombro derecho | 3 | 70°–110° |
-| 3 | Flexión de codo | Movilidad | Codo derecho | 3 | 60°–90° |
-| 4 | Marcha estacionaria | Movilidad | Cadera derecha | 6 | 100°–140° |
-| 5 | Flexión de rodilla (sentado) | Movilidad | Rodilla derecha | 6 | 90°–160° |
-| 6 | Flexión dorsal/plantar de tobillo | Movilidad | Tobillo derecho | 6 | 80°–100° |
-| 7 | Rotación de tronco (sentado) | Movilidad | Tronco | 6 | 60°–100° |
-| 8 | Mini sentadilla | Control motor | Rodilla derecha | 6 | 120°–150° |
-| 9 | Puente de glúteos | Control motor | Cadera derecha | 6 | 160°–180° |
+| Código | Ejercicio | Categoría | Articulación | Vista de cámara | Repeticiones | Rango de referencia (seed)* |
+|---|---|---|---|---|---|---|
+| LUM-01 | Bisagra de cadera (Hip Hinge) | Movilidad | Cadera derecha | Lateral | 6 | 90°–150° |
+| LUM-02 | Marcha estacionaria con control de tronco | Movilidad | Cadera derecha | Frontal | 6 | 100°–140° |
+| LUM-03 | Inclinación lateral de tronco | Movilidad | Tronco | Frontal | 6 | 70°–110° |
+| LUM-04 | Puente de glúteo | Control motor | Cadera derecha | Lateral, cámara baja | 6 | 160°–180° |
+| OAR-01 | Extensión de rodilla en sedestación | Movilidad | Rodilla derecha | Lateral | 6 | 140°–175° |
+| OAR-02 | Flexión de rodilla en bipedestación | Movilidad | Rodilla derecha | Lateral | 6 | 90°–140° |
+| OAR-03 | Mini-sentadilla | Control motor | Rodilla derecha | Frontal (+ lateral complementaria) | 6 | 120°–150° |
+| OAR-04 | Levantarse de una silla (Sit-to-Stand) | Control motor | Rodilla derecha | Lateral | 5 | 150°–180° |
+| SDS-01 | Abducción de hombro | Movilidad | Hombro derecho | Frontal | 3 | 70°–110° |
+| SDS-02 | Flexión de hombro | Movilidad | Hombro derecho | Lateral | 3 | 70°–110° |
+| SDS-03 | Trepado de dedos en pared | Movilidad | Hombro derecho | Frontal | 3 | 80°–130° |
+| SDS-04 | Flexión unilateral alternada de hombro | Movilidad | Hombro derecho | Lateral/oblicua | 6 | 70°–110° |
 
 \* Estos ángulos están en la convención de este sistema (el ángulo crudo
 calculado por `AnguloCalculator` en el vértice de la articulación, no la
-goniometría clínica tradicional) — son un **punto de partida técnico**
-razonable, no una dosis clínica. El fisioterapeuta puede y debe refinarlos
-por paciente, ya sea editándolos a mano (HU02-CA05) o recalculándolos
-analizando un video real con "Calcular ROM automáticamente" (HU02-CA07) una
-vez que existan clips grabados para cada ejercicio — el seed deja
+goniometría clínica tradicional). Los 4 ejercicios cuyo movimiento
+coincide con el catálogo anterior (LUM-04, OAR-03, SDS-01, SDS-02) reusan
+el rango ya usado antes; el resto son un **punto de partida técnico**
+provisional, no una dosis clínica. El fisioterapeuta puede y debe
+refinarlos por paciente, ya sea editándolos a mano (HU02-CA05) o
+recalculándolos analizando un video real con "Calcular ROM automáticamente"
+(HU02-CA07) una vez que existan clips grabados — el seed deja
 `materialUrl` vacío a propósito, pendiente de que se graben esos videos.
 
-### Nota sobre el ejercicio "Equilibrio monopodal" (deliberadamente fuera del seed)
+### Validación piloto prioritaria
 
-No se mide por ángulo articular sino por estabilidad/tiempo sostenido — con
-el diseño actual de HU08/HU09 (comparación contra un ángulo esperado) no
-encaja igual que los otros 9. Queda fuera del catálogo sembrado; se
-agregaría en una segunda iteración con una métrica distinta (tiempo
-balanceado, oscilación del tronco), no por defecto.
+El documento fuente marca explícitamente **LUM-04 (puente de glúteo),
+OAR-04 (sit-to-stand) y SDS-03 (trepado de dedos en pared)** como los 3
+ejercicios a validar primero con un fisioterapeuta antes de fijar sus
+métricas definitivas — son los que presentan mayor riesgo técnico para
+pose estimation monocular: LUM-04 por la cámara cercana al suelo, OAR-04
+por las oclusiones de la silla durante la transición sentado↔de pie, y
+SDS-03 porque MediaPipe no puede verificar directamente el contacto de
+los dedos con la pared (el análisis debe centrarse en trayectoria de
+muñeca y ROM de hombro, no en el contacto en sí).
+
+### Límites explícitos del catálogo (documento fuente, sección 5)
+
+La aplicación no debe diagnosticar, determinar gravedad clínica, sustituir
+al fisioterapeuta, ni afirmar una precisión equivalente a un goniómetro o
+a un sistema de captura de movimiento de laboratorio — MediaPipe Pose es
+una estimación computacional del movimiento, no una medición clínica de
+referencia (mismo espíritu ya establecido en RNF06).
 
 ---
 
 ## 9. Catálogo de diagnósticos
 
-Catálogo real del enum `TipoDiagnostico` (13 valores, ampliación acordada
-sobre el catálogo genérico anterior de 7). Igual que antes: **la app no
-genera diagnósticos** — el fisioterapeuta registra el que ya obtuvo de su
-evaluación clínica; el sistema solo lo usa para **sugerir** ejercicios
-relacionados (HU03-CA07), sin decidir ni bloquear nada por su cuenta.
+Catálogo real del enum `TipoDiagnostico` (**3 valores** — catálogo del
+MVP, reemplaza por completo al catálogo anterior de 13 diagnósticos, no
+es una ampliación). Elegido con respaldo bibliográfico real: la OMS
+(carga de discapacidad de la lumbalgia), la Guía de Práctica Clínica de
+EsSalud 2025 (osteoartritis) y un estudio de 366 pacientes en un centro
+de rehabilitación de Villa El Salvador, Lima (frecuencia de lumbalgia,
+gonalgia y hombro doloroso) — ver
+`Catalogo_Ejercicios_MVP_SANNA_Especificaciones.docx`. El documento
+fuente aclara explícitamente que esta selección **no afirma ser la más
+frecuente dentro de SANNA** (no hay datos internos públicos de su
+servicio) y que la selección final debe validarse con sus
+fisioterapeutas. Igual que antes: **la app no genera diagnósticos** — el
+fisioterapeuta registra el que ya obtuvo de su evaluación clínica; el
+sistema solo lo usa para **sugerir** ejercicios relacionados (HU03-CA07),
+sin decidir ni bloquear nada por su cuenta.
 
-### Lista de diagnósticos (13), agrupados por región corporal
+### Lista de diagnósticos (3), agrupados por región corporal
 
 | Región | Diagnóstico | Ejercicios sugeridos (del catálogo) |
 |---|---|---|
-| Hombro | Síndrome de pinzamiento subacromial | Flexión de hombro, Abducción de hombro |
-| Hombro | Capsulitis adhesiva (hombro congelado) | Flexión de hombro, Abducción de hombro |
-| Hombro | Rehabilitación post-quirúrgica de manguito rotador | Flexión de hombro, Abducción de hombro |
-| Codo | Rigidez postraumática de codo | Flexión de codo |
-| Cadera | Rehabilitación post-artroplastia de cadera | Marcha estacionaria, Puente de glúteos |
-| Cadera | Osteoartrosis de cadera | Marcha estacionaria, Puente de glúteos |
-| Rodilla | Post-reconstrucción de ligamento cruzado anterior | Flexión de rodilla, Mini sentadilla |
-| Rodilla | Osteoartrosis de rodilla | Flexión de rodilla, Mini sentadilla |
-| Rodilla | Síndrome de dolor femoropatelar | Flexión de rodilla, Mini sentadilla |
-| Tobillo | Esguince de tobillo (fase funcional) | Flexión dorsal/plantar de tobillo |
-| Columna | Lumbalgia mecánica / dolor lumbar inespecífico | Rotación de tronco, Puente de glúteos |
-| General | Debilidad muscular / desacondicionamiento físico | Mini sentadilla, Puente de glúteos |
-| General | Alteraciones del equilibrio / riesgo de caídas | Equilibrio monopodal (segunda iteración, sin ejercicio sembrado aún) |
+| Columna | Lumbalgia inespecífica | Bisagra de cadera, Marcha estacionaria con control de tronco, Inclinación lateral de tronco, Puente de glúteo |
+| Rodilla | Osteoartritis de rodilla (gonartrosis) | Extensión de rodilla en sedestación, Flexión de rodilla en bipedestación, Mini-sentadilla, Levantarse de una silla |
+| Hombro | Síndrome de dolor subacromial / hombro doloroso | Abducción de hombro, Flexión de hombro, Trepado de dedos en pared, Flexión unilateral alternada de hombro |
 
 ### Estructura de datos (Firestore)
 
 ```
 usuarios/{pacienteId}
   - diagnosticos: [
-      { codigo: "OSTEOARTROSIS_RODILLA", fecha: <Timestamp> },
-      { codigo: "DEBILIDAD_MUSCULAR", fecha: <Timestamp> }
+      { codigo: "OSTEOARTROSIS_RODILLA", fecha: <Timestamp> }
     ]
 
 ejercicios/{ejercicioId}
-  - diagnosticosAplicables: ["OSTEOARTROSIS_RODILLA", "POST_RECONSTRUCCION_LCA", ...]
+  - diagnosticosAplicables: ["LUMBALGIA_INESPECIFICA"]
 ```
 
 La sugerencia de HU03-CA07 se resuelve **client-side**: la pantalla de
-asignar sesión ya tiene cargado el catálogo completo de ejercicios (~10
+asignar sesión ya tiene cargado el catálogo completo de ejercicios (12
 documentos), así que compara `diagnosticosAplicables` de cada ejercicio
 contra los códigos en `usuarios/{pacienteId}.diagnosticos` sin necesitar
 una query aparte — los sugeridos se muestran primero en el selector
@@ -724,11 +791,12 @@ y priorizados en 5 sprints.
 - CA03: Dado que consulta un paciente, cuando acceda a su detalle, entonces el sistema muestra progreso y sesiones registradas.
 - CA04: Dado que desee ubicar un paciente, cuando ingrese un criterio de búsqueda, entonces el sistema filtra la lista mostrada.
 - CA05: Dado que no tenga pacientes asignados, cuando acceda al módulo, entonces el sistema muestra un mensaje de ausencia de pacientes.
-- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis;
-  revisada durante el propio Sprint 3: pasó de texto libre a catálogo
-  cerrado; ampliada de nuevo más adelante: de un solo valor a una lista)*:
+- CA06 *(ampliación acordada, no en la versión original de la tesis; pasó
+  de texto libre a catálogo cerrado, luego de un solo valor a una lista, y
+  finalmente el catálogo se redujo de 13 a 3 diagnósticos del MVP con
+  respaldo bibliográfico — ver sección 9, Catálogo de diagnósticos)*:
   Dado que consulte el detalle de un paciente, cuando elija uno o más
-  diagnósticos de un catálogo cerrado de 13 valores agrupados por región
+  diagnósticos de un catálogo cerrado de 3 valores agrupados por región
   corporal (sección 9, Catálogo de diagnósticos), entonces el sistema los
   guarda (cada uno con su propia fecha) y los muestra junto al resto de su
   información terapéutica (incluida la lista de pacientes). No es texto
@@ -767,6 +835,13 @@ y priorizados en 5 sprints.
   / Control motor — sección 7), no texto libre. Opcionalmente puede además
   marcar uno o más diagnósticos para los que este ejercicio se sugiere
   primero al asignar una sesión (`diagnosticosAplicables`, ver HU03-CA07).
+- CA10 *(actualización del modelo de datos, no en la versión original de la
+  tesis)*: Dado que un ejercicio ya no deba usarse para nuevas asignaciones
+  pero tenga sesiones históricas asociadas, cuando el fisioterapeuta lo
+  desactive en lugar de eliminarlo, entonces el sistema lo oculta del
+  listado de asignación (HU03) pero conserva su historial en las sesiones
+  ya registradas. Un ejercicio desactivado puede reactivarse en cualquier
+  momento.
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -1071,18 +1146,21 @@ y priorizados en 5 sprints.
 - CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
 - CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
 - CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
-- CA04 *(ampliación acordada, no en la versión original de la tesis;
-  construida en Sprint 4 junto con la versión mínima de CA02 — ver nota
-  de dependencia con HU15 más abajo)*: Dado que acceda al detalle de una
-  sesión completada, entonces el sistema
+- CA04 *(ampliación acordada, construida en Sprint 4 junto con la versión
+  mínima de CA02 — ver nota de dependencia con HU15 más abajo; redacción
+  actualizada tras la revisión del modelo de datos: reemplaza el booleano
+  original "dentro de rango" por el porcentaje de ejecución calculado)*:
+  Dado que acceda al detalle de una sesión completada, entonces el sistema
   desglosa el resultado **por repetición** (no solo agregado): para cada
-  repetición muestra si estuvo dentro de rango y, si no, qué error se
-  detectó y en qué articulación (ej. "Repetición 5: hombro derecho, rango
-  incompleto"). Esto es más granular que `erroresDetectados` (HU08-CA04),
-  que hoy agrupa por tipo de error con un conteo total, sin registrar en
-  qué repetición ocurrió cada uno — requiere una estructura nueva
-  (`detallePorRepeticion`, ver sección 5) para poder mostrarlo así. Es la
-  base con la que el fisioterapeuta decide qué recomendación registrar
+  una muestra el **porcentaje de ejecución obtenido** (calculado
+  automáticamente por la IA) y, cuando hubo desviación, qué tipo de error
+  se detectó y en qué articulación (ej. "Repetición 5: 78%, hombro
+  derecho, rango incompleto"). Esto es más granular que
+  `erroresDetectados` (HU08-CA04), que hoy agrupa por tipo de error con un
+  conteo total, sin registrar en qué repetición ocurrió cada uno —
+  requiere una estructura nueva (`detallePorRepeticion`, ver sección 5)
+  para poder mostrarlo así. Es la base con la que el fisioterapeuta decide
+  qué recomendación registrar
   (HU15).
 
 > **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
@@ -1143,15 +1221,15 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 **Deseo:** Registrar, editar y eliminar cuentas de pacientes, y asignarles su fisioterapeuta correspondiente
 **Propósito:** Administrar a los pacientes atendidos por la clínica sin depender de herramientas de línea de comandos.
 - CA01: Dado que el administrador acceda al sistema, cuando seleccione "Pacientes" en el panel de administración, entonces el sistema muestra la lista de pacientes registrados.
-- CA02 *(revisión acordada, no en la versión original)*: Dado que desee
-  registrar un paciente, cuando complete nombre, correo, contraseña, DNI,
-  edad y uno o más diagnósticos (del mismo catálogo cerrado de HU01-CA06),
-  entonces el sistema crea la cuenta con esos datos y la muestra en la
-  lista. La contraseña nunca se muestra en texto plano en el formulario —
-  solo es legible temporalmente si el administrador presiona el ícono de
-  ojo (mismo control en el formulario de fisioterapeuta, aunque ahí no
-  aplican DNI/edad/diagnóstico por no ser datos clínicos del propio fisio).
-- CA03: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes (incluidos DNI, edad y diagnóstico(s)), entonces el sistema guarda los cambios.
+- CA02 *(actualizado — revisión del modelo de datos: se agregaron género y
+  número de contacto)*: Dado que desee registrar un paciente, cuando
+  complete nombre, correo, contraseña, DNI, edad, género, número de
+  contacto y uno o más diagnósticos (del mismo catálogo cerrado de
+  HU01-CA06), entonces el sistema crea la cuenta con esos datos y la
+  muestra en la lista. La contraseña nunca se muestra en texto plano en el
+  formulario — solo es legible temporalmente si el administrador presiona
+  el ícono de ojo (mismo control en el formulario de fisioterapeuta).
+- CA03 *(actualizado)*: Dado que desee actualizar la información de un paciente, cuando modifique los datos correspondientes (incluidos DNI, edad, género, contacto y diagnóstico(s)), entonces el sistema guarda los cambios.
 - CA04: Dado que desee eliminar la cuenta de un paciente, cuando confirme la eliminación, entonces el sistema la elimina.
 - CA05: Dado que un paciente no tenga fisioterapeuta asignado, cuando el administrador seleccione uno desde la lista, entonces el sistema se lo asigna y la opción de asignar deja de estar disponible para ese paciente.
 - CA06 *(ampliación acordada, no en la versión original)*: Dado que consulte
@@ -1161,23 +1239,47 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   de uno a muchos: un fisioterapeuta puede tener varios pacientes), la
   lista de fisioterapeutas (HU21) muestra en la tarjeta de cada uno cuántos
   pacientes tiene asignados actualmente.
+- CA07 *(ampliación acordada, no en la versión original)*: Dado que registre
+  o edite un paciente, cuando indique el lado del cuerpo afectado (Derecho /
+  Izquierdo / Ambos, un único valor para todo el paciente, no por
+  diagnóstico), entonces el sistema lo guarda junto al resto de su
+  información clínica. Este dato lo define siempre el administrador — el
+  sistema nunca lo infiere ni lo decide por su cuenta (coherente con que la
+  app es de seguimiento, no de diagnóstico) — y lo usa el monitoreo (HU07/
+  HU08) para medir la articulación del lado real del paciente en vez de
+  asumir siempre el derecho con el que se definió el ejercicio. Con "Ambos"
+  (ejercicios pensados para alternar un lado a la vez, ej. HOM-01), el
+  sistema mide los dos lados en cada frame y evalúa el que esté activo (el
+  de mayor ángulo); si el paciente mueve los dos a la vez en vez de
+  alternar, se detecta como error de coordinación ("Movimiento
+  simultáneo"). Sin dato, se mide el lado derecho por defecto.
 
 #### HU21 — Gestionar cuentas de fisioterapeutas
 **Rol:** Administrador
 **Deseo:** Registrar, editar y eliminar cuentas de fisioterapeutas
 **Propósito:** Administrar al personal que atiende a los pacientes.
 - CA01: Dado que el administrador acceda al sistema, cuando seleccione "Fisioterapeutas" en el panel de administración, entonces el sistema muestra la lista de fisioterapeutas registrados.
-- CA02: Dado que desee registrar un fisioterapeuta, cuando complete nombre, correo y contraseña, entonces el sistema crea la cuenta y la muestra en la lista.
-- CA03: Dado que desee actualizar la información de un fisioterapeuta, cuando modifique los datos correspondientes, entonces el sistema guarda los cambios.
+- CA02 *(actualizado — revisión del modelo de datos: se agregaron edad,
+  género, número de contacto, especialidad y número de colegiatura)*: Dado
+  que desee registrar un fisioterapeuta, cuando complete nombre, correo,
+  contraseña, edad, género y número de contacto, y opcionalmente
+  especialidad y número de colegiatura, entonces el sistema crea la cuenta
+  y la muestra en la lista.
+- CA03 *(actualizado)*: Dado que desee actualizar la información de un
+  fisioterapeuta, cuando modifique los datos correspondientes (incluidos
+  edad, género, contacto, especialidad y número de colegiatura), entonces
+  el sistema guarda los cambios.
 - CA04: Dado que desee eliminar la cuenta de un fisioterapeuta, cuando confirme la eliminación, entonces el sistema la elimina.
 
 *(Ampliación acordada — HU22/HU23: hasta ahora esta épica solo cubría al
 Administrador gestionando cuentas ajenas; se extiende con el mismo
 espíritu ("gestionar cuentas") a que cada paciente/fisioterapeuta
-gestione su propia cuenta, sin tocar el modelo de datos ni agregar
-campos nuevos — solo expone en una pantalla propia los atributos que ya
-existen en `Usuario`/`Paciente` (sección 5/6), respetando exactamente
-quién puede editar cada uno según las reglas ya vigentes.)*
+gestione su propia cuenta — expone en una pantalla propia los atributos
+que existen en `Usuario` (sección 5/6), respetando exactamente quién
+puede editar cada uno según las reglas ya vigentes. Nota: al momento de
+esta ampliación el modelo `Usuario` no tenía género, contacto,
+especialidad ni colegiatura — esos campos se agregaron después, en la
+actualización del modelo de datos documentada en HU20/HU21/HU22/HU23.)*
 
 *Decisión de navegación asociada (confirmada): "Cerrar sesión" deja de
 mostrarse como ícono suelto en la barra superior de cada pantalla.
@@ -1212,19 +1314,19 @@ CON EL OBJETIVO DE MANTENER MI INFORMACIÓN DE CONTACTO ACTUALIZADA Y TENER UN �
 
 **Criterios de Aceptación**
 
-CA01
+CA01 *(actualizado — revisión del modelo de datos: se agregaron género y número de contacto)*
 Dado que el paciente acceda al sistema,
 Cuando seleccione "Perfil",
-Entonces el sistema muestra su nombre, correo electrónico, DNI, edad, diagnóstico(s) registrado(s) y el fisioterapeuta asignado.
+Entonces el sistema muestra su nombre, correo electrónico, DNI, edad, género, número de contacto, diagnóstico(s) registrado(s) y el fisioterapeuta asignado.
 
 CA02
 Dado que el paciente consulte su perfil,
 Cuando edite su nombre y confirme el cambio,
 Entonces el sistema guarda el nuevo nombre.
 
-CA03
+CA03 *(actualizado)*
 Dado que el paciente consulte su perfil,
-Cuando visualice su correo electrónico, DNI, edad, diagnóstico(s) y fisioterapeuta asignado,
+Cuando visualice su correo electrónico, DNI, edad, género, número de contacto, diagnóstico(s) y fisioterapeuta asignado,
 Entonces el sistema los muestra en modo solo lectura, sin controles de edición.
 
 CA04
@@ -1257,20 +1359,20 @@ CON EL OBJETIVO DE MANTENER MI INFORMACIÓN DE CONTACTO ACTUALIZADA Y TENER UN �
 
 **Criterios de Aceptación**
 
-CA01
+CA01 *(actualizado — revisión del modelo de datos: se agregaron edad, género, número de contacto, especialidad y número de colegiatura)*
 Dado que el fisioterapeuta acceda al sistema,
 Cuando seleccione "Perfil",
-Entonces el sistema muestra su nombre y correo electrónico.
+Entonces el sistema muestra su nombre, correo electrónico, edad, género, número de contacto, especialidad y número de colegiatura.
 
 CA02
 Dado que el fisioterapeuta consulte su perfil,
 Cuando edite su nombre y confirme el cambio,
 Entonces el sistema guarda el nuevo nombre.
 
-CA03
+CA03 *(actualizado)*
 Dado que el fisioterapeuta consulte su perfil,
-Cuando visualice su correo electrónico,
-Entonces el sistema lo muestra en modo solo lectura, sin controles de edición.
+Cuando visualice su correo electrónico, edad, género, número de contacto, especialidad y número de colegiatura,
+Entonces el sistema los muestra en modo solo lectura, sin controles de edición.
 
 CA04
 Dado que el fisioterapeuta esté en la pantalla "Perfil",

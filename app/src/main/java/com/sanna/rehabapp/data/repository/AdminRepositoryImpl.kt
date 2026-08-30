@@ -8,6 +8,8 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
+import com.sanna.rehabapp.domain.model.Genero
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
@@ -51,6 +53,9 @@ class AdminRepositoryImpl @Inject constructor(
         dni: String,
         edad: Int,
         diagnosticos: List<TipoDiagnostico>,
+        ladoAfectado: LadoAfectado,
+        genero: Genero,
+        numeroContacto: String,
     ): Result<Unit> = crearCuenta(
         nombre,
         email,
@@ -60,11 +65,34 @@ class AdminRepositoryImpl @Inject constructor(
             "dni" to dni,
             "edad" to edad,
             "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
+            "ladoAfectado" to ladoAfectado.aFirestore(),
+            "genero" to genero.aFirestore(),
+            "numeroContacto" to numeroContacto,
         ),
     )
 
-    override suspend fun crearFisioterapeuta(nombre: String, email: String, password: String): Result<Unit> =
-        crearCuenta(nombre, email, password, Rol.FISIOTERAPEUTA)
+    override suspend fun crearFisioterapeuta(
+        nombre: String,
+        email: String,
+        password: String,
+        edad: Int,
+        genero: Genero,
+        numeroContacto: String,
+        especialidad: String?,
+        numeroColegiatura: String?,
+    ): Result<Unit> = crearCuenta(
+        nombre,
+        email,
+        password,
+        Rol.FISIOTERAPEUTA,
+        datosAdicionales = buildMap {
+            put("edad", edad)
+            put("genero", genero.aFirestore())
+            put("numeroContacto", numeroContacto)
+            if (!especialidad.isNullOrBlank()) put("especialidad", especialidad)
+            if (!numeroColegiatura.isNullOrBlank()) put("numeroColegiatura", numeroColegiatura)
+        },
+    )
 
     // Instancia secundaria de FirebaseApp: createUserWithEmailAndPassword
     // inicia sesión automáticamente en la instancia donde se ejecuta, así
@@ -120,6 +148,9 @@ class AdminRepositoryImpl @Inject constructor(
         dni: String,
         edad: Int,
         diagnosticos: List<TipoDiagnostico>,
+        ladoAfectado: LadoAfectado,
+        genero: Genero,
+        numeroContacto: String,
     ): Result<Unit> = runCatching {
         firestore.collection(COLECCION_USUARIOS)
             .document(uid)
@@ -130,6 +161,36 @@ class AdminRepositoryImpl @Inject constructor(
                     "dni" to dni,
                     "edad" to edad,
                     "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
+                    "ladoAfectado" to ladoAfectado.aFirestore(),
+                    "genero" to genero.aFirestore(),
+                    "numeroContacto" to numeroContacto,
+                ),
+            )
+            .await()
+        Unit
+    }
+
+    override suspend fun actualizarFisioterapeuta(
+        uid: String,
+        nombre: String,
+        email: String,
+        edad: Int,
+        genero: Genero,
+        numeroContacto: String,
+        especialidad: String?,
+        numeroColegiatura: String?,
+    ): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS)
+            .document(uid)
+            .update(
+                mapOf(
+                    "nombre" to nombre,
+                    "email" to email,
+                    "edad" to edad,
+                    "genero" to genero.aFirestore(),
+                    "numeroContacto" to numeroContacto,
+                    "especialidad" to (especialidad ?: ""),
+                    "numeroColegiatura" to (numeroColegiatura ?: ""),
                 ),
             )
             .await()
@@ -168,5 +229,10 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         dni = getString("dni"),
         edad = (get("edad") as? Number)?.toInt(),
         fechaRegistro = getDate("fechaRegistro"),
+        ladoAfectado = LadoAfectado.desdeFirestoreOrNull(getString("ladoAfectado")) ?: LadoAfectado.DERECHO,
+        genero = Genero.desdeFirestoreOrNull(getString("genero")),
+        numeroContacto = getString("numeroContacto"),
+        especialidad = getString("especialidad"),
+        numeroColegiatura = getString("numeroColegiatura"),
     )
 }

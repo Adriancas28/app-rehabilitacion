@@ -45,4 +45,11 @@ class EjerciciosViewModel @Inject constructor(
             ejercicioRepository.eliminarEjercicio(id)
         }
     }
+
+    // HU02-CA10 (actualización del modelo de datos)
+    fun cambiarEstadoActivo(ejercicio: Ejercicio) {
+        viewModelScope.launch {
+            ejercicioRepository.cambiarEstadoActivo(ejercicio.id, !ejercicio.activo)
+        }
+    }
 }

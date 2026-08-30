@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.domain.model.Genero
 import com.sanna.rehabapp.domain.repository.AdminRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -36,7 +37,16 @@ class AdminFisioterapeutaFormViewModel @Inject constructor(
             _uiState.update { it.copy(cargando = true) }
             val usuario = usuarioRepository.obtenerUsuario(uid)
             _uiState.update {
-                it.copy(nombre = usuario?.nombre ?: "", email = usuario?.email ?: "", cargando = false)
+                it.copy(
+                    nombre = usuario?.nombre ?: "",
+                    email = usuario?.email ?: "",
+                    edad = usuario?.edad?.toString() ?: "",
+                    genero = usuario?.genero,
+                    numeroContacto = usuario?.numeroContacto ?: "",
+                    especialidad = usuario?.especialidad ?: "",
+                    numeroColegiatura = usuario?.numeroColegiatura ?: "",
+                    cargando = false,
+                )
             }
         }
     }
@@ -44,19 +54,45 @@ class AdminFisioterapeutaFormViewModel @Inject constructor(
     fun onNombreCambiado(valor: String) = _uiState.update { it.copy(nombre = valor, error = null) }
     fun onEmailCambiado(valor: String) = _uiState.update { it.copy(email = valor, error = null) }
     fun onPasswordCambiado(valor: String) = _uiState.update { it.copy(password = valor, error = null) }
+    fun onEdadCambiado(valor: String) = _uiState.update { it.copy(edad = valor, error = null) }
+    fun onGeneroCambiado(valor: Genero) = _uiState.update { it.copy(genero = valor, error = null) }
+    fun onNumeroContactoCambiado(valor: String) = _uiState.update { it.copy(numeroContacto = valor, error = null) }
+    fun onEspecialidadCambiado(valor: String) = _uiState.update { it.copy(especialidad = valor, error = null) }
+    fun onNumeroColegiaturaCambiado(valor: String) = _uiState.update { it.copy(numeroColegiatura = valor, error = null) }
 
     fun guardar() {
         val estado = _uiState.value
-        if (estado.nombre.isBlank() || estado.email.isBlank() || (!esEdicion && estado.password.isBlank())) {
+        val edadInt = estado.edad.toIntOrNull()
+        if (estado.nombre.isBlank() || estado.email.isBlank() || (!esEdicion && estado.password.isBlank()) ||
+            edadInt == null || edadInt <= 0 || estado.genero == null || estado.numeroContacto.isBlank()
+        ) {
             _uiState.update { it.copy(error = "Completa todos los campos requeridos.") }
             return
         }
         viewModelScope.launch {
             _uiState.update { it.copy(guardando = true, error = null) }
             val resultado = if (esEdicion) {
-                adminRepository.actualizarUsuario(usuarioIdArg!!, estado.nombre.trim(), estado.email.trim())
+                adminRepository.actualizarFisioterapeuta(
+                    usuarioIdArg!!,
+                    estado.nombre.trim(),
+                    estado.email.trim(),
+                    edadInt,
+                    estado.genero,
+                    estado.numeroContacto.trim(),
+                    estado.especialidad.trim().ifBlank { null },
+                    estado.numeroColegiatura.trim().ifBlank { null },
+                )
             } else {
-                adminRepository.crearFisioterapeuta(estado.nombre.trim(), estado.email.trim(), estado.password)
+                adminRepository.crearFisioterapeuta(
+                    estado.nombre.trim(),
+                    estado.email.trim(),
+                    estado.password,
+                    edadInt,
+                    estado.genero,
+                    estado.numeroContacto.trim(),
+                    estado.especialidad.trim().ifBlank { null },
+                    estado.numeroColegiatura.trim().ifBlank { null },
+                )
             }
             resultado.fold(
                 onSuccess = { _uiState.update { it.copy(guardando = false, guardadoExitoso = true) } },

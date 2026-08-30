@@ -19,12 +19,18 @@ data class ErrorDetectado(
     val repeticiones: Int = 1,
 )
 
-// HU18-CA04 (Sprint 4): el mismo error que ErrorDetectado, pero acotado a
-// una repetición puntual — es lo que el fisioterapeuta revisa antes de
-// registrar una recomendación (HU15), en vez de solo ver un agregado.
+// HU18-CA04 (actualización del modelo de datos): el mismo error que
+// ErrorDetectado, pero acotado a una repetición puntual — es lo que el
+// fisioterapeuta revisa antes de registrar una recomendación (HU15), en
+// vez de solo ver un agregado. porcentajeEjecucion reemplaza al booleano
+// dentroDeRango original: en vez de "sí/no cumplió", muestra qué
+// porcentaje de esa repetición estuvo dentro del rango esperado —
+// calculado por el mismo motor de IA que calcula el % global de la
+// sesión (construirResultadoSesion), pero acotado a los frames de esta
+// repetición puntual.
 data class DetalleRepeticion(
     val numero: Int,
-    val dentroDeRango: Boolean,
+    val porcentajeEjecucion: Float,
     val errores: List<ErrorDetectado> = emptyList(),
 )
 

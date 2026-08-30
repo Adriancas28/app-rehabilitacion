@@ -17,7 +17,9 @@ import androidx.compose.ui.unit.dp
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.CampoTexto
+import com.sanna.rehabapp.core.designsystem.SelectorDropdown
 import com.sanna.rehabapp.core.theme.Spacing
+import com.sanna.rehabapp.domain.model.Genero
 
 @Composable
 fun AdminUsuarioFormContenido(
@@ -27,6 +29,11 @@ fun AdminUsuarioFormContenido(
     onNombreCambiado: (String) -> Unit,
     onEmailCambiado: (String) -> Unit,
     onPasswordCambiado: (String) -> Unit,
+    onEdadCambiado: (String) -> Unit,
+    onGeneroCambiado: (Genero) -> Unit,
+    onNumeroContactoCambiado: (String) -> Unit,
+    onEspecialidadCambiado: (String) -> Unit,
+    onNumeroColegiaturaCambiado: (String) -> Unit,
     onGuardar: () -> Unit,
     onVolver: () -> Unit,
 ) {
@@ -62,6 +69,40 @@ fun AdminUsuarioFormContenido(
                     esPassword = true,
                 )
             }
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            CampoTexto(
+                valor = uiState.edad,
+                onValorCambiado = onEdadCambiado,
+                etiqueta = "Edad",
+                tipoTeclado = KeyboardType.Number,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            SelectorDropdown(
+                valorSeleccionado = uiState.genero,
+                opciones = Genero.entries,
+                etiquetaDeOpcion = { it.etiqueta },
+                onSeleccionar = onGeneroCambiado,
+                etiqueta = "Género",
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            CampoTexto(
+                valor = uiState.numeroContacto,
+                onValorCambiado = onNumeroContactoCambiado,
+                etiqueta = "Número de contacto",
+                tipoTeclado = KeyboardType.Phone,
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            CampoTexto(
+                valor = uiState.especialidad,
+                onValorCambiado = onEspecialidadCambiado,
+                etiqueta = "Especialidad (opcional)",
+            )
+            Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+            CampoTexto(
+                valor = uiState.numeroColegiatura,
+                onValorCambiado = onNumeroColegiaturaCambiado,
+                etiqueta = "Número de colegiatura (opcional)",
+            )
 
             uiState.error?.let { mensaje ->
                 Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))

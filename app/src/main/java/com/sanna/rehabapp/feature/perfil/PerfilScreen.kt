@@ -171,6 +171,13 @@ private fun ContenidoPerfil(
                     Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     CampoSoloLectura(etiqueta = "Edad", valor = usuario.edad?.toString() ?: "No registrada")
                     Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(etiqueta = "Género", valor = usuario.genero?.etiqueta ?: "No registrado")
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(
+                        etiqueta = "Número de contacto",
+                        valor = usuario.numeroContacto ?: "No registrado",
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     CampoSoloLectura(
                         etiqueta = "Diagnóstico(s)",
                         valor = if (usuario.diagnosticos.isEmpty()) {
@@ -183,6 +190,28 @@ private fun ContenidoPerfil(
                     CampoSoloLectura(
                         etiqueta = "Fisioterapeuta asignado",
                         valor = uiState.nombreFisioterapeuta ?: "Sin asignar",
+                    )
+                }
+            } else if (usuario.rol == Rol.FISIOTERAPEUTA) {
+                Spacer(modifier = Modifier.height(Spacing.md))
+                SeccionFormulario(titulo = "Información de contacto") {
+                    CampoSoloLectura(etiqueta = "Edad", valor = usuario.edad?.toString() ?: "No registrada")
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(etiqueta = "Género", valor = usuario.genero?.etiqueta ?: "No registrado")
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(
+                        etiqueta = "Número de contacto",
+                        valor = usuario.numeroContacto ?: "No registrado",
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(
+                        etiqueta = "Especialidad",
+                        valor = usuario.especialidad?.takeIf { it.isNotBlank() } ?: "No registrada",
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    CampoSoloLectura(
+                        etiqueta = "Número de colegiatura",
+                        valor = usuario.numeroColegiatura?.takeIf { it.isNotBlank() } ?: "No registrado",
                     )
                 }
             }

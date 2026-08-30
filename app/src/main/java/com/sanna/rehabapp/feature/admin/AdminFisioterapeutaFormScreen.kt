@@ -46,6 +46,11 @@ fun AdminFisioterapeutaFormScreen(
             onNombreCambiado = viewModel::onNombreCambiado,
             onEmailCambiado = viewModel::onEmailCambiado,
             onPasswordCambiado = viewModel::onPasswordCambiado,
+            onEdadCambiado = viewModel::onEdadCambiado,
+            onGeneroCambiado = viewModel::onGeneroCambiado,
+            onNumeroContactoCambiado = viewModel::onNumeroContactoCambiado,
+            onEspecialidadCambiado = viewModel::onEspecialidadCambiado,
+            onNumeroColegiaturaCambiado = viewModel::onNumeroColegiaturaCambiado,
             onGuardar = viewModel::guardar,
             onVolver = onVolver,
         )

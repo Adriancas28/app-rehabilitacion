@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.domain.model.Genero
+import com.sanna.rehabapp.domain.model.LadoAfectado
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.repository.AdminRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
@@ -44,6 +46,9 @@ class AdminPacienteFormViewModel @Inject constructor(
                     dni = usuario?.dni ?: "",
                     edad = usuario?.edad?.toString() ?: "",
                     diagnosticosSeleccionados = usuario?.diagnosticos?.map { d -> d.tipo }?.toSet() ?: emptySet(),
+                    ladoAfectado = usuario?.ladoAfectado ?: LadoAfectado.DERECHO,
+                    genero = usuario?.genero,
+                    numeroContacto = usuario?.numeroContacto ?: "",
                     cargando = false,
                 )
             }
@@ -55,6 +60,10 @@ class AdminPacienteFormViewModel @Inject constructor(
     fun onPasswordCambiado(valor: String) = _uiState.update { it.copy(password = valor, error = null) }
     fun onDniCambiado(valor: String) = _uiState.update { it.copy(dni = valor, error = null) }
     fun onEdadCambiado(valor: String) = _uiState.update { it.copy(edad = valor, error = null) }
+
+    fun onLadoCambiado(lado: LadoAfectado) = _uiState.update { it.copy(ladoAfectado = lado, error = null) }
+    fun onGeneroCambiado(genero: Genero) = _uiState.update { it.copy(genero = genero, error = null) }
+    fun onNumeroContactoCambiado(valor: String) = _uiState.update { it.copy(numeroContacto = valor, error = null) }
 
     fun onDiagnosticoAlternado(tipo: TipoDiagnostico) = _uiState.update { estado ->
         val nuevos = if (tipo in estado.diagnosticosSeleccionados) {
@@ -70,7 +79,8 @@ class AdminPacienteFormViewModel @Inject constructor(
         val edadInt = estado.edad.toIntOrNull()
         if (estado.nombre.isBlank() || estado.email.isBlank() ||
             (!esEdicion && estado.password.isBlank()) ||
-            estado.dni.isBlank() || edadInt == null || edadInt <= 0 || estado.diagnosticosSeleccionados.isEmpty()
+            estado.dni.isBlank() || edadInt == null || edadInt <= 0 || estado.diagnosticosSeleccionados.isEmpty() ||
+            estado.genero == null || estado.numeroContacto.isBlank()
         ) {
             _uiState.update { it.copy(error = "Completa todos los campos requeridos.") }
             return
@@ -86,6 +96,9 @@ class AdminPacienteFormViewModel @Inject constructor(
                     estado.dni.trim(),
                     edadInt,
                     diagnosticos,
+                    estado.ladoAfectado,
+                    estado.genero,
+                    estado.numeroContacto.trim(),
                 )
             } else {
                 adminRepository.crearPaciente(
@@ -95,6 +108,9 @@ class AdminPacienteFormViewModel @Inject constructor(
                     estado.dni.trim(),
                     edadInt,
                     diagnosticos,
+                    estado.ladoAfectado,
+                    estado.genero,
+                    estado.numeroContacto.trim(),
                 )
             }
             resultado.fold(

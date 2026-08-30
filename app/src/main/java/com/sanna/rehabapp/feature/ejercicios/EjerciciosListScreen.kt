@@ -20,6 +20,8 @@ import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,11 +38,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.DialogoConfirmacion
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaEjercicio
+import com.sanna.rehabapp.core.designsystem.TipoBadge
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
@@ -125,6 +129,10 @@ fun EjerciciosListScreen(
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                if (!ejercicio.activo) {
+                                    Spacer(modifier = Modifier.width(Spacing.xs))
+                                    BadgeEstado(texto = "Inactivo", tipo = TipoBadge.NEUTRO)
+                                }
                             },
                             modifier = Modifier.padding(Spacing.xs),
                             menu = { cerrar ->
@@ -134,6 +142,22 @@ fun EjerciciosListScreen(
                                     onClick = {
                                         cerrar()
                                         onEditarEjercicio(ejercicio.id)
+                                    },
+                                )
+                                // HU02-CA10 (actualización del modelo de datos): activar/
+                                // desactivar en vez de eliminar, para no perder el
+                                // historial de sesiones ya asociadas a este ejercicio.
+                                DropdownMenuItem(
+                                    text = { Text(if (ejercicio.activo) "Desactivar" else "Activar") },
+                                    leadingIcon = {
+                                        Icon(
+                                            if (ejercicio.activo) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                            contentDescription = null,
+                                        )
+                                    },
+                                    onClick = {
+                                        cerrar()
+                                        viewModel.cambiarEstadoActivo(ejercicio)
                                     },
                                 )
                                 DropdownMenuItem(

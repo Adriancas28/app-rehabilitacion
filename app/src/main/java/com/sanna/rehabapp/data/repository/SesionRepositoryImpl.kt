@@ -58,7 +58,7 @@ class SesionRepositoryImpl @Inject constructor(
                 "detallePorRepeticion" to resultado.detallePorRepeticion.map { detalle ->
                     mapOf(
                         "numero" to detalle.numero,
-                        "dentroDeRango" to detalle.dentroDeRango,
+                        "porcentajeEjecucion" to detalle.porcentajeEjecucion,
                         "errores" to detalle.errores.map {
                             mapOf(
                                 "articulacion" to it.articulacion,
@@ -232,7 +232,7 @@ private fun Map<*, *>.toDetalleRepeticion(): DetalleRepeticion? {
     val numero = (this["numero"] as? Number)?.toInt() ?: return null
     return DetalleRepeticion(
         numero = numero,
-        dentroDeRango = this["dentroDeRango"] as? Boolean ?: false,
+        porcentajeEjecucion = (this["porcentajeEjecucion"] as? Number)?.toFloat() ?: 0f,
         errores = (this["errores"] as? List<*>)
             ?.mapNotNull { entrada -> (entrada as? Map<*, *>)?.toErrorDetectado() }
             ?: emptyList(),

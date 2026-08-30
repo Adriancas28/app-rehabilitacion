@@ -87,6 +87,11 @@ class EjercicioRepositoryImpl @Inject constructor(
         Unit
     }
 
+    override suspend fun cambiarEstadoActivo(id: String, activo: Boolean): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_EJERCICIOS).document(id).update("activo", activo).await()
+        Unit
+    }
+
     private suspend fun subirMaterial(ejercicioId: String, archivo: Uri): String {
         // HU05-CA02 necesita distinguir imagen de video al reproducir el
         // material; sin la extensión en el nombre no hay forma de saberlo

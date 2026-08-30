@@ -14,11 +14,19 @@ data class MedicionArticulacion(
     val angulo: Float,
     val anguloMin: Float,
     val anguloMax: Float,
+    // HU20 (ampliación, ejercicios bilaterales con lado afectado "Ambos"):
+    // cuando no es null, fuerza que esta medición cuente como fuera de
+    // rango con este motivo específico (ej. "Movimiento simultáneo" si el
+    // paciente levanta los dos brazos a la vez en un ejercicio pensado
+    // para alternar) — no lo produce la comparación ángulo/rango normal,
+    // lo decide ProcesadorMovimiento al detectar el patrón de movimiento.
+    val motivoErrorForzado: String? = null,
 ) {
-    val dentroDeRango: Boolean get() = angulo in anguloMin..anguloMax
+    val dentroDeRango: Boolean get() = motivoErrorForzado == null && angulo in anguloMin..anguloMax
 
     val desviacion: Float
         get() = when {
+            motivoErrorForzado != null -> 0f
             angulo < anguloMin -> anguloMin - angulo
             angulo > anguloMax -> angulo - anguloMax
             else -> 0f
@@ -27,7 +35,7 @@ data class MedicionArticulacion(
     // HU09-CA02: clasifica el tipo de error (ya satisface la CA tal cual
     // está redactada — "rango incompleto, desviación angular, etc.").
     val tipoDeError: String
-        get() = when {
+        get() = motivoErrorForzado ?: when {
             angulo < anguloMin -> "Rango incompleto"
             angulo > anguloMax -> "Desviación angular"
             else -> "Desviación"
@@ -84,9 +92,12 @@ fun construirResultadoSesion(
         frames.isNotEmpty() && frames.all { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
     }
 
-    // HU18-CA04: el mismo agrupamiento de erroresDetectados, pero acotado
-    // a cada repetición en vez de global — lo que ve el fisioterapeuta al
-    // revisar el detalle de la sesión.
+    // HU18-CA04 (actualización del modelo de datos): el mismo agrupamiento
+    // de erroresDetectados, pero acotado a cada repetición en vez de
+    // global — lo que ve el fisioterapeuta al revisar el detalle de la
+    // sesión. porcentajeEjecucion se calcula igual que el % global de la
+    // sesión (framesDentroDeRango / totalFrames), pero acotado a los
+    // frames de esta repetición puntual — no un simple sí/no.
     val detallePorRepeticion = medicionesPorRepeticion.mapIndexed { indice, frames ->
         val medicionesRepeticion = frames.flatten()
         val erroresRepeticion = medicionesRepeticion
@@ -95,12 +106,18 @@ fun construirResultadoSesion(
             .map { (clave, mediciones) ->
                 ErrorDetectado(articulacion = clave.first.etiqueta, tipo = clave.second, repeticiones = mediciones.size)
             }
+        val framesRepeticionDentroDeRango = frames.count { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
+        val porcentajeRepeticion = if (frames.isNotEmpty()) {
+            framesRepeticionDentroDeRango.toFloat() / frames.size * 100f
+        } else {
+            0f
+        }
         DetalleRepeticion(
             // HU06-CA09: numeroRepeticionInicial > 1 cuando se reanuda una
             // sesión — la numeración refleja la repetición real, no el
             // índice dentro de esta ejecución puntual.
             numero = indice + numeroRepeticionInicial,
-            dentroDeRango = medicionesRepeticion.isNotEmpty() && erroresRepeticion.isEmpty(),
+            porcentajeEjecucion = porcentajeRepeticion,
             errores = erroresRepeticion,
         )
     }

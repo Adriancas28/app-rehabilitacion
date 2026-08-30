@@ -1,26 +1,18 @@
 package com.sanna.rehabapp.domain.model
 
-// Catálogo de diagnósticos (ampliación acordada): 13 diagnósticos frecuentes
-// en rehabilitación musculoesquelética, agrupados por región corporal — más
-// específico clínicamente que el catálogo genérico anterior de 7 valores.
-// La app no genera diagnósticos: el fisioterapeuta registra el que ya
-// obtuvo de su propia evaluación clínica; el sistema solo lo usa para
-// sugerir ejercicios relacionados (HU03-CA05), nunca para decidir por su
-// cuenta.
+// Catálogo de diagnósticos del MVP (reemplaza al catálogo anterior de 13
+// valores): 3 condiciones musculoesqueléticas, elegidas con respaldo
+// bibliográfico real (OMS, Guía de Práctica Clínica de EsSalud 2025, y un
+// estudio de 366 pacientes en un centro de rehabilitación de Lima) y
+// viabilidad técnica con MediaPipe Pose — ver
+// "Catalogo_Ejercicios_MVP_SANNA_Especificaciones.docx". La app no genera
+// diagnósticos: el fisioterapeuta registra el que ya obtuvo de su propia
+// evaluación clínica; el sistema solo lo usa para sugerir ejercicios
+// relacionados (HU03-CA07), nunca para decidir por su cuenta.
 enum class TipoDiagnostico(val etiqueta: String, val regionCorporal: String) {
-    PINZAMIENTO_SUBACROMIAL("Síndrome de pinzamiento subacromial", "Hombro"),
-    CAPSULITIS_ADHESIVA("Capsulitis adhesiva (hombro congelado)", "Hombro"),
-    POST_QUIRURGICO_MANGUITO_ROTADOR("Rehabilitación post-quirúrgica de manguito rotador", "Hombro"),
-    RIGIDEZ_POSTRAUMATICA_CODO("Rigidez postraumática de codo", "Codo"),
-    POST_ARTROPLASTIA_CADERA("Rehabilitación post-artroplastia de cadera", "Cadera"),
-    OSTEOARTROSIS_CADERA("Osteoartrosis de cadera", "Cadera"),
-    POST_RECONSTRUCCION_LCA("Post-reconstrucción de ligamento cruzado anterior", "Rodilla"),
-    OSTEOARTROSIS_RODILLA("Osteoartrosis de rodilla", "Rodilla"),
-    SINDROME_DOLOR_FEMOROPATELAR("Síndrome de dolor femoropatelar", "Rodilla"),
-    ESGUINCE_TOBILLO("Esguince de tobillo (fase funcional)", "Tobillo"),
-    LUMBALGIA_MECANICA("Lumbalgia mecánica / dolor lumbar inespecífico", "Columna"),
-    DEBILIDAD_MUSCULAR("Debilidad muscular / desacondicionamiento físico", "General"),
-    ALTERACIONES_EQUILIBRIO("Alteraciones del equilibrio / riesgo de caídas", "General");
+    LUMBALGIA_INESPECIFICA("Lumbalgia inespecífica", "Columna"),
+    OSTEOARTROSIS_RODILLA("Osteoartritis de rodilla (gonartrosis)", "Rodilla"),
+    SINDROME_DOLOR_SUBACROMIAL("Síndrome de dolor subacromial / hombro doloroso", "Hombro");
 
     fun aFirestore(): String = name
 

@@ -37,11 +37,31 @@ enum class Articulacion(
     // rotación/inclinación de tronco vista de frente — no es goniometría
     // exacta de rotación axial (eso requeriría profundidad/3D), pero
     // cambia de forma consistente con el movimiento del ejercicio
-    // "Rotación de tronco (sentado)" del catálogo predeterminado, mismo
-    // criterio pragmático que ya se usó para CUELLO.
+    // "Inclinación lateral de tronco" (LUM-03) del catálogo predeterminado,
+    // mismo criterio pragmático que ya se usó para CUELLO.
     TRONCO("Tronco", puntoInicial = 11, vertice = 24, puntoFinal = 12);
 
     fun aFirestore(): String = name
+
+    // HU20 (ampliación): devuelve la articulación equivalente del lado
+    // opuesto (ej. HOMBRO_DERECHO -> HOMBRO_IZQUIERDO), usada para medir el
+    // lado afectado real del paciente (Usuario.ladoAfectado) en vez del
+    // lado con el que se definió el patronesReferencia del ejercicio.
+    // Las articulaciones sin lado (CUELLO, TRONCO) se devuelven sin cambios.
+    fun espejo(): Articulacion = when (this) {
+        RODILLA_IZQUIERDA -> RODILLA_DERECHA
+        RODILLA_DERECHA -> RODILLA_IZQUIERDA
+        CODO_IZQUIERDO -> CODO_DERECHO
+        CODO_DERECHO -> CODO_IZQUIERDO
+        HOMBRO_IZQUIERDO -> HOMBRO_DERECHO
+        HOMBRO_DERECHO -> HOMBRO_IZQUIERDO
+        CADERA_IZQUIERDA -> CADERA_DERECHA
+        CADERA_DERECHA -> CADERA_IZQUIERDA
+        TOBILLO_IZQUIERDO -> TOBILLO_DERECHO
+        TOBILLO_DERECHO -> TOBILLO_IZQUIERDO
+        CUELLO -> CUELLO
+        TRONCO -> TRONCO
+    }
 
     companion object {
         // Documentos de ejercicios previos a este cambio pueden tener
