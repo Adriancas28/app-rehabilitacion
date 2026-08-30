@@ -118,6 +118,7 @@ class AdminRepositoryImpl @Inject constructor(
                 "email" to email,
                 "rol" to rol.aFirestore(),
                 "fechaRegistro" to FieldValue.serverTimestamp(),
+                "activo" to true,
             ) + datosAdicionales
             firestore.collection(COLECCION_USUARIOS).document(uid).set(datos).await()
             Unit
@@ -197,6 +198,11 @@ class AdminRepositoryImpl @Inject constructor(
         Unit
     }
 
+    override suspend fun cambiarEstadoActivoUsuario(uid: String, activo: Boolean): Result<Unit> = runCatching {
+        firestore.collection(COLECCION_USUARIOS).document(uid).update("activo", activo).await()
+        Unit
+    }
+
     override suspend fun eliminarUsuario(uid: String): Result<Unit> = runCatching {
         firestore.collection(COLECCION_USUARIOS).document(uid).delete().await()
         Unit
@@ -234,5 +240,6 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         numeroContacto = getString("numeroContacto"),
         especialidad = getString("especialidad"),
         numeroColegiatura = getString("numeroColegiatura"),
+        activo = getBoolean("activo") ?: true,
     )
 }

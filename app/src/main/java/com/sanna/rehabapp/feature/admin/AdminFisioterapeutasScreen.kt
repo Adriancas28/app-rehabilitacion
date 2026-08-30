@@ -131,6 +131,7 @@ fun AdminFisioterapeutasScreen(
                                 },
                                 onEditar = { onEditarFisioterapeuta(fisio.uid) },
                                 onEliminar = { fisioAEliminar = fisio },
+                                onCambiarActivo = { viewModel.cambiarEstadoActivo(fisio.uid, fisio.nombre, !fisio.activo) },
                             )
                         }
                     }

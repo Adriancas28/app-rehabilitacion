@@ -64,5 +64,19 @@ class AdminFisioterapeutasViewModel @Inject constructor(
         }
     }
 
+    // Recomendación del modelo E-R-SANNA: desactivar una cuenta es
+    // reversible, a diferencia de eliminar.
+    fun cambiarEstadoActivo(uid: String, nombre: String, nuevoEstado: Boolean) {
+        viewModelScope.launch {
+            adminRepository.cambiarEstadoActivoUsuario(uid, nuevoEstado).fold(
+                onSuccess = {
+                    val mensaje = if (nuevoEstado) "Se activó a $nombre." else "Se desactivó a $nombre."
+                    _uiState.update { it.copy(mensaje = mensaje) }
+                },
+                onFailure = { _uiState.update { it.copy(mensaje = "No se pudo actualizar el estado de $nombre.") } },
+            )
+        }
+    }
+
     fun mensajeMostrado() = _uiState.update { it.copy(mensaje = null) }
 }

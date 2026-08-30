@@ -90,5 +90,6 @@ private fun DocumentSnapshot.toUsuario(): Usuario? {
         numeroContacto = getString("numeroContacto"),
         especialidad = getString("especialidad"),
         numeroColegiatura = getString("numeroColegiatura"),
+        activo = getBoolean("activo") ?: true,
     )
 }

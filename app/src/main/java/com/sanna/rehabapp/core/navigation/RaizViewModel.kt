@@ -45,7 +45,7 @@ class RaizViewModel @Inject constructor(
                 return@launch
             }
             val usuario = usuarioRepository.obtenerUsuario(uid)
-            if (usuario == null) {
+            if (usuario == null || !usuario.activo) {
                 authRepository.logout()
                 _destino.value = DestinoInicial.Login
                 return@launch

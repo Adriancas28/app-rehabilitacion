@@ -16,6 +16,8 @@ import androidx.compose.material.icons.filled.MedicalServices
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -36,11 +38,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.DialogoConfirmacion
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaPersona
+import com.sanna.rehabapp.core.designsystem.TipoBadge
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
@@ -140,6 +144,7 @@ fun AdminPacientesScreen(
                                 },
                                 onEditar = { onEditarPaciente(paciente.uid) },
                                 onEliminar = { pacienteAEliminar = paciente },
+                                onCambiarActivo = { viewModel.cambiarEstadoActivo(paciente.uid, paciente.nombre, !paciente.activo) },
                             )
                         }
                     }
@@ -215,13 +220,23 @@ internal fun TarjetaUsuarioAdmin(
     lineaExtra: (@Composable () -> Unit)? = null,
     onEditar: () -> Unit,
     onEliminar: () -> Unit,
+    onCambiarActivo: () -> Unit,
 ) {
     var menuAbierto by remember { mutableStateOf(false) }
 
     TarjetaPersona(
         nombre = usuario.nombre,
         subtitulo = usuario.email,
-        lineaExtra = lineaExtra,
+        lineaExtra = {
+            Column {
+                lineaExtra?.invoke()
+                // Recomendación del modelo E-R-SANNA: además de eliminar, el
+                // admin puede desactivar una cuenta de forma reversible.
+                if (!usuario.activo) {
+                    BadgeEstado(texto = "Inactivo", tipo = TipoBadge.NEUTRO)
+                }
+            }
+        },
         modifier = Modifier.padding(vertical = Spacing.xs),
         contenidoFinal = {
             Box {
@@ -235,6 +250,19 @@ internal fun TarjetaUsuarioAdmin(
                         onClick = {
                             menuAbierto = false
                             onEditar()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(if (usuario.activo) "Desactivar" else "Activar") },
+                        leadingIcon = {
+                            Icon(
+                                if (usuario.activo) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            menuAbierto = false
+                            onCambiarActivo()
                         },
                     )
                     DropdownMenuItem(

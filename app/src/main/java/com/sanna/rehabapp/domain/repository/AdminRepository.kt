@@ -70,6 +70,11 @@ interface AdminRepository {
         numeroColegiatura: String?,
     ): Result<Unit>
 
+    // Recomendación del modelo E-R-SANNA: desactivar una cuenta (reversible)
+    // en vez de eliminarla directamente — el admin puede elegir cualquiera
+    // de las dos acciones, esta no reemplaza a eliminarUsuario.
+    suspend fun cambiarEstadoActivoUsuario(uid: String, activo: Boolean): Result<Unit>
+
     // Nota: solo elimina el documento en Firestore. El registro de Firebase
     // Auth de OTRO usuario no se puede borrar desde el cliente sin Admin
     // SDK/Cloud Functions (descartadas en este proyecto) — sin su documento,

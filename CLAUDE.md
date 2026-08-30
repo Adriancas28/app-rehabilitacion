@@ -304,6 +304,14 @@ usuarios/{uid}
                                 rango normal. Sin dato, se mide el lado con
                                 el que se definió el ejercicio (derecho))
   - fechaRegistro
+  - activo: bool               (ambos roles, default true; recomendación
+                                del modelo E-R-SANNA — desactivación
+                                reversible de una cuenta, distinta de
+                                eliminarla. Una cuenta con activo = false se
+                                desloguea sola al entrar (`RaizViewModel`),
+                                igual que si no tuviera documento. No
+                                reemplaza a "Eliminar" — el admin dispone de
+                                ambas acciones, ver HU20-CA08/HU21-CA05)
 
   usuarios/{pacienteId}/sesiones/{sesionId}
     - ejercicioId
@@ -1253,6 +1261,15 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   de mayor ángulo); si el paciente mueve los dos a la vez en vez de
   alternar, se detecta como error de coordinación ("Movimiento
   simultáneo"). Sin dato, se mide el lado derecho por defecto.
+- CA08 *(ampliación acordada, no en la versión original — recomendación
+  del modelo E-R-SANNA)*: Dado que consulte la lista de pacientes, cuando
+  seleccione "Desactivar" en el menú de un paciente, entonces el sistema
+  marca su cuenta como inactiva (`activo = false`) sin eliminarla — el
+  paciente no puede volver a iniciar sesión mientras esté inactiva, pero
+  su historial de sesiones y resultados se conserva. El administrador
+  puede revertirlo seleccionando "Activar". Esta acción convive con
+  "Eliminar" (CA04): son dos opciones distintas, no un reemplazo — eliminar
+  borra el registro; desactivar solo bloquea el acceso de forma reversible.
 
 #### HU21 — Gestionar cuentas de fisioterapeutas
 **Rol:** Administrador
@@ -1270,6 +1287,15 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   edad, género, contacto, especialidad y número de colegiatura), entonces
   el sistema guarda los cambios.
 - CA04: Dado que desee eliminar la cuenta de un fisioterapeuta, cuando confirme la eliminación, entonces el sistema la elimina.
+- CA05 *(ampliación acordada, no en la versión original — recomendación
+  del modelo E-R-SANNA, simétrica a HU20-CA08)*: Dado que consulte la
+  lista de fisioterapeutas, cuando seleccione "Desactivar" en el menú de
+  uno de ellos, entonces el sistema marca su cuenta como inactiva
+  (`activo = false`) sin eliminarla — no puede volver a iniciar sesión
+  mientras esté inactiva, pero sus datos (ejercicios creados, sesiones
+  asignadas, recomendaciones) se conservan. El administrador puede
+  revertirlo seleccionando "Activar". Convive con "Eliminar" (CA04), no
+  la reemplaza.
 
 *(Ampliación acordada — HU22/HU23: hasta ahora esta épica solo cubría al
 Administrador gestionando cuentas ajenas; se extiende con el mismo

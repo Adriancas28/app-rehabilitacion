@@ -33,4 +33,11 @@ data class Usuario(
     // opcionales incluso para ese rol (HU21-CA02).
     val especialidad: String? = null,
     val numeroColegiatura: String? = null,
+    // Recomendación del modelo E-R-SANNA: desactivar una cuenta en vez de
+    // (o además de) eliminarla — reversible, y evita el problema conocido
+    // de que eliminar solo borra el documento de Firestore, dejando el
+    // registro de Firebase Auth huérfano (ver HU20/HU21, "limitación
+    // conocida"). Una cuenta con activo = false se desloguea sola al
+    // entrar (RaizViewModel), igual que si no tuviera documento.
+    val activo: Boolean = true,
 )
