@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -156,12 +156,12 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion, onEditar: () -> U
             }
             Box {
                 IconButton(onClick = { menuAbierto = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones")
+                    Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
                 }
                 DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
                     DropdownMenuItem(
                         text = { Text("Editar") },
-                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                         onClick = {
                             menuAbierto = false
                             onEditar()
@@ -169,7 +169,7 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion, onEditar: () -> U
                     )
                     DropdownMenuItem(
                         text = { Text("Eliminar") },
-                        leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                         onClick = {
                             menuAbierto = false
                             onEliminar()

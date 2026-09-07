@@ -3,7 +3,7 @@ package com.sanna.rehabapp.core.designsystem
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -41,7 +41,7 @@ fun BarraSuperior(
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                 }
                 onAlternarMenu != null -> IconButton(onClick = onAlternarMenu) {
-                    Icon(Icons.Filled.Menu, contentDescription = "Mostrar/ocultar menú")
+                    Icon(Icons.Rounded.Menu, contentDescription = "Mostrar/ocultar menú")
                 }
             }
         },

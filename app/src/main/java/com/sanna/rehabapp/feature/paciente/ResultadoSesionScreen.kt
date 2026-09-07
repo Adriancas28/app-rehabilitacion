@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Comment
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.rounded.Comment
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -177,7 +177,7 @@ private fun TarjetaAngulo(angulo: AnguloDetectado) {
 private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
     TarjetaBase(relleno = Spacing.sm + 6.dp) {
         Row(verticalAlignment = Alignment.Top) {
-            Icon(Icons.AutoMirrored.Filled.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.AutoMirrored.Rounded.Comment, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
         }
@@ -188,7 +188,7 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion) {
 private fun TarjetaError(error: ErrorDetectado) {
     TarjetaBase(relleno = Spacing.sm + 6.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+            Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "${error.articulacion} — ${error.tipo}", style = MaterialTheme.typography.bodyMedium)

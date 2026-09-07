@@ -13,14 +13,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Replay
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.SelfImprovement
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Replay
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -75,7 +75,7 @@ fun EjerciciosAsignadosScreen(
                     modifier = Modifier.weight(1f),
                 )
                 IconButton(onClick = onNavegarAPerfil) {
-                    Icon(Icons.Filled.Person, contentDescription = "Perfil")
+                    Icon(Icons.Rounded.Person, contentDescription = "Perfil")
                 }
             }
         },
@@ -93,11 +93,11 @@ fun EjerciciosAsignadosScreen(
             // sesión) perdía toda forma de llegar al historial — parecía
             // que sus sesiones completadas "desaparecían".
             TarjetaConIcono(
-                icono = Icons.Filled.History,
+                icono = Icons.Rounded.History,
                 titulo = "Mi progreso",
                 onClick = onNavegarAHistorial,
                 contenidoFinal = {
-                    Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 },
             )
             Spacer(modifier = Modifier.height(Spacing.md))
@@ -108,7 +108,7 @@ fun EjerciciosAsignadosScreen(
 
                     uiState.ejerciciosAsignados.isEmpty() && uiState.sesionesReanudables.isEmpty() ->
                         EstadoVacio(
-                            icono = Icons.Filled.SelfImprovement,
+                            icono = Icons.Rounded.SelfImprovement,
                             mensaje = "Todavía no tienes ejercicios asignados.",
                         )
 
@@ -148,13 +148,13 @@ fun EjerciciosAsignadosScreen(
                                     LazyColumn {
                                         items(resto, key = { it.sesionId }) { item ->
                                             TarjetaConIcono(
-                                                icono = Icons.Filled.FitnessCenter,
+                                                icono = Icons.Rounded.FitnessCenter,
                                                 titulo = item.ejercicio.nombre,
                                                 subtitulo = item.ejercicio.categoria.etiqueta,
                                                 onClick = { onEjercicioSeleccionado(item.sesionId) },
                                                 contenidoFinal = {
                                                     Icon(
-                                                        Icons.Filled.ChevronRight,
+                                                        Icons.Rounded.ChevronRight,
                                                         contentDescription = null,
                                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
@@ -177,14 +177,14 @@ fun EjerciciosAsignadosScreen(
 private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit, onClick: () -> Unit) {
     val ejercicio = item.ejercicio
     TarjetaConIcono(
-        icono = Icons.Filled.FitnessCenter,
+        icono = Icons.Rounded.FitnessCenter,
         titulo = ejercicio.nombre,
         subtitulo = item.fechaAsignacion?.let(::formatearFechaHora) ?: ejercicio.categoria.etiqueta,
         onClick = onClick,
         contenidoInferior = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Filled.Schedule,
+                    Icons.Rounded.Schedule,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp),
@@ -201,7 +201,7 @@ private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit,
             BotonPrimario(
                 texto = "Iniciar sesión",
                 onClick = onIniciar,
-                icono = Icons.Filled.PlayArrow,
+                icono = Icons.Rounded.PlayArrow,
             )
         },
     )
@@ -212,7 +212,7 @@ private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit,
 @Composable
 private fun TarjetaReanudable(item: SesionReanudable, onReanudar: () -> Unit) {
     TarjetaConIcono(
-        icono = Icons.Filled.Replay,
+        icono = Icons.Rounded.Replay,
         titulo = item.ejercicio.nombre,
         subtitulo = "${item.repeticionesCompletadas}/${item.repeticionesAsignadas} repeticiones completadas",
         colorContenedorIcono = AmbarAlertaContenedor,
@@ -222,7 +222,7 @@ private fun TarjetaReanudable(item: SesionReanudable, onReanudar: () -> Unit) {
             BotonPrimario(
                 texto = "Reanudar sesión",
                 onClick = onReanudar,
-                icono = Icons.Filled.Replay,
+                icono = Icons.Rounded.Replay,
             )
         },
     )

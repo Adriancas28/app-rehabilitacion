@@ -11,11 +11,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.automirrored.filled.EventNote
-import androidx.compose.material.icons.filled.MedicalInformation
-import androidx.compose.material.icons.filled.RateReview
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.automirrored.rounded.EventNote
+import androidx.compose.material.icons.rounded.MedicalInformation
+import androidx.compose.material.icons.rounded.RateReview
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,7 +71,7 @@ fun PacienteDetalleScreen(
                 onNavegarAtras = onVolver,
                 acciones = {
                     IconButton(onClick = { onAsignarSesion(viewModel.pacienteId) }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Asignar sesión")
+                        Icon(Icons.Rounded.Add, contentDescription = "Asignar sesión")
                     }
                 },
             )
@@ -179,7 +179,7 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (List<TipoDiagnosti
     TarjetaBase {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Filled.MedicalInformation,
+                Icons.Rounded.MedicalInformation,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -191,7 +191,7 @@ private fun TarjetaDiagnostico(paciente: Usuario, onGuardar: (List<TipoDiagnosti
             )
             if (!editando) {
                 IconButton(onClick = { editando = true }) {
-                    Icon(Icons.Filled.Edit, contentDescription = "Editar diagnóstico")
+                    Icon(Icons.Rounded.Edit, contentDescription = "Editar diagnóstico")
                 }
             }
         }
@@ -313,7 +313,7 @@ private fun TarjetaSesion(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.AutoMirrored.Filled.EventNote,
+                Icons.AutoMirrored.Rounded.EventNote,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -334,7 +334,7 @@ private fun TarjetaSesion(
             if (sesion.estado == EstadoSesion.COMPLETADA) {
                 IconButton(onClick = onRecomendar) {
                     Icon(
-                        Icons.Filled.RateReview,
+                        Icons.Rounded.RateReview,
                         contentDescription = "Registrar recomendación",
                         tint = MaterialTheme.colorScheme.primary,
                     )

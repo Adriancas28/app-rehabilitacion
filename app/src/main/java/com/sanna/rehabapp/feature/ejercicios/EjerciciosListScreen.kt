@@ -11,17 +11,17 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material.icons.filled.SelfImprovement
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Assessment
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.SelfImprovement
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -71,18 +71,18 @@ fun EjerciciosListScreen(
         items = listOf(
             ItemBarraLateral(
                 "Pacientes",
-                Icons.Filled.People,
+                Icons.Rounded.People,
                 seleccionado = false,
                 onClick = onNavegarAPacientes,
             ),
-            ItemBarraLateral("Ejercicios", Icons.Filled.FitnessCenter, seleccionado = true, onClick = {}),
+            ItemBarraLateral("Ejercicios", Icons.Rounded.FitnessCenter, seleccionado = true, onClick = {}),
             ItemBarraLateral(
                 "Resultados",
-                Icons.Filled.Assessment,
+                Icons.Rounded.Assessment,
                 seleccionado = false,
                 onClick = onNavegarAResultados,
             ),
-            ItemBarraLateral("Perfil", Icons.Filled.Person, seleccionado = false, onClick = onNavegarAPerfil),
+            ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = false, onClick = onNavegarAPerfil),
         ),
         topBar = { onAlternarMenu ->
             BarraSuperior(
@@ -90,7 +90,7 @@ fun EjerciciosListScreen(
                 onAlternarMenu = onAlternarMenu,
                 acciones = {
                     IconButton(onClick = onRegistrarEjercicio) {
-                        Icon(Icons.Filled.Add, contentDescription = "Registrar ejercicio")
+                        Icon(Icons.Rounded.Add, contentDescription = "Registrar ejercicio")
                     }
                 },
             )
@@ -106,19 +106,19 @@ fun EjerciciosListScreen(
                 uiState.cargando -> EstadoCargando()
 
                 uiState.ejercicios.isEmpty() -> EstadoVacio(
-                    icono = Icons.Filled.SelfImprovement,
+                    icono = Icons.Rounded.SelfImprovement,
                     mensaje = "Aún no hay ejercicios registrados.",
                 )
 
                 else -> LazyVerticalGrid(columns = GridCells.Fixed(2)) {
                     items(uiState.ejercicios, key = { it.id }) { ejercicio ->
                         TarjetaEjercicio(
-                            icono = Icons.Filled.FitnessCenter,
+                            icono = Icons.Rounded.FitnessCenter,
                             nombre = ejercicio.nombre,
                             lineaSecundaria = ejercicio.categoria.etiqueta,
                             lineaTerciaria = {
                                 Icon(
-                                    Icons.Filled.Schedule,
+                                    Icons.Rounded.Schedule,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(14.dp),
@@ -138,7 +138,7 @@ fun EjerciciosListScreen(
                             menu = { cerrar ->
                                 DropdownMenuItem(
                                     text = { Text("Editar") },
-                                    leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                                     onClick = {
                                         cerrar()
                                         onEditarEjercicio(ejercicio.id)
@@ -151,7 +151,7 @@ fun EjerciciosListScreen(
                                     text = { Text(if (ejercicio.activo) "Desactivar" else "Activar") },
                                     leadingIcon = {
                                         Icon(
-                                            if (ejercicio.activo) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                            if (ejercicio.activo) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                                             contentDescription = null,
                                         )
                                     },
@@ -162,7 +162,7 @@ fun EjerciciosListScreen(
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Eliminar") },
-                                    leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                                    leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                                     onClick = {
                                         cerrar()
                                         ejercicioAEliminar = ejercicio

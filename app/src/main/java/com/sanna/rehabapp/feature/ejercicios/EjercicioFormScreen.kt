@@ -14,11 +14,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachFile
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -129,7 +129,7 @@ fun EjercicioFormScreen(
                 BotonOutline(
                     texto = "Agregar articulación",
                     onClick = viewModel::agregarArticulacion,
-                    icono = Icons.Filled.Add,
+                    icono = Icons.Rounded.Add,
                 )
 
                 // HU02-CA07: si el material es un video y ya hay al menos
@@ -141,7 +141,7 @@ fun EjercicioFormScreen(
                         texto = if (uiState.calculandoRom) "Analizando video…" else "Calcular rango automáticamente desde el video",
                         onClick = viewModel::calcularRomDesdeVideo,
                         cargando = uiState.calculandoRom,
-                        icono = Icons.Filled.AutoAwesome,
+                        icono = Icons.Rounded.AutoAwesome,
                     )
                 }
             }
@@ -170,7 +170,7 @@ fun EjercicioFormScreen(
                         else -> "Seleccionar archivo"
                     },
                     onClick = { selectorArchivo.launch(arrayOf("image/*", "video/*")) },
-                    icono = if (uiState.archivoSeleccionado != null) Icons.Filled.CheckCircle else Icons.Filled.AttachFile,
+                    icono = if (uiState.archivoSeleccionado != null) Icons.Rounded.CheckCircle else Icons.Rounded.AttachFile,
                 )
             }
 
@@ -212,7 +212,7 @@ private fun FilaPatronReferencia(
             }
             IconButton(onClick = onEliminar) {
                 Icon(
-                    Icons.Filled.RemoveCircleOutline,
+                    Icons.Rounded.RemoveCircleOutline,
                     contentDescription = "Quitar articulación",
                     tint = MaterialTheme.colorScheme.error,
                 )

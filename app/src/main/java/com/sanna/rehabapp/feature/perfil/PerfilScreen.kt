@@ -9,11 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Assessment
+import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
@@ -89,20 +89,20 @@ fun PerfilFisioterapeutaScreen(
             menuVisible = menuVisible,
             onCambiarMenuVisible = onCambiarMenuVisible,
             items = listOf(
-                ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = false, onClick = onNavegarAPacientes),
+                ItemBarraLateral("Pacientes", Icons.Rounded.People, seleccionado = false, onClick = onNavegarAPacientes),
                 ItemBarraLateral(
                     "Ejercicios",
-                    Icons.Filled.FitnessCenter,
+                    Icons.Rounded.FitnessCenter,
                     seleccionado = false,
                     onClick = onNavegarAEjercicios,
                 ),
                 ItemBarraLateral(
                     "Resultados",
-                    Icons.Filled.Assessment,
+                    Icons.Rounded.Assessment,
                     seleccionado = false,
                     onClick = onNavegarAResultados,
                 ),
-                ItemBarraLateral("Perfil", Icons.Filled.Person, seleccionado = true, onClick = {}),
+                ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = true, onClick = {}),
             ),
             topBar = { onAlternarMenu -> BarraSuperior(titulo = "Perfil", onAlternarMenu = onAlternarMenu) },
         ) { padding ->
@@ -221,7 +221,7 @@ private fun ContenidoPerfil(
                 texto = "Cerrar sesión",
                 onClick = { confirmandoCierre = true },
                 esDestructivo = true,
-                icono = Icons.AutoMirrored.Filled.Logout,
+                icono = Icons.AutoMirrored.Rounded.Logout,
             )
         }
     }

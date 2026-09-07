@@ -8,16 +8,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonOff
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.MedicalServices
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.PersonOff
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -83,16 +83,16 @@ fun AdminPacientesScreen(
             menuVisible = menuVisible,
             onCambiarMenuVisible = onCambiarMenuVisible,
             items = listOf(
-                ItemBarraLateral("Pacientes", Icons.Filled.People, seleccionado = true, onClick = {}),
+                ItemBarraLateral("Pacientes", Icons.Rounded.People, seleccionado = true, onClick = {}),
                 ItemBarraLateral(
                     "Fisioterapeutas",
-                    Icons.Filled.MedicalServices,
+                    Icons.Rounded.MedicalServices,
                     seleccionado = false,
                     onClick = onNavegarAFisioterapeutas,
                 ),
                 ItemBarraLateral(
                     "Cerrar sesión",
-                    Icons.AutoMirrored.Filled.Logout,
+                    Icons.AutoMirrored.Rounded.Logout,
                     seleccionado = false,
                     onClick = { confirmandoCierreSesion = true },
                 ),
@@ -103,7 +103,7 @@ fun AdminPacientesScreen(
                     onAlternarMenu = onAlternarMenu,
                     acciones = {
                         IconButton(onClick = onRegistrarPaciente) {
-                            Icon(Icons.Filled.Add, contentDescription = "Registrar paciente")
+                            Icon(Icons.Rounded.Add, contentDescription = "Registrar paciente")
                         }
                     },
                 )
@@ -119,7 +119,7 @@ fun AdminPacientesScreen(
                     uiState.cargando -> EstadoCargando()
 
                     uiState.pacientes.isEmpty() -> EstadoVacio(
-                        icono = Icons.Filled.PersonOff,
+                        icono = Icons.Rounded.PersonOff,
                         mensaje = "Aún no hay pacientes registrados.",
                     )
 
@@ -260,12 +260,12 @@ internal fun TarjetaUsuarioAdmin(
         contenidoFinal = {
             Box {
                 IconButton(onClick = { menuAbierto = true }) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Más opciones")
+                    Icon(Icons.Rounded.MoreVert, contentDescription = "Más opciones")
                 }
                 DropdownMenu(expanded = menuAbierto, onDismissRequest = { menuAbierto = false }) {
                     DropdownMenuItem(
                         text = { Text("Editar") },
-                        leadingIcon = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Rounded.Edit, contentDescription = null) },
                         onClick = {
                             menuAbierto = false
                             onEditar()
@@ -275,7 +275,7 @@ internal fun TarjetaUsuarioAdmin(
                         text = { Text(if (usuario.activo) "Desactivar" else "Activar") },
                         leadingIcon = {
                             Icon(
-                                if (usuario.activo) Icons.Filled.VisibilityOff else Icons.Filled.Visibility,
+                                if (usuario.activo) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
                                 contentDescription = null,
                             )
                         },
@@ -286,7 +286,7 @@ internal fun TarjetaUsuarioAdmin(
                     )
                     DropdownMenuItem(
                         text = { Text("Eliminar") },
-                        leadingIcon = { Icon(Icons.Filled.Delete, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.Rounded.Delete, contentDescription = null) },
                         onClick = {
                             menuAbierto = false
                             onEliminar()

@@ -5,6 +5,12 @@ falta leer la tesis en Word: todo lo relevante para desarrollar la app ya
 está resumido y corregido aquí (arquitectura, stack, modelo de datos,
 historias de usuario y requisitos no funcionales, priorizados por sprint).
 
+> Trabajo en curso, fuera del alcance de este archivo (no son HU/RNF del
+> backlog): el plan de producción de videos 3D para el material
+> audiovisual de los ejercicios (`Ejercicio.materialUrl`, hoy vacío) vive
+> en `videos_3d/PLAN_PRODUCCION_VIDEOS_3D.md`, con bitácora de avance del
+> piloto SDS-02.
+
 ## Índice
 1. Contexto del proyecto
 2. Estructura del repositorio

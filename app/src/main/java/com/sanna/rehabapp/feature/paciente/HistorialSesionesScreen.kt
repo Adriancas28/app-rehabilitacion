@@ -13,11 +13,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.EventNote
-import androidx.compose.material.icons.automirrored.filled.TrendingUp
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.LocalFireDepartment
-import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.automirrored.rounded.EventNote
+import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -59,21 +59,21 @@ fun HistorialSesionesScreen(
             // completadas y racha de días consecutivos.
             Row(modifier = Modifier.fillMaxWidth()) {
                 TarjetaEstadistica(
-                    icono = Icons.AutoMirrored.Filled.TrendingUp,
+                    icono = Icons.AutoMirrored.Rounded.TrendingUp,
                     valor = "${uiState.resumen.porcentajeGeneral.toInt()}%",
                     etiqueta = "Progreso general",
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(Spacing.sm + 2.dp))
                 TarjetaEstadistica(
-                    icono = Icons.Filled.TaskAlt,
+                    icono = Icons.Rounded.TaskAlt,
                     valor = "${uiState.resumen.sesionesCompletadas}",
                     etiqueta = "Completadas",
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.width(Spacing.sm + 2.dp))
                 TarjetaEstadistica(
-                    icono = Icons.Filled.LocalFireDepartment,
+                    icono = Icons.Rounded.LocalFireDepartment,
                     valor = "${uiState.resumen.rachaActual}",
                     etiqueta = "Racha (días)",
                     modifier = Modifier.weight(1f),
@@ -95,7 +95,7 @@ fun HistorialSesionesScreen(
 
                 // HU13-CA04
                 uiState.sesiones.isEmpty() -> EstadoVacio(
-                    icono = Icons.Filled.History,
+                    icono = Icons.Rounded.History,
                     mensaje = if (uiState.filtroPeriodo == PeriodoProgreso.TODOS) {
                         "Aún no has completado ninguna sesión."
                     } else {
@@ -106,7 +106,7 @@ fun HistorialSesionesScreen(
                 else -> LazyColumn {
                     items(uiState.sesiones, key = { it.sesionId }) { item ->
                         TarjetaConIcono(
-                            icono = Icons.AutoMirrored.Filled.EventNote,
+                            icono = Icons.AutoMirrored.Rounded.EventNote,
                             titulo = item.ejercicio.nombre,
                             subtitulo = item.sesion.fechaEjecucion?.let(::formatearFecha) ?: "Fecha no disponible",
                             onClick = { onSesionSeleccionada(item.sesionId) },

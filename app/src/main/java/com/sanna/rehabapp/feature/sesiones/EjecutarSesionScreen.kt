@@ -21,13 +21,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.PriorityHigh
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.VideocamOff
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.PriorityHigh
+import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material.icons.rounded.VideocamOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -129,7 +129,7 @@ fun EjecutarSesionScreen(
                 uiState.cargando -> EstadoCargando()
 
                 uiState.error != null -> EstadoCentrado {
-                    MensajeConIcono(Icons.Filled.VideocamOff, uiState.error ?: "")
+                    MensajeConIcono(Icons.Rounded.VideocamOff, uiState.error ?: "")
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
@@ -137,7 +137,7 @@ fun EjecutarSesionScreen(
                 !tieneCamaraDisponible(contexto) -> EstadoCentrado {
                     // RNF03-CA03: el dispositivo no cumple los requisitos mínimos.
                     MensajeConIcono(
-                        Icons.Filled.VideocamOff,
+                        Icons.Rounded.VideocamOff,
                         "Este dispositivo no tiene cámara disponible, así que no puede ejecutar sesiones con monitoreo.",
                     )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
@@ -146,7 +146,7 @@ fun EjecutarSesionScreen(
 
                 !permisoConcedido -> EstadoCentrado {
                     MensajeConIcono(
-                        Icons.Filled.CameraAlt,
+                        Icons.Rounded.CameraAlt,
                         "Se necesita permiso de cámara para monitorear el ejercicio.",
                     )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
@@ -158,7 +158,7 @@ fun EjecutarSesionScreen(
                 }
 
                 uiState.sesionCompletada -> EstadoCentrado {
-                    MensajeConIcono(Icons.Filled.CheckCircle, "Sesión completada")
+                    MensajeConIcono(Icons.Rounded.CheckCircle, "Sesión completada")
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
                 }
@@ -172,7 +172,7 @@ fun EjecutarSesionScreen(
                     BotonPrimario(
                         texto = "Iniciar sesión",
                         onClick = viewModel::iniciarSesion,
-                        icono = Icons.Filled.PlayArrow,
+                        icono = Icons.Rounded.PlayArrow,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(bottom = 32.dp)
@@ -292,7 +292,7 @@ private fun IconoEstadoCorreccion(enCorreccion: Boolean, modifier: Modifier = Mo
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = if (enCorreccion) Icons.Filled.PriorityHigh else Icons.Filled.Check,
+            imageVector = if (enCorreccion) Icons.Rounded.PriorityHigh else Icons.Rounded.Check,
             contentDescription = if (enCorreccion) "Corrige la postura" else "Postura correcta",
             tint = Color.White,
             modifier = Modifier.size(20.dp),
@@ -375,7 +375,7 @@ private fun PanelProgreso(
             texto = "Finalizar ejercicio",
             onClick = onFinalizar,
             esDestructivo = true,
-            icono = Icons.Filled.Stop,
+            icono = Icons.Rounded.Stop,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = Spacing.lg),

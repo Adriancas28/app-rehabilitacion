@@ -7,11 +7,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MedicalServices
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonOff
+import androidx.compose.material.icons.automirrored.rounded.Logout
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.MedicalServices
+import androidx.compose.material.icons.rounded.People
+import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,19 +71,19 @@ fun AdminFisioterapeutasScreen(
             items = listOf(
                 ItemBarraLateral(
                     "Pacientes",
-                    Icons.Filled.People,
+                    Icons.Rounded.People,
                     seleccionado = false,
                     onClick = onNavegarAPacientes,
                 ),
                 ItemBarraLateral(
                     "Fisioterapeutas",
-                    Icons.Filled.MedicalServices,
+                    Icons.Rounded.MedicalServices,
                     seleccionado = true,
                     onClick = {},
                 ),
                 ItemBarraLateral(
                     "Cerrar sesión",
-                    Icons.AutoMirrored.Filled.Logout,
+                    Icons.AutoMirrored.Rounded.Logout,
                     seleccionado = false,
                     onClick = { confirmandoCierreSesion = true },
                 ),
@@ -94,7 +94,7 @@ fun AdminFisioterapeutasScreen(
                     onAlternarMenu = onAlternarMenu,
                     acciones = {
                         IconButton(onClick = onRegistrarFisioterapeuta) {
-                            Icon(Icons.Filled.Add, contentDescription = "Registrar fisioterapeuta")
+                            Icon(Icons.Rounded.Add, contentDescription = "Registrar fisioterapeuta")
                         }
                     },
                 )
@@ -110,7 +110,7 @@ fun AdminFisioterapeutasScreen(
                     uiState.cargando -> EstadoCargando()
 
                     uiState.fisioterapeutas.isEmpty() -> EstadoVacio(
-                        icono = Icons.Filled.PersonOff,
+                        icono = Icons.Rounded.PersonOff,
                         mensaje = "Aún no hay fisioterapeutas registrados.",
                     )
 
