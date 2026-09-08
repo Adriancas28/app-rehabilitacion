@@ -1,8 +1,5 @@
 package com.sanna.rehabapp.feature.paciente
 
-import android.net.Uri
-import android.widget.MediaController
-import android.widget.VideoView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,12 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.theme.Spacing
 
 @Composable
@@ -104,18 +101,7 @@ fun DetalleEjercicioAsignadoScreen(
 private fun MaterialTerapeutico(url: String) {
     val forma = RoundedCornerShape(16.dp)
     if (esMaterialVideo(url)) {
-        AndroidView(
-            factory = { contexto ->
-                VideoView(contexto).apply {
-                    setVideoURI(Uri.parse(url))
-                    setMediaController(MediaController(contexto).also { it.setAnchorView(this) })
-                }
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(220.dp)
-                .clip(forma),
-        )
+        ReproductorVideo(url = url)
     } else {
         AsyncImage(
             model = url,

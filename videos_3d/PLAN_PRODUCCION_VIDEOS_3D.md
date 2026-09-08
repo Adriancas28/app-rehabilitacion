@@ -340,9 +340,298 @@ iteraciones de corrección por video.
   - Ensamblado a MP4 con el mismo método OpenCV (`cv2.VideoWriter`,
     códec `mp4v`) que ya se usó para evitar el bug de color del VSE de
     Blender.
-- **Archivo final (versión con personaje Mixamo)**:
-  `videos_3d/SDS-02/exports/SDS-02_Flexion_Hombro_Derecho.mp4` (479 KB,
-  720×1280, 30fps, 301 frames, 10.03s). Verificado visualmente en los
-  frames 0 (70°) y 98 (110°): movimiento correcto, sin costuras, contraste
-  normal. **Pendiente de aprobación del usuario** ("VIDEO APROBADO")
-  antes de iniciar la Fase 12 (integración Android).
+- **2026-09-06 (cont.) — segunda fuente de verdad: `Ejercicios.docx`**:
+  el usuario aportó un Word con la especificación clínica de los 12
+  ejercicios (posición inicial/final, segmento que se mueve, errores a
+  diferenciar, criterio de repetición — sin cifras de ángulo, esas se
+  dejan a criterio del fisioterapeuta a propósito). Confirmado: el Word
+  no contradice el rango numérico 70°-110° del código (son capas
+  complementarias, cualitativa vs cuantitativa), **pero sí reveló un
+  error real en la animación**: para SDS-02 el Word especifica
+  "posición inicial: brazo... junto al cuerpo" y "fase de regreso:
+  recuperar la posición inicial" — es decir, el ciclo debe empezar y
+  terminar con el brazo **colgando pegado al cuerpo**, no en el límite
+  inferior de 70° (que en realidad es solo el umbral que la app
+  monitorea activamente, no la postura de reposo real).
+  - **Diagnóstico** (`18_encontrar_eje_aduccion.py`,
+    `19_barrido_x_amplio.py`): el modelo se importó en T-pose (brazo
+    horizontal), y la rotación calibrada antes (31°/-9° para 70°/110°)
+    solo balanceaba el brazo cerca de la altura del hombro, sin bajarlo
+    nunca al costado real. Barrido más amplio del mismo eje (X) encontró
+    que **rot_x=90° coloca el codo matemáticamente debajo del hombro**
+    (mismo X/Y que el hombro, altura = hombro − largo del brazo) — esa
+    es la verdadera posición "pegado al cuerpo" (~6.8° en la convención
+    del sistema).
+  - **Corrección aplicada** (`14_animar_ybot.py`): ciclo cambiado de
+    70°→110°→70° a **90°→110°→90°** (`GRADOS_INICIAL=90.0`,
+    `GRADOS_MAXIMO=-9.0` sin cambio). Verificado visualmente en render de
+    prueba: frame 1 = brazo pegado al cuerpo; frame 99 = brazo elevado al
+    frente. Re-renderizado completo (301 frames) y reexportado.
+- **2026-09-07 — corrección de plano de movimiento (hallazgo importante)**:
+  al preparar SDS-01 (abducción) se necesitó verificar en qué plano
+  anatómico se mueve realmente el brazo, y se encontró que **el eje que
+  veníamos usando para "SDS-02 Flexión de hombro" en realidad mueve el
+  brazo en el plano de ABDUCCIÓN** (coronal — hacia el costado), no en el
+  de flexión (sagital — hacia adelante). Verificado matemáticamente
+  (`20_verificar_plano_movimiento.py`): la coordenada mundo Y (eje
+  adelante/atrás del personaje) permanecía exactamente constante durante
+  todo el movimiento, solo cambiaban X (lateral) y Z (altura) — eso es
+  abducción, no flexión.
+  - **Eje correcto encontrado** (`21_buscar_eje_flexion.py`): con
+    `rotation_euler.x = 90°` FIJO (mantiene el brazo colgando en el plano
+    correcto en vez del T-pose original) y variando **Y adicional**, el
+    codo se mueve en el plano adelante/arriba con `dx≈0.000` en todo el
+    barrido — esa sí es flexión real (plano sagital).
+  - **Recalibración** (`22_calibrar_flexion_real.py`): `Y=0°` → brazo
+    colgando (~12.8° reales); `Y=117°` → ~110° reales.
+  - **Reanimado y re-renderizado** (`23_animar_flexion_correcta.py` +
+    `15`/`16`/`17`_*_ybot.py sin cambios): mismo ciclo de Plantilla A
+    (10s), ahora animando `rotation_euler.x=90` fijo +
+    `rotation_euler.y` entre 0°/117°. Verificado visualmente: el brazo
+    ahora sube hacia adelante y arriba (no hacia el costado).
+  - **Nota para los próximos ejercicios**: el eje "solo X desde T-pose"
+    (el que se usaba antes) SÍ es la abducción correcta — se reutiliza
+    tal cual para **SDS-01** (que es abducción real). El combo
+    "X=90 fijo + Y variable" es el que corresponde a **SDS-02 y SDS-04**
+    (ambos son flexión).
+- **Archivo final (versión corregida, flexión real en el plano sagital)**:
+  `videos_3d/SDS-02/exports/SDS-02_Flexion_Hombro_Derecho.mp4` (518 KB,
+  720×1280, 30fps, 301 frames, 10.03s). **APROBADO por el usuario.**
+- **2026-09-07 — Lote "Fácil" (SDS-01, SDS-04, OAR-02)**: producidos
+  reutilizando el `.blend` de importación ya validado
+  (`SDS-02/blender/YBot_importado.blend`) como base para cada uno, evitando
+  reimportar el FBX (una reimportación fresca demostró no ser
+  bit-a-bit idéntica — ver incidente de ruta más abajo).
+  - **SDS-01 (Abducción de hombro)**: reutiliza el eje "solo X desde
+    T-pose" (que en realidad SÍ es abducción, no flexión — ver hallazgo
+    de la sección anterior). Calibración idéntica a la ya usada
+    (`X=90`→colgando, `X=-9`→110°). Cámara **Frontal** (catálogo), no
+    lateral — la abducción se ve mejor de frente. Corrección estática:
+    brazo izquierdo también posado colgando (si no, se queda en T-pose
+    todo el video, antinatural). Carpeta `videos_3d/SDS-01/`.
+  - **SDS-04 (Flexión unilateral alternada de hombro)**: mismo eje de
+    flexión corregido (`X=90` fijo + `Y` variable) que SDS-02, aplicado a
+    AMBOS brazos por turnos. Encontrado por calibración: el lado
+    izquierdo necesita el signo opuesto de `Y` (`Y=-117°` → ~110°, vs
+    `Y=+117°` para el derecho) — rig espejado, coherente. Secuencia:
+    reposo → sube y baja el derecho → pausa → sube y baja el izquierdo →
+    pausa final (fiel al Word: "solo después se inicia el lado
+    contrario"). Cámara lateral-oblicua (catálogo). Carpeta
+    `videos_3d/SDS-04/`.
+  - **OAR-02 (Flexión de rodilla en bipedestación)**: primera articulación
+    de pierna. Calibración nueva (`00_calibrar_rodilla.py`): pierna recta
+    en reposo = **177.8°** (no 180 exacto, por la geometría del rig);
+    `rot_x=-90` en `mixamorig:RightLeg` → **87.9° (~90°)**, el extremo de
+    mayor flexión del rango del catálogo (90°-140°). Corrección estática:
+    ambos brazos posados colgando (no participan del ejercicio, quedaban
+    en T-pose si no se corregían). Cámara lateral-oblicua. Carpeta
+    `videos_3d/OAR-02/`.
+  - **Incidente evitado a tiempo**: al abrir un `.blend` de OTRA carpeta
+    (ej. `SDS-02/blender/YBot_importado.blend`) y luego guardar con ruta
+    relativa `//archivo.blend`, Blender resuelve esa ruta relativa a la
+    carpeta del archivo **abierto**, no a la carpeta del script — por eso
+    todos los scripts de este lote usan **rutas absolutas** para guardar
+    (`r"D:\...\SDS-01\blender\..."`), nunca `bpy.path.abspath("//...")`
+    cuando se abre un `.blend` de otra carpeta primero. Ya ocurrió una
+    vez (sobreescribió el `.blend` intermedio de SDS-02, sin afectar el
+    `.mp4` final ya exportado) y quedó corregido para el resto del lote.
+- **Archivos finales del lote fácil**:
+  - `videos_3d/SDS-01/exports/SDS-01_Abduccion_Hombro_Derecho.mp4` (490 KB)
+  - `videos_3d/SDS-04/exports/SDS-04_Flexion_Alternada_Hombro.mp4` (497 KB)
+  - `videos_3d/OAR-02/exports/OAR-02_Flexion_Rodilla_Bipedestacion.mp4` (471 KB)
+  Los 3: 720×1280, 30fps, 301 frames, 10.03s. **APROBADOS por el
+  usuario.**
+- **2026-09-07 — Lote "Medio" (LUM-01, LUM-02, LUM-03, OAR-01)**: cada
+  uno necesitó un hueso/eje distinto de la columna o piernas, calibrado
+  desde cero contra la misma convención de ángulo del proyecto.
+  - **LUM-01 (Bisagra de cadera)**: hueso `mixamorig:Spine`, eje X
+    (mismo eje de "flexión hacia adelante" que ya conocíamos). Reposo de
+    pie = 174.4°; `rot_x=-114` → 90.3° (techo del catálogo, 90°-150°).
+    Flexión de rodilla pequeña y CONSTANTE (-15°, no animada, solo
+    acompaña, tal como pide el Word). **Bug encontrado y corregido**: al
+    inclinar el torso, los brazos (hijos jerárquicos del torso) se
+    inclinaban CON él en vez de seguir colgando por gravedad, viéndose
+    cruzados/distorsionados en la bisagra máxima — se corrigió con una
+    contra-rotación animada en los brazos (`grados_brazo = 90 - grados_spine`)
+    para que su orientación en el mundo se mantenga constante.
+  - **LUM-02 (Marcha estacionaria)**: hueso `mixamorig:RightUpLeg` /
+    `LeftUpLeg` (muslo, flexión de cadera), mismo eje ya usado. Reposo
+    174.4°; `rot_x=-75` → 100.3° (extremo inferior del catálogo,
+    100°-140°). Alternado igual que SDS-04 (una pierna, pausa, la otra).
+    Mismo signo en ambas piernas (a diferencia de los brazos, que sí se
+    espejan).
+  - **LUM-03 (Inclinación lateral de tronco)**: **hallazgo importante**
+    — el triángulo hombro izq-cadera der-hombro der
+    (`Articulacion.TRONCO`) con las proporciones de este personaje NO
+    alcanza el rango numérico del catálogo (70°-110°) ni con una
+    inclinación extrema de 90° (el ángulo real solo llega a ~19-20°,
+    verificado por barrido completo). Se documenta como discrepancia
+    entre el modelo 3D y el rango sembrado, sin forzar un valor irreal.
+    Se usó una inclinación visualmente clara y anatómicamente plausible
+    (eje Z del `Spine`, 45°) para la demostración. Eje encontrado
+    comparando la altura de ambos hombros bajo cada eje (Z es el único
+    que sube uno y baja el otro, confirmando inclinación lateral real).
+  - **OAR-01 (Extensión de rodilla en sedestación)**: la más compleja —
+    requiere posición SENTADA + silla (prop nuevo). Calibración: muslo
+    horizontal = `rot_x=-90` en `RightUpLeg`/`LeftUpLeg` (verificado:
+    rodilla a la misma altura que la cadera). Rodilla en reposo sentado
+    (pie cerca del suelo) = `rot_x=90` (~92° real); extensión máxima =
+    `rot_x=3` (~178°, ~175° del catálogo 140°-175°). **Bug encontrado y
+    corregido**: al combinar muslo(-90) + rodilla(-90 con el mismo signo
+    que estando de pie), el pie terminaba ARRIBA de la cadera (postura
+    fetal) en vez de abajo — la rotación de un hueso hijo se compone
+    sobre el marco ya rotado de su padre; se corrigió con un barrido
+    fino que encontró el signo correcto (positivo) para que la pierna
+    cuelgue hacia abajo desde el muslo horizontal. Se bajó todo el
+    personaje (`arm.location.z -= 0.516`) para que el pie en reposo
+    apoye en el suelo (cadera queda a ~0.48m, altura de asiento
+    plausible), y se agregó una silla simple (dos cajas: asiento + pata
+    frontal) bajo la pelvis para contexto visual.
+- **Archivos finales del lote medio**:
+  - `videos_3d/LUM-01/exports/LUM-01_Bisagra_Cadera.mp4` (513 KB)
+  - `videos_3d/LUM-02/exports/LUM-02_Marcha_Estacionaria.mp4` (476 KB)
+  - `videos_3d/LUM-03/exports/LUM-03_Inclinacion_Lateral_Tronco.mp4` (510 KB)
+  - `videos_3d/OAR-01/exports/OAR-01_Extension_Rodilla_Sedestacion.mp4` (478 KB)
+  Los 4: 720×1280, 30fps, 301 frames, 10.03s. **APROBADOS por el
+  usuario.**
+- **2026-09-07 — Lote "Difícil" (SDS-03, OAR-03, LUM-04, OAR-04)**: los
+  3 marcados por el proyecto como de mayor riesgo técnico, más OAR-04.
+  - **SDS-03 (Trepado de dedos en pared)**: reutiliza el eje de flexión
+    ya corregido (X=90 fijo + Y variable). Calibración: `Y=87°`→80.3°
+    (inicio), `Y=138°`→130.2° (techo, catálogo 80°-130°). Se agregó una
+    pared simple (caja delgada) posicionada exactamente frente a la mano
+    en reposo. Cámara lateral-oblicua (35°, más inclinada que las
+    anteriores) en vez de la "Frontal" del catálogo — se decidió así
+    para que la pared no ocluya la vista del brazo desde una cámara
+    puramente frontal.
+  - **OAR-03 (Mini-sentadilla)**: primer ejercicio de cuerpo completo
+    coordinado — ambas rodillas + ambas caderas + tronco simultáneos.
+    Rodillas reutilizan la calibración de OAR-01/OAR-02 (`rot_x=-30`→150°,
+    `rot_x=-60`→120°, catálogo 120°-150°). Cadera y tronco: ángulos
+    moderados sin calibrar contra la app (no son la articulación
+    medida). **Bug encontrado y corregido (retroalimentación numérica)**:
+    el primer intento de "bajar todo el objeto para que el pie no flote"
+    calculó el desplazamiento usando la posición YA corregida del frame
+    anterior, generando un valor sin sentido (`obj_z=57`) — se corrigió
+    forzando `location.z=0` antes de cada medición para evaluar desde una
+    base limpia. Cámara Frontal (catálogo).
+  - **OAR-04 (Levantarse de una silla)**: reutiliza la pose sentada + silla
+    de OAR-01. Transición sentado→de pie animando ambos muslos
+    (`-90°→0°`) y ambas rodillas (`90°→3°`, ~178°≈180° del catálogo
+    150°-180°) simultáneamente, con inclinación de tronco hacia
+    adelante durante la transición (Word: "inclinar el tronco...
+    trasladar el peso... antes de la extensión"). Mismo mecanismo de
+    anclaje del pie al suelo que OAR-03/OAR-01, esta vez recalculado en
+    cada keyframe porque el cambio de postura es mucho más grande.
+    Cámara lateral-oblicua (catálogo).
+  - **LUM-04 (Puente de glúteo)** — el más complejo de los 12,
+    requiere posición decúbito supino (acostado):
+    - **Hallazgo**: rotar el objeto en el eje **Y** (no X, que fue mi
+      primer intento fallido) es lo que realmente acuesta al personaje
+      — verificado empíricamente comparando la dispersión de altura
+      (Z) de cadera/cabeza/pie bajo cada eje candidato.
+    - Para lograr que hombros y pies permanezcan apoyados mientras la
+      pelvis "sube" (sin resolver una IK real de dos puntos), se
+      reutilizó la técnica de contra-rotación de LUM-01: se rota el
+      hueso raíz `Hips` (extensión de cadera) y se contra-rotan
+      `Spine` y ambos muslos por el mismo ángulo en sentido opuesto.
+      El efecto de elevación visible es el volumen de malla alrededor
+      del pivote de `Hips`, no una traslación real de la pelvis.
+    - **Limitación conocida y aceptada, no resuelta**: con la
+      contra-rotación exacta, el efecto de elevación es sutil (poco
+      dramático). Se probó amplificar el ángulo (-70° en vez de -35°)
+      para hacerlo más visible, pero **las piernas se deforman/pliegan
+      de forma antinatural** a ese ángulo — se revirtió a -35°.
+    - **2026-09-08 — segundo intento (IK real de Blender), descartado**:
+      se intentó reemplazar la contra-rotación manual por constraints IK
+      reales (`bpy` `IK` constraint): pies anclados con IK de 2 huesos
+      (muslo+rodilla) a un Empty fijo por lado, y columna anclada con IK
+      de 3 huesos (Spine/Spine1/Spine2) a un Empty fijo en la posición
+      original de Spine2 — la idea era animar solo `Hips` con un ángulo
+      mayor y dejar que el solver reparta la corrección de forma más
+      natural que la contra-rotación de un solo hueso. **Resultado: peor,
+      no mejor** — el solver de columna, al tener 3 huesos de libertad
+      para alcanzar un objetivo casi en su propia posición (problema
+      mal condicionado/casi singular), encontró una solución alternativa
+      válida matemáticamente pero visualmente rota: la columna se pliega
+      y la cabeza queda oculta/colapsada dentro del torso, incluso en
+      reposo (hips=0, sin ninguna corrección real que hacer). Verificado
+      con cámara mucho más amplia (lente 18mm, alejada) — la cabeza
+      simplemente no aparece en ningún punto del clip, no es un problema
+      de encuadre.
+    - **Decisión final**: se descartó el intento de IK y se mantiene la
+      versión de contra-rotación simple (-35°) como la definitiva. **Este
+      sigue siendo el resultado menos refinado de los 12** — consistente
+      con que el propio proyecto ya marcaba este ejercicio como el de
+      mayor riesgo técnico antes de producir ningún video. Si se quiere
+      mejorar en el futuro, la vía recomendada NO es este tipo de IK
+      simple de Blender (demostrado problemático para esta cadena
+      concreta) sino una animación manual quadro por cuadro o retargeting
+      desde mocap real (ver conversación previa sobre Mixamo/BVH).
+    - Cámara lateral, baja (casi a nivel del suelo, catálogo).
+- **Archivos finales del lote difícil**:
+  - `videos_3d/SDS-03/exports/SDS-03_Trepado_Dedos_Pared.mp4` (518 KB)
+  - `videos_3d/OAR-03/exports/OAR-03_Mini_Sentadilla.mp4` (515 KB)
+  - `videos_3d/OAR-04/exports/OAR-04_Levantarse_Silla.mp4` (533 KB)
+  - `videos_3d/LUM-04/exports/LUM-04_Puente_Gluteo.mp4` (670 KB) —
+    **marcado como borrador, no al mismo nivel que los otros 11**.
+  Los 4: 720×1280, 30fps, 301 frames, 10.03s.
+
+## Estado final del catálogo (12/12 producidos)
+
+Los 12 ejercicios del catálogo MVP tienen un video piloto generado con
+Y Bot (Mixamo), calibrado contra la convención de ángulos del proyecto y
+verificado contra `Ejercicios.docx`. 11 de 12 se consideran de calidad
+aceptable para un primer pase; **LUM-04 queda marcado explícitamente
+como borrador** por las limitaciones de la pose acostada. Pendiente:
+revisión final del usuario de este último lote, y luego decidir sobre
+la Fase 12 (integración Android) — que sigue sin iniciar para ningún
+ejercicio hasta recibir "VIDEO APROBADO" de cada uno.
+
+## Fase 12 (integración Android) — probada end-to-end con SDS-02
+
+Antes de subir el resto de videos se construyó el componente que faltaba
+(`core/designsystem/ReproductorVideo.kt`, Media3/ExoPlayer) y se probó
+con SDS-02 subido a Firebase Storage: login en emulador, consentimiento
+RNF06, tarjeta de sesión, detalle del ejercicio, reproducción real del
+video con controles nativos. Funcionó de punta a punta. Detalle técnico
+(dependencias, pantalla modificada) fuera del alcance de este documento
+— vive en el código (`app/build.gradle.kts`, `feature/paciente/`).
+
+## Corrección de encuadre (2026-09-08): zoom + intento de vista frontal
+
+Al ver SDS-02 reproducido en el emulador, el usuario señaló que el
+personaje se ve "de lado" y muy pequeño, y pidió vista frontal + más
+zoom en los 12 videos.
+
+- **Intento de vista frontal (SDS-02), descartado**: se probó una cámara
+  frontal pura para SDS-02. Resultado: el brazo (que en este ejercicio
+  se flexiona hacia adelante, es decir, en profundidad respecto a una
+  cámara frontal) se ve extendido a los costados y se corta fuera del
+  cuadro — una cámara frontal no puede mostrar un movimiento que ocurre
+  mayormente en el eje hacia/desde la cámara. Se le mostró la captura al
+  usuario como evidencia. Confirmado el problema, el usuario aceptó
+  mantener la vista de cámara correcta por ejercicio (la que ya definía
+  el catálogo/Word: frontal donde el movimiento es lateral/vertical
+  respecto a cámara, lateral-oblicua o lateral donde el movimiento va
+  hacia adelante) y aplicar **solo** más zoom en los 12.
+- **Bug encontrado de paso**: al reabrir `SDS-02/blender/YBot_animado.blend`
+  para el nuevo encuadre, el frame de prueba mostró una T-pose sin
+  ninguna rotación aplicada — es decir, el archivo estaba corrompido.
+  Se confirmó que es el mismo bug ya documentado más arriba (el script
+  de SDS-01 sobrescribió este archivo por una ruta relativa mal
+  resuelta): el `.blend1` (backup automático de Blender, con fecha
+  anterior a la sobrescritura) sí tenía la animación correcta (`RightArm`
+  en X=90°, Y≈100° en el frame de prueba, consistente con la calibración
+  documentada). Se restauró `YBot_animado.blend` desde ese backup (el
+  corrupto se conserva como `YBot_animado_CORRUPTO_backup.blend` por si
+  hace falta comparar) y se verificó que los otros 11 ejercicios NO
+  tienen este problema (suma de rotaciones de todos los huesos en el
+  frame intermedio, todas > 0°, ninguna en T-pose).
+- **Zoom aplicado**: mismo tipo de cámara por ejercicio (frontal, lateral,
+  lateral-oblicua o lateral-baja, según ya estaba definido), pero
+  `distancia_camara` reducida a ~79% del valor original y `cam_data.lens`
+  subido de 24 a 26 (LUM-04 usa 2.05 en vez de 2.6 por ser ya "cámara
+  baja"). SDS-02 re-renderizado (301 frames) y reensamblado con este
+  ajuste — pendiente aprobación del usuario antes de aplicar el mismo
+  ajuste a los otros 11 y volver a exportar sus videos finales.

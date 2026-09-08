@@ -82,6 +82,10 @@ dependencies {
     // Coil (HU05 — cargar imágenes de material terapéutico desde Storage)
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+    // Media3/ExoPlayer (HU05 — reproducir video de material terapéutico desde Storage)
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
+
     // CameraX
     implementation("androidx.camera:camera-core:1.3.4")
     implementation("androidx.camera:camera-camera2:1.3.4")
