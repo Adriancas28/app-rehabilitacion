@@ -27,8 +27,15 @@ import com.sanna.rehabapp.domain.model.ResultadoSesion
 class ProcesadorMovimiento(
     private val ejercicio: Ejercicio,
     private val ladoAfectado: LadoAfectado = LadoAfectado.DERECHO,
+    // HU03 (ampliación, Etapa 4): el fisioterapeuta puede personalizar el
+    // ángulo objetivo SOLO para esta sesión/paciente (ej. 120° en vez de
+    // 80° para un paciente en primera sesión) -- si es null, se usa el
+    // patronesReferencia por defecto del ejercicio, igual criterio que
+    // repeticiones/duracionSegundos en Sesion.
+    patronesReferenciaOverride: List<PatronReferencia>? = null,
 ) {
 
+    private val patronesReferencia = patronesReferenciaOverride ?: ejercicio.patronesReferencia
     private val medicionesPorRepeticion = mutableListOf<MutableList<List<MedicionArticulacion>>>()
 
     // Se llama al empezar cada repetición del ciclo de monitoreo (HU06-CA06).
@@ -45,7 +52,7 @@ class ProcesadorMovimiento(
         // Sin persona detectada en este frame: se ignora sin interrumpir el
         // procesamiento (RNF05-CA02/CA03), no se cuenta como frame medido.
         val landmarks = resultado.landmarks().firstOrNull() ?: return emptyList()
-        val mediciones = ejercicio.patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
+        val mediciones = patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
         bucketRepeticionActual.add(mediciones)
         return mediciones
     }

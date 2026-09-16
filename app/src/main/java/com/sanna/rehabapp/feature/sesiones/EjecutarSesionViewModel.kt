@@ -51,6 +51,10 @@ data class EjecutarSesionUiState(
     // HU03-CA06: override de repeticiones para esta sesión puntual; si es
     // null, se usa el valor por defecto del ejercicio.
     val repeticionesOverride: Int? = null,
+    // HU03-CA06 (ampliacion): override de la duracion por repeticion
+    // (segundos) para esta sesion puntual; si es null, se usa el valor
+    // por defecto del ejercicio.
+    val duracionSegundosOverride: Int? = null,
     val cargando: Boolean = true,
     val sesionIniciada: Boolean = false,
     // HU06-CA02 (ampliación): cuenta regresiva antes de que arranque la
@@ -74,6 +78,7 @@ data class EjecutarSesionUiState(
     val eventoVoz: EventoVoz? = null,
 ) {
     val totalRepeticiones: Int get() = repeticionesOverride ?: ejercicio?.repeticiones ?: 1
+    val duracionRepeticionSegundos: Int get() = duracionSegundosOverride ?: ejercicio?.duracionSegundos ?: 1
 }
 
 // HU06 — ejecutar una sesión terapéutica: cargar el ejercicio asignado
@@ -88,7 +93,9 @@ class EjecutarSesionViewModel @Inject constructor(
     private val usuarioRepository: UsuarioRepository,
 ) : ViewModel() {
 
-    private val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
+    // No privado: la Screen lo necesita para navegar al resultado (HU11-CA01)
+    // en cuanto la sesión se completa.
+    val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
     private val pacienteId: String? = authRepository.uidActual
 
     private val _uiState = MutableStateFlow(EjecutarSesionUiState())
@@ -126,7 +133,18 @@ class EjecutarSesionViewModel @Inject constructor(
                 // indicó como afectado para este paciente, no siempre el
                 // derecho con el que se definió el ejercicio.
                 val ladoAfectado = usuarioRepository.obtenerUsuario(idPaciente)?.ladoAfectado ?: LadoAfectado.DERECHO
-                procesadorMovimiento = ProcesadorMovimiento(ejercicio, ladoAfectado)
+                // HU03 (ampliación, Etapa 4): si el fisioterapeuta
+                // personalizó el ángulo objetivo para esta sesión, se
+                // reemplaza el rango de la PRIMERA articulación del
+                // ejercicio (ver nota en Sesion.anguloMinOverride).
+                val patronesReferenciaOverride = sesion?.anguloMinOverride?.let { min ->
+                    sesion.anguloMaxOverride?.let { max ->
+                        ejercicio.patronesReferencia.mapIndexed { indice, patron ->
+                            if (indice == 0) patron.copy(anguloMin = min, anguloMax = max) else patron
+                        }
+                    }
+                }
+                procesadorMovimiento = ProcesadorMovimiento(ejercicio, ladoAfectado, patronesReferenciaOverride)
                 val totalRepeticiones = sesion?.repeticiones ?: ejercicio.repeticiones
                 val resultadoAnterior = sesion?.resultado
                 if (resultadoAnterior != null && resultadoAnterior.repeticionesCompletadas < totalRepeticiones) {
@@ -137,9 +155,10 @@ class EjecutarSesionViewModel @Inject constructor(
                     it.copy(
                         ejercicio = ejercicio,
                         repeticionesOverride = sesion?.repeticiones,
+                        duracionSegundosOverride = sesion?.duracionSegundos,
                         repeticionActual = numeroRepeticionInicial,
                         repeticionesCompletadas = resultadoAnterior?.repeticionesCompletadas ?: 0,
-                        segundosRestantes = ejercicio.duracionSegundos,
+                        segundosRestantes = sesion?.duracionSegundos ?: ejercicio.duracionSegundos,
                         cargando = false,
                     )
                 }
@@ -166,7 +185,7 @@ class EjecutarSesionViewModel @Inject constructor(
             _uiState.update { it.copy(enPreparacion = false) }
 
             for (repeticion in numeroRepeticionInicial..totalRepeticiones) {
-                _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.ejercicio?.duracionSegundos ?: 0) }
+                _uiState.update { it.copy(repeticionActual = repeticion, segundosRestantes = it.duracionRepeticionSegundos) }
                 procesadorMovimiento?.marcarNuevaRepeticion()
                 while (_uiState.value.segundosRestantes > 0) {
                     delay(1_000)

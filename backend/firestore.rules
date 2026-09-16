@@ -28,9 +28,18 @@ service cloud.firestore {
       return estaAutenticado() && rolDe(request.auth.uid) == 'admin';
     }
 
+    // HU22-CA01: el paciente debe poder ver el nombre de su propio
+    // fisioterapeuta asignado en su Perfil -- sin esto, la lectura de
+    // usuarios/{fisioUid} desde un paciente queda bloqueada y el listener
+    // de PerfilViewModel crashea la app con PERMISSION_DENIED.
+    function esPacienteDe(fisioUid) {
+      return estaAutenticado() &&
+             get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.fisioterapeutaId == fisioUid;
+    }
+
     // usuarios/{uid}
     match /usuarios/{uid} {
-      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
       allow create, delete: if esDueno(uid) || esAdmin();
       // HU01-CA06: el fisioterapeuta asignado puede actualizar el
       // documento de su paciente (en la práctica, solo el diagnóstico —
@@ -40,7 +49,21 @@ service cloud.firestore {
 
       // usuarios/{pacienteId}/sesiones/{sesionId}
       match /sesiones/{sesionId} {
-        allow read: if esDueno(uid) ||
+        // HU18 (collectionGroup "Resultados") — separado en get/list porque
+        // Firestore no puede probar estáticamente una regla OR que mezcla
+        // una condición de ruta (esDueno) con una de datos
+        // (fisioterapeutaId) para una consulta agregada entre pacientes:
+        // el listener rechazaba TODO el listen con PERMISSION_DENIED aunque
+        // cada documento individualmente cumplía la regla. `list` usa solo
+        // la condición que la propia consulta ya garantiza por su filtro
+        // (fisioterapeutaId==uid del fisio, o ruta fija del paciente dueño).
+        allow get: if esDueno(uid) || esAdmin() ||
+                      (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
+        // Etapa 2A (dashboard Admin) — el administrador necesita el
+        // agregado de TODAS las sesiones (sin filtro por fisioterapeutaId)
+        // para las estadísticas globales; esAdmin() no depende de la forma
+        // de la consulta, a diferencia de la condición de fisioterapeuta.
+        allow list: if esDueno(uid) || esAdmin() ||
                        (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
         allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
         allow update: if esDueno(uid) ||

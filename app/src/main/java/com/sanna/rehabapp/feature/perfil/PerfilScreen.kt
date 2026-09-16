@@ -12,9 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Assessment
 import androidx.compose.material.icons.rounded.FitnessCenter
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,31 +41,57 @@ import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.domain.model.Rol
 
-// HU22 — Perfil del paciente: sin barra lateral, igual que el resto de
-// pantallas de detalle del lado paciente (solo botón atrás).
+// HU22 — Perfil del paciente: ahora es una pestaña mas de la barra lateral
+// (Ejercicios/Progreso/Perfil), igual criterio de navegacion que
+// fisioterapeuta/admin -- decision explicita del usuario para dar
+// consistencia entre los 3 roles (antes el paciente no tenia ninguna
+// barra persistente).
 @Composable
 fun PerfilPacienteScreen(
-    onVolver: () -> Unit,
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
+    onNavegarAEjercicios: () -> Unit,
+    onNavegarAHistorial: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: PerfilViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = rememberSnackbarDeMensaje(uiState.mensaje, viewModel::mensajeMostrado)
 
-    Scaffold(
-        topBar = { BarraSuperior(titulo = "Perfil", onNavegarAtras = onVolver) },
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-    ) { padding ->
-        ContenidoPerfil(
-            uiState = uiState,
-            onNombreCambiado = viewModel::onNombreCambiado,
-            onGuardarNombre = viewModel::guardarNombre,
-            onCerrarSesion = {
-                viewModel.cerrarSesion()
-                onCerrarSesion()
-            },
-            modifier = Modifier.padding(padding),
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        ScaffoldConBarraLateral(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = onCambiarMenuVisible,
+            items = listOf(
+                ItemBarraLateral(
+                    "Ejercicios",
+                    Icons.Rounded.FitnessCenter,
+                    seleccionado = false,
+                    onClick = onNavegarAEjercicios,
+                ),
+                ItemBarraLateral(
+                    "Progreso",
+                    Icons.Rounded.History,
+                    seleccionado = false,
+                    onClick = onNavegarAHistorial,
+                ),
+                ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = true, onClick = {}),
+            ),
+            topBar = { onAlternarMenu -> BarraSuperior(titulo = "Perfil", onAlternarMenu = onAlternarMenu) },
+        ) { padding ->
+            ContenidoPerfil(
+                uiState = uiState,
+                onNombreCambiado = viewModel::onNombreCambiado,
+                onGuardarNombre = viewModel::guardarNombre,
+                onCerrarSesion = {
+                    viewModel.cerrarSesion()
+                    onCerrarSesion()
+                },
+                modifier = Modifier.padding(padding),
+            )
+        }
+
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 

@@ -1,5 +1,6 @@
 package com.sanna.rehabapp.core.designsystem
 
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,10 +26,11 @@ import androidx.media3.ui.PlayerView
 fun ReproductorVideo(
     url: String,
     modifier: Modifier = Modifier,
-    alto: Dp = 220.dp,
+    alto: Dp? = 220.dp,
+    esquinas: Dp = 16.dp,
 ) {
     val contexto = LocalContext.current
-    val forma = RoundedCornerShape(16.dp)
+    val forma = RoundedCornerShape(esquinas)
 
     val exoPlayer = remember(url) {
         ExoPlayer.Builder(contexto).build().apply {
@@ -49,7 +51,7 @@ fun ReproductorVideo(
         },
         modifier = modifier
             .fillMaxWidth()
-            .height(alto)
+            .then(if (alto != null) Modifier.height(alto) else Modifier.fillMaxHeight())
             .clip(forma),
     )
 }

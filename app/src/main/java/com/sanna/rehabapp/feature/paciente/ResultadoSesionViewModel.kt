@@ -25,6 +25,9 @@ data class ResultadoSesionUiState(
     // HU16 — recomendaciones que el fisioterapeuta registró sobre esta sesión.
     val recomendaciones: List<Recomendacion> = emptyList(),
     val cargando: Boolean = true,
+    // true cuando se llega desde el historial (HU13) -- la sesión ya se
+    // vio antes; false solo justo al terminarla (EjecutarSesionScreen).
+    val soloLectura: Boolean = true,
 )
 
 // HU11 — el paciente consulta el detalle de resultados de una sesión ya
@@ -41,8 +44,9 @@ class ResultadoSesionViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
+    private val soloLectura: Boolean = savedStateHandle[Rutas.ARG_SOLO_LECTURA] ?: true
 
-    private val _uiState = MutableStateFlow(ResultadoSesionUiState())
+    private val _uiState = MutableStateFlow(ResultadoSesionUiState(soloLectura = soloLectura))
     val uiState: StateFlow<ResultadoSesionUiState> = _uiState
 
     init {

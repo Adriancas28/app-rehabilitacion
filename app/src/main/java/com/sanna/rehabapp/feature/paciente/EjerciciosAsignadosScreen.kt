@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Replay
@@ -24,7 +25,6 @@ import androidx.compose.material.icons.rounded.SelfImprovement
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +38,8 @@ import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.TarjetaConIcono
+import com.sanna.rehabapp.core.navigation.ItemBarraLateral
+import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.AmbarAlertaContenedor
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.core.theme.Spacing
@@ -45,8 +47,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+// HU04/HU05 — igual que el fisioterapeuta/admin, el paciente navega ahora
+// con una barra lateral (antes no tenia ninguna barra persistente, solo
+// "Accesos rapidos" sueltos) -- decision explicita del usuario para dar
+// consistencia de navegacion entre los 3 roles.
 @Composable
 fun EjerciciosAsignadosScreen(
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
     onEjercicioSeleccionado: (sesionId: String) -> Unit,
     onIniciarSesionDirecta: (sesionId: String) -> Unit,
     onNavegarAHistorial: () -> Unit,
@@ -56,8 +64,20 @@ fun EjerciciosAsignadosScreen(
     val uiState by viewModel.uiState.collectAsState()
     val primerNombre = uiState.nombrePaciente.trim().substringBefore(" ")
 
-    Scaffold(
-        topBar = {
+    ScaffoldConBarraLateral(
+        menuVisible = menuVisible,
+        onCambiarMenuVisible = onCambiarMenuVisible,
+        items = listOf(
+            ItemBarraLateral("Ejercicios", Icons.Rounded.FitnessCenter, seleccionado = true, onClick = {}),
+            ItemBarraLateral(
+                "Progreso",
+                Icons.Rounded.History,
+                seleccionado = false,
+                onClick = onNavegarAHistorial,
+            ),
+            ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = false, onClick = onNavegarAPerfil),
+        ),
+        topBar = { onAlternarMenu ->
             // Banner tipo mockup: fondo blanco y saludo grande en vez de la
             // barra teal que usa el resto de pantallas — a propósito, esta es
             // la única así, igual que en el mockup de referencia (la barra
@@ -65,18 +85,18 @@ fun EjerciciosAsignadosScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = Spacing.md + 4.dp, vertical = Spacing.md),
+                    .padding(horizontal = Spacing.md, vertical = Spacing.md),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                IconButton(onClick = onAlternarMenu) {
+                    Icon(Icons.Rounded.Menu, contentDescription = "Menú")
+                }
                 Text(
                     text = if (primerNombre.isNotBlank()) "Hola, $primerNombre" else "Mis ejercicios",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                 )
-                IconButton(onClick = onNavegarAPerfil) {
-                    Icon(Icons.Rounded.Person, contentDescription = "Perfil")
-                }
             }
         },
     ) { padding ->
@@ -192,7 +212,7 @@ private fun TarjetaProximaSesion(item: EjercicioAsignado, onIniciar: () -> Unit,
                 Spacer(modifier = Modifier.width(Spacing.xs))
                 Text(
                     text = "${item.repeticiones} rep. · " +
-                        formatearDuracionTotal(ejercicio.duracionSegundos * item.repeticiones),
+                        formatearDuracionTotal(item.duracionSegundos * item.repeticiones),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

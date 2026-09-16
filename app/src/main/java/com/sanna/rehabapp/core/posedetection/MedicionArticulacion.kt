@@ -104,7 +104,17 @@ fun construirResultadoSesion(
             .filterNot { it.dentroDeRango }
             .groupBy { it.articulacion to it.tipoDeError }
             .map { (clave, mediciones) ->
-                ErrorDetectado(articulacion = clave.first.etiqueta, tipo = clave.second, repeticiones = mediciones.size)
+                ErrorDetectado(
+                    articulacion = clave.first.etiqueta,
+                    tipo = clave.second,
+                    repeticiones = mediciones.size,
+                    // Idea 9/10 (mockup fisio): "150° (esperado 120°)" por
+                    // repetición -- promedio del ángulo real detectado en
+                    // los frames con este error, contra el punto medio del
+                    // rango esperado (mismo criterio que angulosDetectados).
+                    anguloDetectado = mediciones.map { it.angulo }.average().toFloat(),
+                    anguloEsperado = (mediciones.first().anguloMin + mediciones.first().anguloMax) / 2f,
+                )
             }
         val framesRepeticionDentroDeRango = frames.count { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
         val porcentajeRepeticion = if (frames.isNotEmpty()) {

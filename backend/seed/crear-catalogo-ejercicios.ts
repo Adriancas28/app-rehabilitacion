@@ -202,7 +202,6 @@ async function crearCatalogo(argumentos: Argumentos): Promise<void> {
       nombre: ejercicio.nombre,
       descripcion: ejercicio.descripcion,
       categoria: ejercicio.categoria,
-      materialUrl: "",
       duracionSegundos: ejercicio.duracionSegundos,
       repeticiones: ejercicio.repeticiones,
       patronesReferencia: ejercicio.patronesReferencia,
@@ -213,7 +212,11 @@ async function crearCatalogo(argumentos: Argumentos): Promise<void> {
     };
 
     if (existente.empty) {
-      await firestore.collection("ejercicios").add(datos);
+      // materialUrl solo se inicializa vacio al CREAR -- en una
+      // actualizacion (merge abajo) no se toca, para no borrar un video
+      // ya subido a un ejercicio existente (bug real: un re-seed
+      // anterior borro los materialUrl de 5 ejercicios ya con video).
+      await firestore.collection("ejercicios").add({ ...datos, materialUrl: "" });
       console.log(`Creado: ${ejercicio.codigo} - ${ejercicio.nombre}`);
     } else {
       await existente.docs[0].ref.set(datos, { merge: true });

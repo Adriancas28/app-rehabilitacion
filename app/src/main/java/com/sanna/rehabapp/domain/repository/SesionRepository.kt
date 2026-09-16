@@ -32,12 +32,18 @@ interface SesionRepository {
     // conoce por fuera y no lo necesita).
     fun observarTodasLasSesionesDe(fisioterapeutaId: String): Flow<List<Sesion>>
 
+    // Etapa 2A (dashboard Admin, ampliación acordada) — todas las sesiones
+    // de TODOS los pacientes/fisioterapeutas, sin filtro, para las
+    // estadísticas agregadas del panel de administrador.
+    fun observarTodasLasSesiones(): Flow<List<Sesion>>
+
     // HU03-CA03 — cargar una sesión puntual para editarla.
     suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
 
     // HU03-CA02 — el fisioterapeuta asigna una nueva sesión a un paciente.
     // HU03-CA05: nota opcional del fisioterapeuta sobre esta sesión.
-    // HU03-CA06: override opcional de las repeticiones, solo para esta sesión.
+    // HU03-CA06: override opcional de las repeticiones y de la duración
+    // por repetición, solo para esta sesión.
     suspend fun asignarSesion(
         pacienteId: String,
         ejercicioId: String,
@@ -45,10 +51,13 @@ interface SesionRepository {
         fechaAsignacion: Date,
         notas: String? = null,
         repeticiones: Int? = null,
+        duracionSegundos: Int? = null,
+        anguloMinOverride: Float? = null,
+        anguloMaxOverride: Float? = null,
     ): Result<Unit>
 
-    // HU03-CA03 — modificar el ejercicio, la fecha, la nota o las
-    // repeticiones de una sesión pendiente.
+    // HU03-CA03 — modificar el ejercicio, la fecha, la nota, las
+    // repeticiones o la duración por repetición de una sesión pendiente.
     suspend fun actualizarSesion(
         pacienteId: String,
         sesionId: String,
@@ -56,5 +65,8 @@ interface SesionRepository {
         fechaAsignacion: Date,
         notas: String? = null,
         repeticiones: Int? = null,
+        duracionSegundos: Int? = null,
+        anguloMinOverride: Float? = null,
+        anguloMaxOverride: Float? = null,
     ): Result<Unit>
 }

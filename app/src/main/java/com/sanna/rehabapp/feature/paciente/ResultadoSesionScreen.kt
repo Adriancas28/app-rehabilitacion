@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Comment
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,6 +31,7 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.Spacing
@@ -71,8 +74,35 @@ fun ResultadoSesionScreen(
                         .padding(Spacing.md)
                         .verticalScroll(rememberScrollState()),
                 ) {
+                    // HU13: al entrar desde el historial, la sesión ya se
+                    // ejecutó antes -- este aviso deja claro que es solo
+                    // consulta (no vuelve a contar como una sesión nueva).
+                    if (uiState.soloLectura) {
+                        NotaSoloLectura()
+                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
+                    }
+
                     TarjetaPorcentaje(resultado)
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+
+                    if (resultado.detallePorRepeticion.isNotEmpty()) {
+                        Text(text = "Precisión por repetición", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        GraficoBarras(
+                            valores = resultado.detallePorRepeticion
+                                .sortedBy { it.numero }
+                                .map { it.porcentajeEjecucion },
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        NotaInfo(
+                            texto = "Calculado según correcciones detectadas por MediaPipe en cada repetición.",
+                        )
+                        if (!uiState.soloLectura) {
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            NotaInfo(texto = "Este ${resultado.porcentajeEjecucion.toInt()}% se suma a tu progreso total.")
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+                    }
 
                     if (resultado.angulosDetectados.isNotEmpty()) {
                         Text(text = "Ángulos por articulación", style = MaterialTheme.typography.titleSmall)
@@ -118,6 +148,35 @@ fun ResultadoSesionScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun NotaSoloLectura() {
+    TarjetaBase(relleno = Spacing.sm + 6.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.History, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.width(Spacing.sm))
+            Text(
+                text = "Sesión finalizada — vista de solo lectura",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun NotaInfo(texto: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Icon(
+            Icons.Rounded.Info,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(16.dp),
+        )
+        Spacer(modifier = Modifier.width(Spacing.sm))
+        Text(text = texto, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

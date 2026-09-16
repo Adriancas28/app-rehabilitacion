@@ -32,6 +32,18 @@ data class AsignarSesionUiState(
     val fechaAsignacion: Date? = null,
     val notas: String = "",
     val repeticiones: Int? = null,
+    // HU03-CA06 (ampliacion): override de la duracion por repeticion,
+    // como texto (mismo patron que "edad" en el formulario de paciente)
+    // para permitir edicion libre en segundos -- a diferencia de
+    // repeticiones, que usa un selector de opciones fijas.
+    val duracionSegundosTexto: String = "",
+    // HU03 (ampliación, Etapa 4): personalizar el ángulo objetivo (min/max)
+    // solo para esta sesión/paciente. `personalizarAngulo` es el checkbox;
+    // los textos solo importan si está marcado -- mismo patrón texto libre
+    // que duracionSegundosTexto.
+    val personalizarAngulo: Boolean = false,
+    val anguloMinTexto: String = "",
+    val anguloMaxTexto: String = "",
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
@@ -97,6 +109,10 @@ class AsignarSesionViewModel @Inject constructor(
                         fechaAsignacion = sesion.fechaAsignacion,
                         notas = sesion.notas ?: "",
                         repeticiones = sesion.repeticiones,
+                        duracionSegundosTexto = sesion.duracionSegundos?.toString() ?: "",
+                        personalizarAngulo = sesion.anguloMinOverride != null && sesion.anguloMaxOverride != null,
+                        anguloMinTexto = sesion.anguloMinOverride?.toString() ?: "",
+                        anguloMaxTexto = sesion.anguloMaxOverride?.toString() ?: "",
                         cargando = false,
                     )
                 } else {
@@ -115,10 +131,21 @@ class AsignarSesionViewModel @Inject constructor(
                 ejercicioSeleccionadoId = ejercicioId,
                 repeticiones = ejercicio?.let { seleccionado -> valorMasCercano(seleccionado.repeticiones) }
                     ?: it.repeticiones,
+                duracionSegundosTexto = ejercicio?.duracionSegundos?.toString() ?: it.duracionSegundosTexto,
+                anguloMinTexto = ejercicio?.patronesReferencia?.firstOrNull()?.anguloMin?.toString()
+                    ?: it.anguloMinTexto,
+                anguloMaxTexto = ejercicio?.patronesReferencia?.firstOrNull()?.anguloMax?.toString()
+                    ?: it.anguloMaxTexto,
                 error = null,
             )
         }
     }
+
+    fun onPersonalizarAnguloCambiado(valor: Boolean) = _uiState.update { it.copy(personalizarAngulo = valor) }
+
+    fun onAnguloMinCambiado(valor: String) = _uiState.update { it.copy(anguloMinTexto = valor) }
+
+    fun onAnguloMaxCambiado(valor: String) = _uiState.update { it.copy(anguloMaxTexto = valor) }
 
     fun onFechaSeleccionada(fecha: Date) =
         _uiState.update { it.copy(fechaAsignacion = fecha, error = null) }
@@ -126,6 +153,8 @@ class AsignarSesionViewModel @Inject constructor(
     fun onNotasCambiadas(valor: String) = _uiState.update { it.copy(notas = valor) }
 
     fun onRepeticionesCambiadas(valor: Int) = _uiState.update { it.copy(repeticiones = valor) }
+
+    fun onDuracionSegundosCambiada(valor: String) = _uiState.update { it.copy(duracionSegundosTexto = valor) }
 
     fun guardar() {
         val estado = _uiState.value
@@ -136,6 +165,12 @@ class AsignarSesionViewModel @Inject constructor(
             return
         }
         val notas = estado.notas.trim().ifBlank { null }
+        val duracionSegundos = estado.duracionSegundosTexto.trim().toIntOrNull()
+        // HU03 (ampliación, Etapa 4): el override de ángulo solo se envía si
+        // el checkbox está marcado Y ambos valores son números válidos --
+        // de lo contrario se guarda null (usa el rango por defecto).
+        val anguloMinOverride = estado.anguloMinTexto.trim().toFloatOrNull().takeIf { estado.personalizarAngulo }
+        val anguloMaxOverride = estado.anguloMaxTexto.trim().toFloatOrNull().takeIf { estado.personalizarAngulo }
 
         viewModelScope.launch {
             _uiState.update { it.copy(guardando = true, error = null) }
@@ -147,6 +182,9 @@ class AsignarSesionViewModel @Inject constructor(
                     fecha,
                     notas,
                     estado.repeticiones,
+                    duracionSegundos,
+                    anguloMinOverride,
+                    anguloMaxOverride,
                 )
             } else {
                 val fisioterapeutaId = authRepository.uidActual
@@ -161,6 +199,9 @@ class AsignarSesionViewModel @Inject constructor(
                     fecha,
                     notas,
                     estado.repeticiones,
+                    duracionSegundos,
+                    anguloMinOverride,
+                    anguloMaxOverride,
                 )
             }
             resultado.fold(

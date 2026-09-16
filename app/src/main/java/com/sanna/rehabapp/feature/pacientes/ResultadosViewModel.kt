@@ -76,7 +76,7 @@ class ResultadosViewModel @Inject constructor(
             val sesionesFiltradas = sesiones
                 .filter { it.estado == EstadoSesion.COMPLETADA }
                 .filter { filtroEjercicio == null || it.ejercicioId == filtroEjercicio }
-                .filter { cumplePeriodo(it.fechaAsignacion, periodo) }
+                .filter { cumplePeriodo(it.fechaEjecucion ?: it.fechaAsignacion, periodo) }
                 .map { sesion ->
                     SesionConDetalle(
                         sesion = sesion,
@@ -92,7 +92,7 @@ class ResultadosViewModel @Inject constructor(
                 cargando = false,
             )
         }
-            .catch { }
+            .catch { e -> android.util.Log.e("ResultadosDebug", "combine flow threw", e) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),

@@ -19,6 +19,12 @@ import kotlinx.coroutines.launch
 data class DetalleEjercicioAsignadoUiState(
     val ejercicio: Ejercicio? = null,
     val sesionPendiente: Boolean = false,
+    // HU03 (ampliación, Etapa 4): true solo si el fisioterapeuta
+    // personalizó el ángulo objetivo para esta sesión puntual.
+    val tieneAnguloPersonalizado: Boolean = false,
+    // Nota clínica opcional a mostrar junto al aviso -- reutiliza
+    // sesion.notas (HU03-CA05), no se agrega un campo nuevo.
+    val notaClinica: String? = null,
     val cargando: Boolean = true,
 )
 
@@ -50,10 +56,13 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
+            val tienePersonalizacion = sesion?.anguloMinOverride != null && sesion.anguloMaxOverride != null
             _uiState.update {
                 it.copy(
                     ejercicio = ejercicio,
                     sesionPendiente = sesion?.estado == EstadoSesion.PENDIENTE,
+                    tieneAnguloPersonalizado = tienePersonalizacion,
+                    notaClinica = sesion?.notas?.takeIf { tienePersonalizacion && it.isNotBlank() },
                     cargando = false,
                 )
             }

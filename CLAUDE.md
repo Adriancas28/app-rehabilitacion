@@ -179,9 +179,10 @@ aquí:
 | `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
-| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Su `topBar` ya usa `BarraSuperior` (con `onAlternarMenu`) en todas las pantallas que lo consumen (fisio y admin) |
+| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` | Su `topBar` ya usa `BarraSuperior` (con `onAlternarMenu`) en todas las pantallas que lo consumen — **fisio, admin y (ampliación acordada, 2026-09-10) también paciente**: `EjerciciosAsignadosScreen`/`HistorialSesionesScreen`/`PerfilPacienteScreen` ahora comparten la misma barra lateral (Ejercicios/Progreso/Perfil) en vez de navegar solo con "Accesos rápidos" sueltos — decisión explícita del usuario para dar consistencia de navegación entre los 3 roles |
+| `TarjetaEjercicio` (rediseño) | `TarjetaEjercicio.kt` | (Ampliación acordada, 2026-09-10) La miniatura ya no es un ícono genérico: si el ejercicio tiene `materialUrl`, se reproduce el video ahí mismo (`ReproductorVideo`); ícono de mancuerna solo si aún no tiene video. Se quitaron las líneas de categoría/repeticiones/duración (esta pantalla es de gestión del catálogo, no de ejecución). El menú "⋮" gana la opción "Ver video" (abre el video a pantalla completa en un `Dialog`) — no se usa tocar la miniatura directamente porque `PlayerView`/ExoPlayer capturaba el toque antes de que llegara a un `clickable` puesto encima |
 | `BotonSelectorFecha` | `SelectorFecha.kt` | Botón que abre un `DatePickerDialog`; resuelve internamente la conversión de zona horaria UTC↔local (antes vivía inline en `AsignarSesionScreen`) |
-| Gráfico de línea (evolución semanal) | *pendiente* | No existe todavía — se construye cuando se aplique a la pantalla de Progreso |
+| `GraficoBarras` / `GraficoLinea` | `Graficos.kt` | (Ampliación acordada, 2026-09-15) Gráficos simples dibujados a mano con `Canvas` — el proyecto no tiene ninguna librería de gráficos (Vico/MPAndroidChart) como dependencia. `GraficoBarras` recibe una lista de porcentajes 0-100 y colorea cada barra verde/ámbar según un umbral (precisión por repetición, HU11-CA07); `GraficoLinea` dibuja una línea con relleno para una serie en orden cronológico (evolución de precisión, HU12) |
 
 Componentes visuales que **ya existen dentro de una pantalla concreta y no
 se han extraído todavía** (se migran cuando se rediseñe esa pantalla, no
@@ -330,9 +331,28 @@ usuarios/{uid}
                                 ejercicio SOLO para esta sesión puntual —
                                 HU03-CA06, Sprint 3. Si es null, se usa el
                                 valor por defecto de `ejercicios.repeticiones`)
+    - duracionSegundos         (opcional; override de la duración por
+                                repetición SOLO para esta sesión puntual —
+                                HU03-CA06, ampliación 2026-09-10. Si es
+                                null, se usa el valor por defecto de
+                                `ejercicios.duracionSegundos`)
+    - anguloMinOverride, anguloMaxOverride
+                               (opcionales; override del ángulo objetivo
+                                (mín/máx) SOLO para esta sesión/paciente —
+                                HU03-CA08, ampliación 2026-09-16. Aplica
+                                sobre la PRIMERA articulación de
+                                `ejercicios.patronesReferencia`
+                                (simplificación: el catálogo actual define
+                                un solo patrón por ejercicio). Si
+                                cualquiera de los dos es null, se usa el
+                                rango por defecto del ejercicio)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
-        erroresDetectados: [{ articulacion, tipo, repeticiones }],
+        erroresDetectados: [{ articulacion, tipo, repeticiones }]
+                             (anguloDetectado/anguloEsperado opcionales,
+                              ampliación 2026-09-16 — HU18-CA05: solo se
+                              completan dentro de detallePorRepeticion,
+                              nunca aquí en el agregado de sesión),
         repeticionesCompletadas, repeticionesAsignadas, repeticionesCorrectas
                              (HU11-CA05, Sprint 3: completadas puede ser
                               menor a asignadas si se finalizó antes de
@@ -880,13 +900,35 @@ y priorizados en 5 sprints.
   sin alterar el valor por defecto del ejercicio ni el de otras sesiones
   ya asignadas o futuras. El sistema también muestra la duración total
   estimada de la sesión (repeticiones × duración por repetición) como
-  referencia antes de guardar.
+  referencia antes de guardar. *(Ampliación posterior, 2026-09-10: el
+  mismo criterio de override aplica tambien a la duración por
+  repetición — el sistema precarga el valor por defecto del ejercicio
+  (ej. 10s) pero el fisioterapeuta puede cambiarlo solo para esa sesión
+  puntual (ej. 30s), sin alterar el ejercicio ni otras sesiones. La
+  duración total estimada se recalcula con el valor que el fisio haya
+  puesto, y la propia ejecución de la sesión (HU06) usa ese valor
+  override, no el default del ejercicio, para el cronómetro de cada
+  repetición.)*
 - CA07 *(ampliación acordada, no en la versión original de la tesis)*: Dado
   que el paciente tenga uno o más diagnósticos registrados (HU01-CA06),
   cuando el fisioterapeuta abra el selector de ejercicios para asignar,
   entonces el sistema resalta primero (★) los ejercicios sugeridos para
   esos diagnósticos (según `ejercicios/{id}.diagnosticosAplicables`, sección
   9), sin impedir seleccionar cualquier otro ejercicio del catálogo.
+- CA08 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que esté
+  asignando o editando una sesión, cuando marque "Personalizar ángulo
+  objetivo para este paciente" e ingrese un mínimo/máximo, entonces el
+  sistema guarda ese rango SOLO para esta sesión/paciente (campos
+  `anguloMinOverride`/`anguloMaxOverride` en `Sesion`, sección 5) — el
+  monitoreo (HU07/HU08) usa ese rango en vez del `patronesReferencia` por
+  defecto del ejercicio para la primera articulación medida
+  (simplificación: el catálogo actual define un solo patrón por
+  ejercicio). El campo se precarga con el rango por defecto del ejercicio
+  al seleccionarlo. Si el paciente tiene una nota (HU03-CA05) y hay
+  personalización activa, el paciente ve un aviso antes de iniciar la
+  sesión ("Este video es referencial. Tu fisioterapeuta ha ajustado este
+  ejercicio para tu etapa actual...") en `DetalleEjercicioAsignadoScreen`
+  — no se agregó un campo "nota clínica" nuevo, se reutiliza `notas`.
 
 #### HU04 — Visualizar ejercicios asignados
 **Rol:** Paciente
@@ -1049,6 +1091,43 @@ y priorizados en 5 sprints.
   ofrece acceso directo a "Ver mi progreso" (historial, HU13) y "Volver
   al inicio" (HU04), sin tener que navegar hacia atrás pantalla por
   pantalla.
+- CA07 *(ampliación acordada, 2026-09-15)*: Dado que el detalle de
+  resultado incluya `detallePorRepeticion` (sección 5), entonces el
+  sistema muestra un gráfico de barras con el % de ejecución de cada
+  repetición individual (verde si ≥75%, ámbar si no), con una nota
+  aclaratoria de que se calcula según las correcciones detectadas por
+  MediaPipe. Implementado en `ResultadoSesionScreen.kt` vía el nuevo
+  componente de Design System `GraficoBarras` (`core/designsystem/Graficos.kt`).
+
+> **Bug/brecha real encontrada y corregida (2026-09-15):** al completar
+> una sesión, `EjecutarSesionScreen` solo mostraba un mensaje genérico
+> "Sesión completada" + botón "Volver" — el paciente nunca veía el % de
+> ejecución ni nada del resultado ahí mismo (CA01 no se cumplía en la
+> práctica); para verlo tenía que ir manualmente a "Mi progreso" y
+> volver a abrir esa sesión desde el historial. Se agregó
+> `onSesionCompletada(sesionId)` (`EjecutarSesionScreen.kt`) que navega
+> de inmediato a `ResultadoSesionScreen` con `soloLectura=false` en
+> cuanto la sesión termina. La misma pantalla, cuando se abre desde el
+> historial (HU13, siempre `soloLectura=true` por defecto en la ruta),
+> muestra en cambio un aviso "Sesión finalizada — vista de solo lectura"
+> — nueva ruta `Rutas.RESULTADO_SESION` con query param opcional
+> `soloLectura` (`ARG_SOLO_LECTURA`, default `true`).
+>
+> **Segundo bug encontrado y corregido en el mismo cambio (2026-09-15):**
+> el botón "Iniciar sesión" de `EjecutarSesionScreen` (pantalla previa al
+> monitoreo) no respondía al toque en el emulador — confirmado con
+> `uiautomator`: el botón se dibujaba superpuesto (`Box` + `align(BottomCenter)`)
+> encima de `CamaraConDeteccionPose`, cuyo `PreviewView` (AndroidView/CameraX)
+> intercepta el toque antes de que llegue a un `clickable` de Compose dibujado
+> encima — mismo problema ya visto antes con `PlayerView` en `TarjetaEjercicio`
+> (ver el rediseño de esa tarjeta más arriba). Se resolvió reestructurando ese
+> estado a un `Column` con la cámara y el botón en zonas separadas sin
+> superposición (`Box.fillMaxHeight(0.8f)` para la cámara + un `Box` propio
+> debajo para el botón, en vez de `weight(1f)` — con `weight(1f)` la cámara
+> igual reclamaba casi toda la altura y el botón quedaba comprimido a unos
+> pocos píxeles al fondo de la pantalla, fuera del área táctil visible).
+> Confirmado con una ejecución completa end-to-end en el emulador (iniciar →
+> cuenta regresiva → repeticiones → finalizar → "Ver resultado").
 
 ---
 
@@ -1078,6 +1157,15 @@ y priorizados en 5 sprints.
 > consecutivos) en su propia pantalla de historial (`HistorialSesionesScreen`)
 > — no es parte de esta HU (que es del fisioterapeuta), pero es una
 > mejora razonable sobre HU13 que ya existía, no le hace daño a nadie.
+>
+> **Ampliación posterior (2026-09-15):** ese regalo del paciente ganó su
+> propio gráfico de líneas — "Evolución de precisión" en
+> `HistorialSesionesScreen`, con el `%` de cada sesión completada en
+> orden cronológico (respeta el filtro de período vigente), vía el nuevo
+> componente `GraficoLinea` (`core/designsystem/Graficos.kt`). Sigue sin
+> existir un gráfico de líneas equivalente en la vista del fisioterapeuta
+> (`PacienteDetalleScreen`), que sigue usando solo la lista — fuera de
+> alcance de este cambio.
 >
 > **Ampliación posterior (corrección, no en la versión original):**
 > "Progreso por ejercicio" — una tarjeta nueva debajo del resumen general
@@ -1131,6 +1219,15 @@ y priorizados en 5 sprints.
 - CA02: Dado que complete la información requerida, entonces el sistema almacena la recomendación.
 - CA03: Dado que desee actualizar una recomendación, entonces el sistema guarda los cambios.
 - CA04: Dado que desee eliminar una recomendación, cuando confirme, entonces el sistema la elimina.
+- CA05 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que esté viendo
+  el resultado de una sesión (`FisioResultadoSesionScreen`), entonces el
+  sistema ofrece un campo de recomendación embebido ahí mismo (mockup
+  Idea 9) para registrar una nueva sin navegar a otra pantalla — llama al
+  mismo `RecomendacionRepository.crear()` que ya usaba
+  `RegistrarRecomendacionScreen`. Ese campo es solo para CREAR rápido;
+  editar, eliminar o ver el historial completo de recomendaciones de la
+  sesión sigue en `RegistrarRecomendacionScreen` (botón "Ver todas las
+  recomendaciones"), que no se eliminó ni se duplicó.
 
 #### HU16 — Consultar recomendaciones terapéuticas
 **Rol:** Paciente
@@ -1176,6 +1273,18 @@ y priorizados en 5 sprints.
   para poder mostrarlo así. Es la base con la que el fisioterapeuta decide
   qué recomendación registrar
   (HU15).
+- CA05 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que el detalle
+  por repetición incluya un error, entonces el sistema muestra también el
+  ángulo real detectado vs el esperado para esa repetición puntual (ej.
+  "Flexión incorrecta — 150° (esperado 120°)"), no solo el tipo de error.
+  Nuevos campos opcionales `anguloDetectado`/`anguloEsperado` en
+  `ErrorDetectado` (sección 5), poblados solo dentro de
+  `detallePorRepeticion` — el agregado de sesión (`erroresDetectados`) no
+  los necesita porque ya tiene su propio desglose en `angulosDetectados`.
+  En `FisioResultadoSesionScreen` se muestran las primeras 3 repeticiones
+  y un botón "Ver más repeticiones" abre un modal con el resto (mockup),
+  además de un gráfico de barras "Precisión por repetición" (reusa
+  `GraficoBarras`, ver sección 3).
 
 > **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
 > recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de
@@ -1199,6 +1308,15 @@ y priorizados en 5 sprints.
 > hubo que desplegarlo). Filtro por ejercicio (dropdown) y por período
 > (Todos/Última semana/Último mes) — CA03 pide "fecha o tipo de
 > ejercicio", se cubre con ambos.
+>
+> **Bug real encontrado y corregido (2026-09-10):** el filtro de período
+> comparaba contra `fechaAsignacion` en vez de `fechaEjecucion` —
+> sesiones asignadas hace tiempo pero completadas recientemente quedaban
+> excluidas de "Última semana"/"Último mes" aunque sí correspondían. Y el
+> dropdown de ejercicio no incluía "Todos los ejercicios" como opción
+> seleccionable, así que una vez elegido un ejercicio específico no había
+> forma de volver a quitar ese filtro desde la UI (quedaba "atascado").
+> Corregido en `ResultadosViewModel.kt`/`ResultadosScreen.kt`.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
@@ -1306,6 +1424,28 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   asignadas, recomendaciones) se conservan. El administrador puede
   revertirlo seleccionando "Activar". Convive con "Eliminar" (CA04), no
   la reemplaza.
+
+> **Etapa 2A — Dashboard del Admin (ampliación acordada, 2026-09-16, no
+> es una HU del backlog original, es refinamiento técnico sobre esta
+> Épica 07).** Nueva pestaña "Dashboard" en la barra lateral del
+> administrador (`AdminDashboardScreen.kt`, primera pestaña, antes de
+> "Pacientes"), con estadísticas agregadas: pacientes/fisioterapeutas
+> activos (`TarjetaEstadistica`), % de adherencia global (sesiones
+> completadas/asignadas de todos los pacientes) y calidad promedio de
+> ejecución, más un desglose "Adherencia por fisioterapeuta" (reusa
+> `GraficoBarras`) con el % de cada fisioterapeuta y su conteo
+> completadas/asignadas. No agrega modelo de datos nuevo: reutiliza
+> `AdminRepository.observarPacientes()/observarFisioterapeutas()` (ya
+> usados por HU20/HU21) y un método nuevo,
+> `SesionRepository.observarTodasLasSesiones()` — a diferencia de
+> `observarTodasLasSesionesDe(fisioterapeutaId)` (HU18, ya filtrado por
+> un fisioterapeuta), este trae el collectionGroup de sesiones SIN
+> filtro, porque el admin necesita el agregado de todos los
+> fisioterapeutas a la vez. Requirió agregar `esAdmin()` a `allow
+> get`/`allow list` de `usuarios/{uid}/sesiones/{sesionId}` en
+> `firestore.rules` (desplegado a producción) — antes solo
+> `esDueno(uid)` o el propio fisioterapeuta dueño de la sesión podían
+> leer ese collectionGroup.
 
 *(Ampliación acordada — HU22/HU23: hasta ahora esta épica solo cubría al
 Administrador gestionando cuentas ajenas; se extiende con el mismo
@@ -1436,12 +1576,28 @@ Entonces no la encuentra — "Perfil" es la única pantalla desde la que el fisi
 > (`Rutas.PERFIL_PACIENTE`/`PERFIL_FISIOTERAPEUTA`) — una por rol, ya que
 > cada pantalla de Perfil recibe parámetros de navegación distintos
 > (el fisioterapeuta la ve como una pestaña más de su barra lateral; el
-> paciente, como pantalla de detalle con botón atrás). El ícono de
+> paciente, como pantalla de detalle -- ver ampliación posterior abajo).
+> El ícono de
 > cerrar sesión se retiró de `PacientesListScreen` (HU01) y
 > `EjerciciosAsignadosScreen` (HU04); el administrador conserva su
 > logout, ahora como opción "Cerrar sesión" dentro de la barra de
 > navegación lateral (`AdminPacientesScreen`/`AdminFisioterapeutasScreen`),
 > con el mismo `DialogoConfirmacion` antes de cerrar sesión.
+>
+> **Ampliacion posterior (2026-09-10):** el paciente ahora tambien ve
+> Perfil como una pestana mas de su propia barra lateral (Ejercicios/
+> Progreso/Perfil), igual que fisio/admin -- antes era una pantalla de
+> detalle con solo boton atras, sin barra persistente. Ver la nota de
+> `ScaffoldConBarraLateral` en la seccion 3 (Design System).
+>
+> **Bug real encontrado y corregido (2026-09-10):** al navegar a Perfil,
+> la app crasheaba con `PERMISSION_DENIED` -- las Firestore Security
+> Rules no dejaban a un paciente leer el documento de su propio
+> fisioterapeuta asignado (necesario para mostrar "Fisioterapeuta
+> asignado" en su perfil, HU22-CA01). Se agrego la funcion
+> `esPacienteDe(fisioUid)` en `firestore.rules` (compara
+> `fisioterapeutaId` del documento del solicitante) y se desplego a
+> produccion.
 
 ---
 

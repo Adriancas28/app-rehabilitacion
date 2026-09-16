@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.PersonOff
@@ -44,6 +45,7 @@ fun AdminFisioterapeutasScreen(
     onCambiarMenuVisible: (Boolean) -> Unit,
     onRegistrarFisioterapeuta: () -> Unit,
     onEditarFisioterapeuta: (String) -> Unit,
+    onNavegarADashboard: () -> Unit,
     onNavegarAPacientes: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: AdminFisioterapeutasViewModel = hiltViewModel(),
@@ -69,6 +71,12 @@ fun AdminFisioterapeutasScreen(
             menuVisible = menuVisible,
             onCambiarMenuVisible = onCambiarMenuVisible,
             items = listOf(
+                ItemBarraLateral(
+                    "Dashboard",
+                    Icons.Rounded.Dashboard,
+                    seleccionado = false,
+                    onClick = onNavegarADashboard,
+                ),
                 ItemBarraLateral(
                     "Pacientes",
                     Icons.Rounded.People,

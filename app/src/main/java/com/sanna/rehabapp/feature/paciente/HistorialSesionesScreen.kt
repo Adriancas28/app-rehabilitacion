@@ -15,11 +15,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.EventNote
 import androidx.compose.material.icons.automirrored.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.LocalFireDepartment
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.TaskAlt
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -31,8 +32,11 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
 import com.sanna.rehabapp.core.designsystem.FilaChipsFiltro
+import com.sanna.rehabapp.core.designsystem.GraficoLinea
 import com.sanna.rehabapp.core.designsystem.TarjetaConIcono
 import com.sanna.rehabapp.core.designsystem.TarjetaEstadistica
+import com.sanna.rehabapp.core.navigation.ItemBarraLateral
+import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,14 +44,29 @@ import java.util.Locale
 
 @Composable
 fun HistorialSesionesScreen(
-    onVolver: () -> Unit,
+    menuVisible: Boolean,
+    onCambiarMenuVisible: (Boolean) -> Unit,
+    onNavegarAEjercicios: () -> Unit,
+    onNavegarAPerfil: () -> Unit,
     onSesionSeleccionada: (sesionId: String) -> Unit,
     viewModel: HistorialSesionesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        topBar = { BarraSuperior(titulo = "Mi progreso", onNavegarAtras = onVolver) },
+    ScaffoldConBarraLateral(
+        menuVisible = menuVisible,
+        onCambiarMenuVisible = onCambiarMenuVisible,
+        items = listOf(
+            ItemBarraLateral(
+                "Ejercicios",
+                Icons.Rounded.FitnessCenter,
+                seleccionado = false,
+                onClick = onNavegarAEjercicios,
+            ),
+            ItemBarraLateral("Progreso", Icons.Rounded.History, seleccionado = true, onClick = {}),
+            ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = false, onClick = onNavegarAPerfil),
+        ),
+        topBar = { onAlternarMenu -> BarraSuperior(titulo = "Mi progreso", onAlternarMenu = onAlternarMenu) },
     ) { padding ->
         Column(
             modifier = Modifier
@@ -89,6 +108,22 @@ fun HistorialSesionesScreen(
                 onSeleccionar = viewModel::onFiltroPeriodoCambiado,
             )
             Spacer(modifier = Modifier.height(Spacing.md))
+
+            // HU12-CA02 (ampliación): evolución de precisión entre sesiones,
+            // en orden cronológico -- lo contrario del orden de la lista de
+            // abajo (más reciente primero), así que se invierte aquí.
+            val precisionesEnOrden = uiState.sesiones
+                .sortedBy { it.sesion.fechaEjecucion ?: it.sesion.fechaAsignacion }
+                .mapNotNull { it.sesion.resultado?.porcentajeEjecucion }
+            if (precisionesEnOrden.size >= 2) {
+                Text(text = "Evolución de precisión", style = MaterialTheme.typography.titleSmall)
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                GraficoLinea(valores = precisionesEnOrden)
+                Spacer(modifier = Modifier.height(Spacing.md))
+            }
+
+            Text(text = "Historial de sesiones", style = MaterialTheme.typography.titleSmall)
+            Spacer(modifier = Modifier.height(Spacing.sm))
 
             when {
                 uiState.cargando -> EstadoCargando()

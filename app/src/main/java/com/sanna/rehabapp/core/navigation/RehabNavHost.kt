@@ -54,7 +54,10 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
             navController = navController,
             menuBarraLateralVisible = menuBarraLateralVisible,
         )
-        pacienteDestinos(navController)
+        pacienteDestinos(
+            navController = navController,
+            menuBarraLateralVisible = menuBarraLateralVisible,
+        )
         adminDestinos(
             navController = navController,
             menuBarraLateralVisible = menuBarraLateralVisible,

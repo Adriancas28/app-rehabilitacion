@@ -64,6 +64,8 @@ class SesionRepositoryImpl @Inject constructor(
                                 "articulacion" to it.articulacion,
                                 "tipo" to it.tipo,
                                 "repeticiones" to it.repeticiones,
+                                "anguloDetectado" to it.anguloDetectado,
+                                "anguloEsperado" to it.anguloEsperado,
                             )
                         },
                     )
@@ -122,6 +124,22 @@ class SesionRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
+    // Etapa 2A (dashboard Admin) — sin whereEqualTo/orderBy a propósito:
+    // el admin necesita el agregado completo, no una vista filtrada, y así
+    // no requiere un índice compuesto nuevo (ver Firestore Security Rules,
+    // esAdmin() en allow list).
+    override fun observarTodasLasSesiones(): Flow<List<Sesion>> = callbackFlow {
+        val registro = firestore.collectionGroup(SUBCOLECCION_SESIONES)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error)
+                    return@addSnapshotListener
+                }
+                trySend(snapshot?.documents?.mapNotNull { it.toSesion() } ?: emptyList())
+            }
+        awaitClose { registro.remove() }
+    }
+
     override suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion? {
         val snapshot = firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -139,6 +157,9 @@ class SesionRepositoryImpl @Inject constructor(
         fechaAsignacion: Date,
         notas: String?,
         repeticiones: Int?,
+        duracionSegundos: Int?,
+        anguloMinOverride: Float?,
+        anguloMaxOverride: Float?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
@@ -147,6 +168,9 @@ class SesionRepositoryImpl @Inject constructor(
             "estado" to EstadoSesion.PENDIENTE.aFirestore(),
             "notas" to notas,
             "repeticiones" to repeticiones,
+            "duracionSegundos" to duracionSegundos,
+            "anguloMinOverride" to anguloMinOverride,
+            "anguloMaxOverride" to anguloMaxOverride,
             "sincronizado" to true,
         )
         firestore.collection(COLECCION_USUARIOS)
@@ -164,12 +188,18 @@ class SesionRepositoryImpl @Inject constructor(
         fechaAsignacion: Date,
         notas: String?,
         repeticiones: Int?,
+        duracionSegundos: Int?,
+        anguloMinOverride: Float?,
+        anguloMaxOverride: Float?,
     ): Result<Unit> = runCatching {
         val datos = mapOf(
             "ejercicioId" to ejercicioId,
             "fechaAsignacion" to fechaAsignacion,
             "notas" to notas,
             "repeticiones" to repeticiones,
+            "duracionSegundos" to duracionSegundos,
+            "anguloMinOverride" to anguloMinOverride,
+            "anguloMaxOverride" to anguloMaxOverride,
         )
         firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -216,6 +246,9 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
         estado = EstadoSesion.desdeFirestore(estadoStr),
         notas = getString("notas"),
         repeticiones = (get("repeticiones") as? Number)?.toInt(),
+        duracionSegundos = (get("duracionSegundos") as? Number)?.toInt(),
+        anguloMinOverride = (get("anguloMinOverride") as? Number)?.toFloat(),
+        anguloMaxOverride = (get("anguloMaxOverride") as? Number)?.toFloat(),
         resultado = resultado,
         sincronizado = getBoolean("sincronizado") ?: true,
     )
@@ -225,7 +258,13 @@ private fun Map<*, *>.toErrorDetectado(): ErrorDetectado? {
     val articulacion = this["articulacion"] as? String ?: return null
     val tipo = this["tipo"] as? String ?: return null
     val repeticiones = (this["repeticiones"] as? Number)?.toInt() ?: 1
-    return ErrorDetectado(articulacion = articulacion, tipo = tipo, repeticiones = repeticiones)
+    return ErrorDetectado(
+        articulacion = articulacion,
+        tipo = tipo,
+        repeticiones = repeticiones,
+        anguloDetectado = (this["anguloDetectado"] as? Number)?.toFloat(),
+        anguloEsperado = (this["anguloEsperado"] as? Number)?.toFloat(),
+    )
 }
 
 private fun Map<*, *>.toDetalleRepeticion(): DetalleRepeticion? {

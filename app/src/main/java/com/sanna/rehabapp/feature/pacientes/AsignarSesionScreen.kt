@@ -8,8 +8,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -20,6 +23,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
@@ -30,7 +34,6 @@ import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.SeccionFormulario
 import com.sanna.rehabapp.core.designsystem.SelectorDropdown
 import com.sanna.rehabapp.core.theme.Spacing
-import com.sanna.rehabapp.domain.model.Ejercicio
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,7 +69,8 @@ fun AsignarSesionScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(Spacing.md),
+                .padding(Spacing.md)
+                .verticalScroll(rememberScrollState()),
         ) {
             SeccionFormulario(titulo = "Ejercicio") {
                 SelectorDropdown(
@@ -101,10 +105,70 @@ fun AsignarSesionScreen(
                     habilitado = ejercicioSeleccionado != null,
                 )
 
+                Spacer(modifier = Modifier.height(Spacing.sm + 2.dp))
+
+                // HU03-CA06 (ampliacion): override de la duracion por
+                // repeticion solo para esta sesion -- se precarga con el
+                // valor por defecto del ejercicio (ej. 10s), pero el
+                // fisioterapeuta puede cambiarla (ej. 30s) sin alterar el
+                // ejercicio ni otras sesiones.
+                CampoTexto(
+                    valor = uiState.duracionSegundosTexto,
+                    onValorCambiado = viewModel::onDuracionSegundosCambiada,
+                    etiqueta = "Duración por repetición (s)",
+                    tipoTeclado = KeyboardType.Number,
+                    habilitado = ejercicioSeleccionado != null,
+                )
+
                 val repeticionesSeleccionadas = uiState.repeticiones
+                val duracionSeleccionada = uiState.duracionSegundosTexto.trim().toIntOrNull()
                 if (ejercicioSeleccionado != null && repeticionesSeleccionadas != null) {
                     Spacer(modifier = Modifier.height(Spacing.sm + 2.dp))
-                    FilaDuracionEstimada(ejercicioSeleccionado, repeticionesSeleccionadas)
+                    FilaDuracionEstimada(
+                        duracionPorRepeticion = duracionSeleccionada ?: ejercicioSeleccionado.duracionSegundos,
+                        repeticiones = repeticionesSeleccionadas,
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
+            // HU03 (ampliación, Etapa 4): personalizar el ángulo objetivo
+            // (min/max) solo para esta sesión/paciente -- ej. un paciente en
+            // primera sesión puede necesitar un rango más permisivo que el
+            // por defecto del ejercicio, sin alterarlo para otros pacientes.
+            SeccionFormulario(titulo = "Ángulo objetivo") {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = uiState.personalizarAngulo,
+                        onCheckedChange = viewModel::onPersonalizarAnguloCambiado,
+                        enabled = ejercicioSeleccionado != null,
+                    )
+                    Text(
+                        text = "Personalizar ángulo objetivo para este paciente",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (uiState.personalizarAngulo) {
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        CampoTexto(
+                            valor = uiState.anguloMinTexto,
+                            onValorCambiado = viewModel::onAnguloMinCambiado,
+                            etiqueta = "Mínimo (°)",
+                            tipoTeclado = KeyboardType.Number,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(modifier = Modifier.width(Spacing.sm))
+                        CampoTexto(
+                            valor = uiState.anguloMaxTexto,
+                            onValorCambiado = viewModel::onAnguloMaxCambiado,
+                            etiqueta = "Máximo (°)",
+                            tipoTeclado = KeyboardType.Number,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
 
@@ -139,7 +203,7 @@ fun AsignarSesionScreen(
 // HU03-CA06: duración total estimada (repeticiones × duración por
 // repetición), solo informativa — no se guarda, se recalcula al vuelo.
 @Composable
-private fun FilaDuracionEstimada(ejercicio: Ejercicio, repeticiones: Int) {
+private fun FilaDuracionEstimada(duracionPorRepeticion: Int, repeticiones: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -158,7 +222,7 @@ private fun FilaDuracionEstimada(ejercicio: Ejercicio, repeticiones: Int) {
             modifier = Modifier.weight(1f),
         )
         Text(
-            text = formatearDuracionEstimada(ejercicio.duracionSegundos * repeticiones),
+            text = formatearDuracionEstimada(duracionPorRepeticion * repeticiones),
             style = MaterialTheme.typography.titleSmall,
         )
     }

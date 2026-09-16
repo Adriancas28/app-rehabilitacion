@@ -72,6 +72,7 @@ private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 @Composable
 fun EjecutarSesionScreen(
     onVolver: () -> Unit,
+    onSesionCompletada: (sesionId: String) -> Unit,
     viewModel: EjecutarSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -160,24 +161,50 @@ fun EjecutarSesionScreen(
                 uiState.sesionCompletada -> EstadoCentrado {
                     MensajeConIcono(Icons.Rounded.CheckCircle, "Sesión completada")
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
-                    BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
+                    BotonPrimario(
+                        texto = "Ver resultado",
+                        onClick = { onSesionCompletada(viewModel.sesionId) },
+                        modifier = Modifier.width(200.dp),
+                    )
                 }
 
-                !uiState.sesionIniciada -> Box(modifier = Modifier.fillMaxSize()) {
-                    CamaraConDeteccionPose(
-                        modifier = Modifier.fillMaxSize(),
-                        onResultado = viewModel::procesarResultadoPose,
-                        onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
-                    )
-                    BotonPrimario(
-                        texto = "Iniciar sesión",
-                        onClick = viewModel::iniciarSesion,
-                        icono = Icons.Rounded.PlayArrow,
+                // El botón NO va superpuesto sobre la cámara: PreviewView
+                // (AndroidView/CameraX) intercepta el toque antes de que
+                // llegue a un clickable de Compose dibujado encima -- mismo
+                // problema ya visto con PlayerView en TarjetaEjercicio. Se
+                // resuelve igual que el estado "en curso" de abajo: cámara y
+                // botón en zonas separadas, sin superposición.
+                !uiState.sesionIniciada -> Column(modifier = Modifier.fillMaxSize()) {
+                    // Altura fija por fracción (no weight()): con weight(1f)
+                    // la cámara reclamaba casi toda la altura disponible y el
+                    // botón quedaba comprimido a unos pocos píxeles al fondo
+                    // de la pantalla, fuera del área visible/táctil real.
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 32.dp)
-                            .width(220.dp),
-                    )
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.8f),
+                    ) {
+                        CamaraConDeteccionPose(
+                            modifier = Modifier.fillMaxSize(),
+                            onResultado = viewModel::procesarResultadoPose,
+                            onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(Spacing.md),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BotonPrimario(
+                            texto = "Iniciar sesión",
+                            onClick = viewModel::iniciarSesion,
+                            icono = Icons.Rounded.PlayArrow,
+                            modifier = Modifier.width(220.dp),
+                        )
+                    }
                 }
 
                 // Fiel al mockup original (HU06): video + instrucciones lado a
@@ -242,7 +269,7 @@ fun EjecutarSesionScreen(
                         repeticionActual = uiState.repeticionActual,
                         totalRepeticiones = uiState.totalRepeticiones,
                         segundosRestantes = uiState.segundosRestantes,
-                        duracionRepeticionSegundos = uiState.ejercicio?.duracionSegundos ?: 1,
+                        duracionRepeticionSegundos = uiState.duracionRepeticionSegundos,
                         enDescanso = uiState.enDescanso,
                         segundosDescanso = uiState.segundosDescanso,
                         onFinalizar = viewModel::finalizarAntesDeTiempo,

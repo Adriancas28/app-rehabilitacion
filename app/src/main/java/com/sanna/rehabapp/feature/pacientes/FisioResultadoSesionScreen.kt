@@ -1,17 +1,19 @@
 package com.sanna.rehabapp.feature.pacientes
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
@@ -21,13 +23,20 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
+import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
+import com.sanna.rehabapp.core.designsystem.CampoTexto
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
+import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
@@ -36,6 +45,11 @@ import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.AnguloDetectado
 import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
+
+// HU18-CA04 (ampliación, Etapa 4): solo se muestran las primeras
+// repeticiones en la pantalla principal; el resto se ve en el modal
+// "Ver más repeticiones" (mockup Idea 10).
+private const val REPETICIONES_VISIBLES = 3
 
 @Composable
 fun FisioResultadoSesionScreen(
@@ -63,6 +77,7 @@ fun FisioResultadoSesionScreen(
 
             else -> {
                 val resultado = uiState.resultado!!
+                var mostrarModalRepeticiones by remember { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -74,11 +89,26 @@ fun FisioResultadoSesionScreen(
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
                     if (resultado.detallePorRepeticion.isNotEmpty()) {
+                        Text(text = "Precisión por repetición", style = MaterialTheme.typography.titleSmall)
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                        GraficoBarras(
+                            valores = resultado.detallePorRepeticion
+                                .sortedBy { it.numero }
+                                .map { it.porcentajeEjecucion },
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
+
                         Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleSmall)
                         Spacer(modifier = Modifier.height(Spacing.sm))
-                        resultado.detallePorRepeticion.forEach { detalle ->
+                        resultado.detallePorRepeticion.take(REPETICIONES_VISIBLES).forEach { detalle ->
                             TarjetaDetalleRepeticion(detalle)
                             Spacer(modifier = Modifier.height(Spacing.sm))
+                        }
+                        if (resultado.detallePorRepeticion.size > REPETICIONES_VISIBLES) {
+                            BotonOutline(
+                                texto = "Ver más repeticiones",
+                                onClick = { mostrarModalRepeticiones = true },
+                            )
                         }
                         Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
@@ -93,11 +123,44 @@ fun FisioResultadoSesionScreen(
                         Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
                     }
 
+                    // HU15 (ampliación, Etapa 4): recomendación rápida sin
+                    // salir de esta pantalla (mockup Idea 9) -- el paciente
+                    // solo la ve una vez guardada (HU16-CA01), nunca antes.
+                    Text(text = "Recomendación para el paciente", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    CampoTexto(
+                        valor = uiState.recomendacionTexto,
+                        onValorCambiado = viewModel::onRecomendacionTextoCambiado,
+                        etiqueta = "Escribe una recomendación según lo observado...",
+                        soloUnaLinea = false,
+                        lineasMinimas = 2,
+                    )
                     Spacer(modifier = Modifier.height(Spacing.sm))
                     BotonPrimario(
-                        texto = "Registrar recomendación",
+                        texto = "Guardar recomendación",
+                        onClick = viewModel::guardarRecomendacion,
+                        habilitado = uiState.recomendacionTexto.isNotBlank() && !uiState.guardandoRecomendacion,
+                        cargando = uiState.guardandoRecomendacion,
+                    )
+                    if (uiState.recomendacionGuardada) {
+                        Spacer(modifier = Modifier.height(Spacing.xs))
+                        Text(
+                            text = "Recomendación guardada. El paciente la verá en \"Mis resultados\".",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = VerdeExitoTexto,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    BotonOutline(
+                        texto = "Ver todas las recomendaciones",
                         onClick = { onRegistrarRecomendacion(viewModel.pacienteId, viewModel.sesionId) },
-                        icono = Icons.Filled.Add,
+                    )
+                }
+
+                if (mostrarModalRepeticiones) {
+                    ModalRepeticiones(
+                        detalles = resultado.detallePorRepeticion,
+                        onCerrar = { mostrarModalRepeticiones = false },
                     )
                 }
             }
@@ -156,13 +219,50 @@ private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
                 )
                 if (!dentroDeRango) {
                     detalle.errores.forEach { error ->
+                        // HU18-CA04 (ampliación, Etapa 4): ángulo real vs
+                        // esperado por repetición (mockup Idea 9/10), ej.
+                        // "Flexión incorrecta — 150° (esperado 120°)".
+                        val sufijoAngulo = if (error.anguloDetectado != null && error.anguloEsperado != null) {
+                            " — ${error.anguloDetectado.toInt()}° (esperado ${error.anguloEsperado.toInt()}°)"
+                        } else {
+                            ""
+                        }
                         Text(
-                            text = "${error.articulacion} — ${error.tipo}",
+                            text = "${error.articulacion} — ${error.tipo}$sufijoAngulo",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+// Mockup Idea 10: como la lista completa puede ser larga (hasta 12+
+// repeticiones), se muestran solo las primeras en la pantalla principal y
+// el resto vive en este modal scrolleable.
+@Composable
+private fun ModalRepeticiones(detalles: List<DetalleRepeticion>, onCerrar: () -> Unit) {
+    Dialog(onDismissRequest = onCerrar) {
+        TarjetaBase {
+            Column(modifier = Modifier.heightIn(max = 480.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleMedium)
+                }
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    detalles.sortedBy { it.numero }.forEach { detalle ->
+                        TarjetaDetalleRepeticion(detalle)
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                    }
+                }
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                BotonOutline(texto = "Cerrar", onClick = onCerrar)
             }
         }
     }

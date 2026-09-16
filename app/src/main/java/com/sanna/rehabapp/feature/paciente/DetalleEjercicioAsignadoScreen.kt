@@ -2,16 +2,20 @@ package com.sanna.rehabapp.feature.paciente
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -29,6 +33,7 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
+import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.Spacing
 
 @Composable
@@ -71,6 +76,16 @@ fun DetalleEjercicioAsignadoScreen(
                         Spacer(modifier = Modifier.height(Spacing.md))
                     }
 
+                    // HU03 (ampliación, Etapa 4): si el fisioterapeuta
+                    // personalizó el ángulo objetivo para esta sesión, se
+                    // avisa antes de empezar -- el video/instrucciones son
+                    // los del ejercicio base (referenciales), pero el
+                    // monitoreo usará el rango ajustado.
+                    if (uiState.tieneAnguloPersonalizado) {
+                        AvisoPersonalizacion(notaClinica = uiState.notaClinica)
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                    }
+
                     Text(
                         text = ejercicio.categoria.etiqueta,
                         style = MaterialTheme.typography.labelLarge,
@@ -93,6 +108,21 @@ fun DetalleEjercicioAsignadoScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AvisoPersonalizacion(notaClinica: String?) {
+    TarjetaBase {
+        Row {
+            Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(modifier = Modifier.width(Spacing.sm))
+            Text(
+                text = "Este video es referencial. Tu fisioterapeuta ha ajustado este ejercicio para tu etapa actual" +
+                    if (notaClinica != null) ": $notaClinica" else ".",
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }

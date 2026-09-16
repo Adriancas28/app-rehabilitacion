@@ -86,13 +86,19 @@ fun ResultadosScreen(
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
 
-            // HU18-CA03: filtro por ejercicio.
+            // HU18-CA03: filtro por ejercicio. La opción "Todos los
+            // ejercicios" (id null) es la única forma de volver a quitar el
+            // filtro una vez elegido un ejercicio específico -- antes no
+            // estaba en la lista y el filtro quedaba "atascado".
             val ejercicioSeleccionado = uiState.ejerciciosDisponibles.find { it.id == uiState.filtroEjercicioId }
             SelectorDropdown(
-                valorSeleccionado = ejercicioSeleccionado,
-                opciones = uiState.ejerciciosDisponibles,
-                etiquetaDeOpcion = { it.nombre },
-                onSeleccionar = { viewModel.onFiltroEjercicioCambiado(it.id) },
+                valorSeleccionado = ejercicioSeleccionado?.nombre ?: "Todos los ejercicios",
+                opciones = listOf("Todos los ejercicios") + uiState.ejerciciosDisponibles.map { it.nombre },
+                etiquetaDeOpcion = { it },
+                onSeleccionar = { nombre ->
+                    val elegido = uiState.ejerciciosDisponibles.find { it.nombre == nombre }
+                    viewModel.onFiltroEjercicioCambiado(elegido?.id)
+                },
                 placeholder = "Todos los ejercicios",
             )
             Spacer(modifier = Modifier.height(Spacing.md))

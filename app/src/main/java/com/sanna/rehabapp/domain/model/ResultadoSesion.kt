@@ -17,6 +17,13 @@ data class ErrorDetectado(
     val articulacion: String,
     val tipo: String,
     val repeticiones: Int = 1,
+    // HU18-CA04 (ampliación, Etapa 4): ángulo real vs esperado -- solo se
+    // completa en el detalle POR REPETICIÓN (detallePorRepeticion), no en
+    // el agregado de sesión (erroresDetectados), que ya tiene su propio
+    // desglose por articulación en angulosDetectados. Nulos en errores
+    // ya guardados antes de esta ampliación.
+    val anguloDetectado: Float? = null,
+    val anguloEsperado: Float? = null,
 )
 
 // HU18-CA04 (actualización del modelo de datos): el mismo error que
