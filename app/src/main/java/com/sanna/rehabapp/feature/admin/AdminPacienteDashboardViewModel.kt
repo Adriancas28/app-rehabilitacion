@@ -37,11 +37,6 @@ data class AdminPacienteDashboardUiState(
     val cargando: Boolean = true,
     val mostrandoGrafico: Boolean = false,
     val sesiones: List<SesionDashboard> = SESIONES_DEMO,
-    // Repeticiones correctas/con error acumuladas de la demo (mockup) --
-    // no se derivan de los porcentajes de arriba porque el mockup las
-    // muestra como conteo aparte, no como promedio.
-    val repeticionesCorrectas: Int = 27,
-    val repeticionesErrores: Int = 8,
 ) {
     val sesionesEjecutadas: Int get() = sesiones.size
     val precisionPromedio: Int get() =

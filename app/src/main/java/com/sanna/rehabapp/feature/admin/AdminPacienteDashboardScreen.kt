@@ -25,19 +25,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
-import com.sanna.rehabapp.core.designsystem.GraficoDona
 import com.sanna.rehabapp.core.designsystem.GraficoLinea
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.designsystem.TarjetaEstadistica
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
-import com.sanna.rehabapp.core.theme.RojoErrorTexto
 import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 
@@ -200,38 +197,22 @@ private fun VistaLista(sesiones: List<SesionDashboard>) {
 
 @Composable
 private fun VistaGrafico(uiState: AdminPacienteDashboardUiState) {
+    val etiquetasSesion = uiState.sesiones.map { "Sesión ${it.numero}" }
     Column {
         Text(text = "Tendencia de precisión", style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(Spacing.xs))
-        GraficoLinea(valores = uiState.sesiones.map { it.porcentajeCorrectas.toFloat() })
+        GraficoLinea(
+            valores = uiState.sesiones.map { it.porcentajeCorrectas.toFloat() },
+            etiquetas = etiquetasSesion,
+        )
 
         Spacer(modifier = Modifier.height(Spacing.md))
 
         Text(text = "% completado por sesión", style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(Spacing.xs))
-        GraficoBarras(valores = uiState.sesiones.map { it.porcentajeCompletado.toFloat() })
-
-        Spacer(modifier = Modifier.height(Spacing.md))
-
-        Text(text = "Correctas vs errores (acumulado)", style = MaterialTheme.typography.titleSmall)
-        Spacer(modifier = Modifier.height(Spacing.sm))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            GraficoDona(correctas = uiState.repeticionesCorrectas, errores = uiState.repeticionesErrores)
-            Spacer(modifier = Modifier.width(Spacing.md))
-            Column {
-                LeyendaColor(color = VerdeExitoTexto, texto = "Correctas — ${uiState.repeticionesCorrectas}")
-                Spacer(modifier = Modifier.height(Spacing.xs))
-                LeyendaColor(color = RojoErrorTexto, texto = "Errores — ${uiState.repeticionesErrores}")
-            }
-        }
-    }
-}
-
-@Composable
-private fun LeyendaColor(color: Color, texto: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.size(12.dp).background(color, CircleShape)) {}
-        Spacer(modifier = Modifier.width(Spacing.xs))
-        Text(text = texto, style = MaterialTheme.typography.bodyMedium)
+        GraficoBarras(
+            valores = uiState.sesiones.map { it.porcentajeCompletado.toFloat() },
+            etiquetas = etiquetasSesion,
+        )
     }
 }
