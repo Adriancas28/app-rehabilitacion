@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -91,6 +92,52 @@ fun GraficoLinea(
             drawPath(relleno, color = color.copy(alpha = 0.12f), style = Fill)
             drawPath(lineaPath, color = color, style = Stroke(width = 2.5.dp.toPx()))
             puntos.forEach { punto -> drawCircle(color = color, radius = 3.5.dp.toPx(), center = punto) }
+        }
+    }
+}
+
+// Gráfico de dona — "Correctas vs errores (acumulado)" del dashboard de
+// paciente en la vista Admin. Recibe los dos conteos crudos (no
+// porcentajes) porque el hueco central no muestra cifra propia; la
+// pantalla que lo usa arma la leyenda al lado con esos mismos valores.
+@Composable
+fun GraficoDona(
+    correctas: Int,
+    errores: Int,
+    modifier: Modifier = Modifier,
+    colorCorrectas: Color = VerdeExitoTexto,
+    colorErrores: Color = com.sanna.rehabapp.core.theme.RojoErrorTexto,
+    tamano: androidx.compose.ui.unit.Dp = 120.dp,
+    grosor: androidx.compose.ui.unit.Dp = 16.dp,
+) {
+    val total = (correctas + errores).coerceAtLeast(1)
+    Box(modifier = modifier.size(tamano)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val grosorPx = grosor.toPx()
+            val diametro = size.minDimension - grosorPx
+            val topLeft = Offset((size.width - diametro) / 2f, (size.height - diametro) / 2f)
+            val arcSize = androidx.compose.ui.geometry.Size(diametro, diametro)
+            val barridoCorrectas = 360f * correctas / total
+            drawArc(
+                color = colorErrores,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = grosorPx, cap = androidx.compose.ui.graphics.StrokeCap.Butt),
+            )
+            if (correctas > 0) {
+                drawArc(
+                    color = colorCorrectas,
+                    startAngle = -90f,
+                    sweepAngle = barridoCorrectas,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = grosorPx, cap = androidx.compose.ui.graphics.StrokeCap.Butt),
+                )
+            }
         }
     }
 }

@@ -48,11 +48,17 @@ object Rutas {
     // Etapa 2A (dashboard Admin, ampliación acordada) — estadísticas
     // agregadas de pacientes/fisioterapeutas/sesiones.
     const val ADMIN_DASHBOARD = "admin/dashboard"
+    const val ADMIN_DASHBOARD_PACIENTE = "admin/dashboard/{pacienteId}?nombre={nombre}"
+    const val ARG_ADMIN_PACIENTE_ID = "pacienteId"
+    const val ARG_ADMIN_PACIENTE_NOMBRE = "nombre"
     const val ADMIN_PACIENTES = "admin/pacientes"
     const val ADMIN_PACIENTE_FORMULARIO = "admin/pacientes/formulario?usuarioId={usuarioId}"
     const val ADMIN_FISIOTERAPEUTAS = "admin/fisioterapeutas"
     const val ADMIN_FISIOTERAPEUTA_FORMULARIO = "admin/fisioterapeutas/formulario?usuarioId={usuarioId}"
     const val ARG_ADMIN_USUARIO_ID = "usuarioId"
+
+    fun adminDashboardPaciente(pacienteId: String, nombre: String): String =
+        "admin/dashboard/$pacienteId?nombre=${java.net.URLEncoder.encode(nombre, "UTF-8")}"
 
     fun pacienteDetalle(pacienteId: String): String = "fisioterapeuta/pacientes/$pacienteId"
 

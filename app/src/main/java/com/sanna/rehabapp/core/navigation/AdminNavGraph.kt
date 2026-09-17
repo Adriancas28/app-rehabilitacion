@@ -11,6 +11,7 @@ import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.admin.AdminDashboardScreen
 import com.sanna.rehabapp.feature.admin.AdminFisioterapeutaFormScreen
 import com.sanna.rehabapp.feature.admin.AdminFisioterapeutasScreen
+import com.sanna.rehabapp.feature.admin.AdminPacienteDashboardScreen
 import com.sanna.rehabapp.feature.admin.AdminPacienteFormScreen
 import com.sanna.rehabapp.feature.admin.AdminPacientesScreen
 
@@ -23,6 +24,9 @@ fun NavGraphBuilder.adminDestinos(
         AdminDashboardScreen(
             menuVisible = menuVisible,
             onCambiarMenuVisible = { menuVisible = it },
+            onSeleccionarPaciente = { pacienteId, nombre ->
+                navController.navigate(Rutas.adminDashboardPaciente(pacienteId, nombre))
+            },
             onNavegarAPacientes = {
                 navController.navigate(Rutas.ADMIN_PACIENTES) { launchSingleTop = true }
             },
@@ -35,6 +39,19 @@ fun NavGraphBuilder.adminDestinos(
                 }
             },
         )
+    }
+    composable(
+        route = Rutas.ADMIN_DASHBOARD_PACIENTE,
+        arguments = listOf(
+            navArgument(Rutas.ARG_ADMIN_PACIENTE_ID) { type = NavType.StringType },
+            navArgument(Rutas.ARG_ADMIN_PACIENTE_NOMBRE) {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+        ),
+    ) {
+        AdminPacienteDashboardScreen(onVolver = { navController.popBackStack() })
     }
 
     composable(Rutas.ADMIN_PACIENTES) {

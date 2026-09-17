@@ -1,22 +1,16 @@
 package com.sanna.rehabapp.feature.admin
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Logout
 import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.MedicalServices
 import androidx.compose.material.icons.rounded.People
-import androidx.compose.material.icons.rounded.Percent
-import androidx.compose.material.icons.rounded.Star
+import androidx.compose.material.icons.rounded.PersonOff
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,22 +24,21 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.DialogoConfirmacion
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
-import com.sanna.rehabapp.core.designsystem.GraficoBarras
-import com.sanna.rehabapp.core.designsystem.SeccionFormulario
-import com.sanna.rehabapp.core.designsystem.TarjetaEstadistica
+import com.sanna.rehabapp.core.designsystem.EstadoVacio
+import com.sanna.rehabapp.core.designsystem.TarjetaPersona
 import com.sanna.rehabapp.core.navigation.CerrarSesionViewModel
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
 
-// Etapa 2A (dashboard Admin, ampliación acordada) — resumen agregado de
-// pacientes, fisioterapeutas y adherencia terapéutica global, apoyado en
-// los mismos datos que ya usan HU20/HU21 (AdminRepository) y HU18
-// (SesionRepository), sin un modelo de datos nuevo.
+// Etapa 2A (dashboard Admin) — punto de entrada: lista de pacientes (mismo
+// patrón visual que AdminPacientesScreen). Al seleccionar uno se abre su
+// dashboard de progreso (AdminPacienteDashboardScreen).
 @Composable
 fun AdminDashboardScreen(
     menuVisible: Boolean,
     onCambiarMenuVisible: (Boolean) -> Unit,
+    onSeleccionarPaciente: (String, String) -> Unit,
     onNavegarAPacientes: () -> Unit,
     onNavegarAFisioterapeutas: () -> Unit,
     onCerrarSesion: () -> Unit,
@@ -83,93 +76,35 @@ fun AdminDashboardScreen(
             BarraSuperior(titulo = "Dashboard", onAlternarMenu = onAlternarMenu)
         },
     ) { padding ->
-        if (uiState.cargando) {
-            EstadoCargando(modifier = Modifier.fillMaxSize().padding(padding))
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(Spacing.md)
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    TarjetaEstadistica(
-                        icono = Icons.Rounded.People,
-                        valor = "${uiState.totalPacientesActivos}/${uiState.totalPacientes}",
-                        etiqueta = "Pacientes activos",
-                        modifier = Modifier.weight(1f),
-                    )
-                    TarjetaEstadistica(
-                        icono = Icons.Rounded.MedicalServices,
-                        valor = "${uiState.totalFisioterapeutasActivos}/${uiState.totalFisioterapeutas}",
-                        etiqueta = "Fisios activos",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(Spacing.sm))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
-                ) {
-                    TarjetaEstadistica(
-                        icono = Icons.Rounded.Percent,
-                        valor = "${uiState.porcentajeAdherenciaGlobal.toInt()}%",
-                        etiqueta = "Adherencia global",
-                        modifier = Modifier.weight(1f),
-                    )
-                    TarjetaEstadistica(
-                        icono = Icons.Rounded.Star,
-                        valor = "${uiState.promedioCalidadEjecucion.toInt()}%",
-                        etiqueta = "Calidad promedio",
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(Spacing.md))
-
-                Text(
-                    text = "${uiState.totalSesionesCompletadas}/${uiState.totalSesionesAsignadas} sesiones completadas en total",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(Spacing.md),
+        ) {
+            Text(
+                text = "Selecciona un paciente para ver su dashboard de progreso.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = Spacing.sm),
+            )
+            when {
+                uiState.cargando -> EstadoCargando()
+                uiState.pacientes.isEmpty() -> EstadoVacio(
+                    icono = Icons.Rounded.PersonOff,
+                    mensaje = "Aún no hay pacientes registrados.",
                 )
-
-                Spacer(modifier = Modifier.height(Spacing.md))
-
-                if (uiState.adherenciaPorFisioterapeuta.isNotEmpty()) {
-                    SeccionFormulario(titulo = "Adherencia por fisioterapeuta") {
-                        GraficoBarras(
-                            valores = uiState.adherenciaPorFisioterapeuta.map { it.porcentajeAdherencia },
+                else -> LazyColumn {
+                    items(uiState.pacientes, key = { it.uid }) { paciente ->
+                        val diagnostico = paciente.diagnosticos.firstOrNull()?.tipo?.etiqueta
+                        TarjetaPersona(
+                            nombre = paciente.nombre,
+                            subtitulo = listOfNotNull(diagnostico, if (paciente.activo) "Activo" else "Inactivo")
+                                .joinToString(" · "),
+                            onClick = { onSeleccionarPaciente(paciente.uid, paciente.nombre) },
+                            modifier = Modifier.padding(vertical = Spacing.xs),
                         )
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        uiState.adherenciaPorFisioterapeuta.forEach { fila ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = Spacing.xs),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(text = fila.nombre, style = MaterialTheme.typography.bodyMedium)
-                                Text(
-                                    text = "${fila.porcentajeAdherencia.toInt()}% " +
-                                        "(${fila.sesionesCompletadas}/${fila.sesionesAsignadas})",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
                     }
-                } else {
-                    Text(
-                        text = "Aún no hay sesiones asignadas para calcular adherencia por fisioterapeuta.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
         }
