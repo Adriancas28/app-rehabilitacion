@@ -78,6 +78,19 @@ fun FisioResultadoSesionScreen(
             else -> {
                 val resultado = uiState.resultado!!
                 var mostrarModalRepeticiones by remember { mutableStateOf(false) }
+                var mostrarAvisoVideo by remember { mutableStateOf(false) }
+                if (mostrarAvisoVideo) {
+                    androidx.compose.material3.AlertDialog(
+                        onDismissRequest = { mostrarAvisoVideo = false },
+                        title = { Text("Video de la sesión") },
+                        text = { Text("Video no disponible aún.") },
+                        confirmButton = {
+                            androidx.compose.material3.TextButton(onClick = { mostrarAvisoVideo = false }) {
+                                Text("Entendido")
+                            }
+                        },
+                    )
+                }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -95,6 +108,16 @@ fun FisioResultadoSesionScreen(
                             valores = resultado.detallePorRepeticion
                                 .sortedBy { it.numero }
                                 .map { it.porcentajeEjecucion },
+                        )
+                        Spacer(modifier = Modifier.height(Spacing.md))
+
+                        // Parte 3 (video): placeholder -- grabar y subir video
+                        // contradice RNF06/HU17-CA02 (nunca se sube video a la
+                        // nube) y el consentimiento informado que ve el usuario;
+                        // queda pendiente de decisión explícita.
+                        BotonOutline(
+                            texto = "Ver video de la sesión",
+                            onClick = { mostrarAvisoVideo = true },
                         )
                         Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
