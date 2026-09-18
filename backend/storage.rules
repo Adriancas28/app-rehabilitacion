@@ -1,8 +1,8 @@
 rules_version = '2';
 
 // Storage guarda el material terapéutico (video/imagen de ejercicios) y,
-// por decisión del asesor de tesis (2026-09-18), el video de cada sesión del
-// paciente para que su fisioterapeuta lo revise. El análisis con MediaPipe
+// desde 2026-09-18, el video de cada sesión del paciente para que su
+// fisioterapeuta lo revise y pueda dar una mejor respuesta. El análisis con MediaPipe
 // sigue siendo local (Edge AI); el paciente lo acepta en el consentimiento.
 service firebase.storage {
   match /b/{bucket}/o {

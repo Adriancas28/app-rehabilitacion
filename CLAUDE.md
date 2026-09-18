@@ -33,8 +33,8 @@ monitoreo de ejercicios domiciliarios de rehabilitación musculoesquelética
 (Clínica SANNA). Dos roles: **Paciente** y **Fisioterapeuta**. El análisis de
 postura (MediaPipe Pose) corre **en el dispositivo** (Edge AI): el video no
 se procesa en la nube. Se guardan métricas numéricas (ángulos, vectores) y,
-desde 2026-09-18 (decisión del asesor de tesis: el fisioterapeuta debe poder
-ver lo que el paciente realiza), el video de cada sesión en Firebase Storage
+desde 2026-09-18 el video de cada sesión en Firebase Storage, para que el
+fisioterapeuta vea lo que el paciente realiza y pueda dar una mejor respuesta
 — ver la "Enmienda 2026-09-18" en la sección 11.
 
 ## 2. Estructura del repositorio (monorepo)
@@ -1250,7 +1250,7 @@ y priorizados en 5 sprints.
 **Deseo:** Almacenar la información generada durante las sesiones terapéuticas
 **Propósito:** Mantener registrados los resultados de forma segura y respetando la privacidad del paciente.
 - CA01: Dado que finalice una sesión, entonces el sistema almacena resultados, métricas y fecha.
-- CA02: Dado que procese el movimiento corporal, entonces almacena datos numéricos (ángulos, métricas). *(Enmienda 2026-09-18, decisión del asesor de tesis: antes decía "nunca video o imágenes". Ahora, además, se guarda el video de la sesión — sin audio, calidad SD — en Firebase Storage (`sesiones/{pacienteId}/{sesionId}.mp4`) con su URL en `Sesion.videoUrl`, para que el fisioterapeuta lo revise. El análisis con MediaPipe sigue siendo local. Ver sección 11.)*
+- CA02: Dado que procese el movimiento corporal, entonces almacena datos numéricos (ángulos, métricas). *(Enmienda 2026-09-18: antes decía "nunca video o imágenes". Ahora, además, se guarda el video de la sesión — sin audio, calidad SD — en Firebase Storage (`sesiones/{pacienteId}/{sesionId}.mp4`) con su URL en `Sesion.videoUrl`, para que el fisioterapeuta lo revise y pueda dar una mejor respuesta. El análisis con MediaPipe sigue siendo local. Ver sección 11.)*
 - CA03: Dado que se registre una nueva sesión, entonces el sistema actualiza los datos del paciente sin sobrescribir sesiones anteriores.
 
 #### HU18 — Gestionar sesiones y resultados terapéuticos registrados
@@ -1738,11 +1738,11 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 ## 11. Reglas del proyecto (no negociables)
 
 1. Todo **procesamiento** de cámara/video es **local al dispositivo** (Edge
-   AI, MediaPipe). Enmienda 2026-09-18 (decisión del asesor de tesis, antes
+   AI, MediaPipe). Enmienda 2026-09-18 (antes
    la regla prohibía subir cualquier video): el video de cada sesión SÍ se
    graba (sin audio, SD) y se sube a Firebase Storage
    (`sesiones/{pacienteId}/{sesionId}.mp4`, URL en `Sesion.videoUrl`) para
-   que el fisioterapeuta lo vea (botón "Ver video de la sesión" en
+   que el fisioterapeuta lo vea y pueda dar una mejor respuesta (botón "Ver video de la sesión" en
    `FisioResultadoSesionScreen`). Como consecuencia: el consentimiento
    informado (`ConsentimientoScreen`) lo informa explícitamente y su clave
    pasó a `aceptado_v2`, así que todos los usuarios lo vuelven a aceptar; las
