@@ -1,5 +1,7 @@
 package com.sanna.rehabapp.feature.pacientes
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,12 +16,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.List as ListaIcono
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,6 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,19 +44,18 @@ import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.CampoTexto
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
-import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
-import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.ErrorColor
+import com.sanna.rehabapp.core.theme.RojoErrorContenedor
+import com.sanna.rehabapp.core.theme.RojoErrorTexto
 import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
-import com.sanna.rehabapp.domain.model.AnguloDetectado
 import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
 
-// HU18-CA04 (ampliación, Etapa 4): solo se muestran las primeras
-// repeticiones en la pantalla principal; el resto se ve en el modal
-// "Ver más repeticiones" (mockup Idea 10).
+// Idea 9 (mockup fisio): en la pantalla principal solo se listan las primeras
+// repeticiones con error; el resto vive en el modal "Ver más repeticiones".
 private const val REPETICIONES_VISIBLES = 3
 
 @Composable
@@ -78,33 +84,16 @@ fun FisioResultadoSesionScreen(
 
             else -> {
                 val resultado = uiState.resultado!!
+                var mostrarGrafico by remember { mutableStateOf(false) }
                 var mostrarModalRepeticiones by remember { mutableStateOf(false) }
-                var mostrarAvisoVideo by remember { mutableStateOf(false) }
-                if (mostrarAvisoVideo) {
-                    val videoUrl = uiState.videoUrl
-                    if (videoUrl != null) {
-                        Dialog(onDismissRequest = { mostrarAvisoVideo = false }) {
-                            TarjetaBase {
-                                Text(text = "Video de la sesión", style = MaterialTheme.typography.titleMedium)
-                                Spacer(modifier = Modifier.height(Spacing.sm))
-                                ReproductorVideo(url = videoUrl, alto = 360.dp)
-                                Spacer(modifier = Modifier.height(Spacing.sm))
-                                BotonOutline(texto = "Cerrar", onClick = { mostrarAvisoVideo = false })
-                            }
-                        }
-                    } else {
-                        androidx.compose.material3.AlertDialog(
-                            onDismissRequest = { mostrarAvisoVideo = false },
-                            title = { Text("Video de la sesión") },
-                            text = { Text("Video no disponible aún.") },
-                            confirmButton = {
-                                androidx.compose.material3.TextButton(onClick = { mostrarAvisoVideo = false }) {
-                                    Text("Entendido")
-                                }
-                            },
-                        )
-                    }
-                }
+                var mostrarVideo by remember { mutableStateOf(false) }
+
+                // Solo las repeticiones donde se midió AL MENOS un ángulo
+                // incorrecto: una repetición perfecta no aparece en la lista.
+                val repeticionesConError = resultado.detallePorRepeticion
+                    .filter { it.errores.isNotEmpty() }
+                    .sortedBy { it.numero }
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -112,55 +101,93 @@ fun FisioResultadoSesionScreen(
                         .padding(Spacing.md)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    TarjetaResumen(resultado)
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        TarjetaCifra(
+                            etiqueta = "Repeticiones completas",
+                            valor = "${resultado.repeticionesCompletadas} / ${resultado.repeticionesAsignadas}",
+                            modifier = Modifier.weight(1f),
+                        )
+                        TarjetaCifra(
+                            etiqueta = "Promedio correcto",
+                            valor = "${resultado.porcentajeEjecucion.toInt()}%",
+                            colorValor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                     Spacer(modifier = Modifier.height(Spacing.md))
+
+                    if (resultado.detallePorRepeticion.isNotEmpty()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleSmall)
+                            BotonOutline(
+                                texto = if (mostrarGrafico) "Mostrar lista" else "Mostrar gráfico",
+                                onClick = { mostrarGrafico = !mostrarGrafico },
+                                icono = if (mostrarGrafico) Icons.Rounded.ListaIcono else Icons.Rounded.BarChart,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+
+                        if (mostrarGrafico) {
+                            val todas = resultado.detallePorRepeticion.sortedBy { it.numero }
+                            GraficoBarras(
+                                valores = todas.map { it.porcentajeEjecucion },
+                                umbral = 100f,
+                                colorSobreUmbral = VerdeExitoTexto,
+                                colorBajoUmbral = ErrorColor,
+                                etiquetas = todas.map { "${it.numero}" },
+                                mostrarValores = false,
+                                mostrarEjeY = true,
+                            )
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            Text(
+                                text = "% de precisión por repetición (rojo = tuvo algún ángulo incorrecto)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        } else {
+                            Text(
+                                text = "Solo se listan las repeticiones con algún error",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            if (repeticionesConError.isEmpty()) {
+                                Text(
+                                    text = "Ninguna repetición presentó ángulos incorrectos.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                            repeticionesConError.take(REPETICIONES_VISIBLES).forEach { detalle ->
+                                FilaRepeticionConError(detalle, resultado.repeticionesAsignadas)
+                                Spacer(modifier = Modifier.height(Spacing.sm))
+                            }
+                            if (repeticionesConError.size > REPETICIONES_VISIBLES) {
+                                BotonOutline(
+                                    texto = "Ver más repeticiones",
+                                    onClick = { mostrarModalRepeticiones = true },
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(Spacing.sm))
+                    }
 
                     // El video es independiente del análisis: puede existir aunque
                     // no haya detalle por repetición.
                     BotonOutline(
                         texto = "Ver video de la sesión",
-                        onClick = { mostrarAvisoVideo = true },
+                        onClick = { mostrarVideo = true },
                     )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
-                    if (resultado.detallePorRepeticion.isNotEmpty()) {
-                        Text(text = "Precisión por repetición", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        GraficoBarras(
-                            valores = resultado.detallePorRepeticion
-                                .sortedBy { it.numero }
-                                .map { it.porcentajeEjecucion },
-                        )
-                        Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
-
-                        Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        resultado.detallePorRepeticion.take(REPETICIONES_VISIBLES).forEach { detalle ->
-                            TarjetaDetalleRepeticion(detalle)
-                            Spacer(modifier = Modifier.height(Spacing.sm))
-                        }
-                        if (resultado.detallePorRepeticion.size > REPETICIONES_VISIBLES) {
-                            BotonOutline(
-                                texto = "Ver más repeticiones",
-                                onClick = { mostrarModalRepeticiones = true },
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
-                    }
-
-                    if (resultado.angulosDetectados.isNotEmpty()) {
-                        Text(text = "Ángulos por articulación", style = MaterialTheme.typography.titleSmall)
-                        Spacer(modifier = Modifier.height(Spacing.sm))
-                        resultado.angulosDetectados.forEach { angulo ->
-                            TarjetaAngulo(angulo)
-                            Spacer(modifier = Modifier.height(Spacing.sm))
-                        }
-                        Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
-                    }
-
                     // HU15 (ampliación, Etapa 4): recomendación rápida sin
-                    // salir de esta pantalla (mockup Idea 9) -- el paciente
-                    // solo la ve una vez guardada (HU16-CA01), nunca antes.
+                    // salir de esta pantalla -- el paciente solo la ve una vez
+                    // guardada (HU16-CA01), nunca antes.
                     Text(text = "Recomendación para el paciente", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(Spacing.sm))
                     CampoTexto(
@@ -177,95 +204,55 @@ fun FisioResultadoSesionScreen(
                         habilitado = uiState.recomendacionTexto.isNotBlank() && !uiState.guardandoRecomendacion,
                         cargando = uiState.guardandoRecomendacion,
                     )
-                    if (uiState.recomendacionGuardada) {
-                        Spacer(modifier = Modifier.height(Spacing.xs))
-                        Text(
-                            text = "Recomendación guardada. El paciente la verá en \"Mis resultados\".",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = VerdeExitoTexto,
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    BotonOutline(
-                        texto = "Ver todas las recomendaciones",
-                        onClick = { onRegistrarRecomendacion(viewModel.pacienteId, viewModel.sesionId) },
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = if (uiState.recomendacionGuardada) {
+                            "Recomendación guardada. El paciente la verá en \"Mis resultados\"."
+                        } else {
+                            "El paciente la verá en \"Mis resultados\" una vez guardada."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (uiState.recomendacionGuardada) VerdeExitoTexto else MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
+                    TextButton(
+                        onClick = { onRegistrarRecomendacion(viewModel.pacienteId, viewModel.sesionId) },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                    ) {
+                        Text("Ver todas las recomendaciones")
+                    }
                 }
 
                 if (mostrarModalRepeticiones) {
                     ModalRepeticiones(
-                        detalles = resultado.detallePorRepeticion,
+                        conError = repeticionesConError,
+                        todas = resultado.detallePorRepeticion,
+                        total = resultado.repeticionesAsignadas,
                         onCerrar = { mostrarModalRepeticiones = false },
                     )
                 }
-            }
-        }
-    }
-}
 
-@Composable
-private fun TarjetaResumen(resultado: ResultadoSesion) {
-    TarjetaBase {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            ProgresoCircular(porcentaje = resultado.porcentajeEjecucion / 100f)
-            Spacer(modifier = Modifier.width(Spacing.md))
-            Column {
-                Text(
-                    text = "Repeticiones ${resultado.repeticionesCompletadas}/${resultado.repeticionesAsignadas}",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = "Correctas: ${resultado.repeticionesCorrectas}  ·  " +
-                        "Errores: ${resultado.repeticionesCompletadas - resultado.repeticionesCorrectas}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Text(
-                    text = "Desviación promedio: ${"%.1f".format(resultado.desviacionPromedio)}°",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-// HU18-CA04 (actualización del modelo de datos): lo que el fisioterapeuta
-// usa para decidir qué recomendar — por cada repetición, el porcentaje de
-// ejecución calculado automáticamente por la IA (en vez del sí/no
-// original) y, cuando hubo desviación, qué error puntual tuvo.
-@Composable
-private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
-    val dentroDeRango = detalle.porcentajeEjecucion >= 100f
-    TarjetaBase(relleno = Spacing.sm + 6.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = if (dentroDeRango) Icons.Filled.Check else Icons.Filled.Warning,
-                contentDescription = null,
-                tint = if (dentroDeRango) VerdeExitoTexto else AmbarAlertaTexto,
-            )
-            Spacer(modifier = Modifier.width(Spacing.sm + 4.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = "Repetición ${detalle.numero}", style = MaterialTheme.typography.bodyMedium)
-                Text(
-                    text = "Ejecución: ${detalle.porcentajeEjecucion.toInt()}%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (!dentroDeRango) {
-                    detalle.errores.forEach { error ->
-                        // HU18-CA04 (ampliación, Etapa 4): ángulo real vs
-                        // esperado por repetición (mockup Idea 9/10), ej.
-                        // "Flexión incorrecta — 150° (esperado 120°)".
-                        val sufijoAngulo = if (error.anguloDetectado != null && error.anguloEsperado != null) {
-                            " — ${error.anguloDetectado.toInt()}° (esperado ${error.anguloEsperado.toInt()}°)"
-                        } else {
-                            ""
+                if (mostrarVideo) {
+                    val videoUrl = uiState.videoUrl
+                    if (videoUrl != null) {
+                        Dialog(onDismissRequest = { mostrarVideo = false }) {
+                            TarjetaBase {
+                                Text(text = "Video de la sesión", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.height(Spacing.sm))
+                                ReproductorVideo(url = videoUrl, alto = 360.dp)
+                                Spacer(modifier = Modifier.height(Spacing.sm))
+                                BotonOutline(texto = "Cerrar", onClick = { mostrarVideo = false })
+                            }
                         }
-                        Text(
-                            text = "${error.articulacion} — ${error.tipo}$sufijoAngulo",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    } else {
+                        AlertDialog(
+                            onDismissRequest = { mostrarVideo = false },
+                            title = { Text("Video de la sesión") },
+                            text = { Text("Video no disponible aún.") },
+                            confirmButton = {
+                                TextButton(onClick = { mostrarVideo = false }) { Text("Entendido") }
+                            },
                         )
                     }
                 }
@@ -274,26 +261,123 @@ private fun TarjetaDetalleRepeticion(detalle: DetalleRepeticion) {
     }
 }
 
-// Mockup Idea 10: como la lista completa puede ser larga (hasta 12+
-// repeticiones), se muestran solo las primeras en la pantalla principal y
-// el resto vive en este modal scrolleable.
 @Composable
-private fun ModalRepeticiones(detalles: List<DetalleRepeticion>, onCerrar: () -> Unit) {
+private fun TarjetaCifra(
+    etiqueta: String,
+    valor: String,
+    modifier: Modifier = Modifier,
+    colorValor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
+) {
+    TarjetaBase(modifier = modifier) {
+        Text(
+            text = etiqueta,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(Spacing.xs))
+        Text(
+            text = valor,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = colorValor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+// Una repetición con al menos un ángulo incorrecto: su número, el % de
+// precisión de ESA repetición (puede ser alto aunque tenga un error) y, por
+// cada error, el segundo en que ocurrió con el ángulo detectado vs esperado.
+@Composable
+private fun FilaRepeticionConError(detalle: DetalleRepeticion, total: Int) {
+    val forma = MaterialTheme.shapes.large
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(RojoErrorContenedor, forma)
+            .border(1.dp, ErrorColor.copy(alpha = 0.55f), forma)
+            .padding(Spacing.sm + 6.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = "Repetición ${detalle.numero}/$total",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "${detalle.porcentajeEjecucion.toInt()}% correcto",
+                style = MaterialTheme.typography.titleSmall,
+                color = RojoErrorTexto,
+            )
+        }
+        detalle.errores.forEach { error ->
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(
+                    imageVector = Icons.Filled.Warning,
+                    contentDescription = null,
+                    tint = RojoErrorTexto,
+                    modifier = Modifier.padding(top = 2.dp).width(16.dp),
+                )
+                Spacer(modifier = Modifier.width(Spacing.xs + 2.dp))
+                Text(
+                    text = descripcionError(error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RojoErrorTexto,
+                )
+            }
+        }
+    }
+}
+
+// "Segundo 15 — ángulo incorrecto: 120° (esperado 90°)". Las sesiones
+// guardadas antes de registrar el segundo caen a "Articulación — ángulo
+// incorrecto: ...", y sin ángulos a "Articulación — tipo de error".
+private fun descripcionError(error: com.sanna.rehabapp.domain.model.ErrorDetectado): String {
+    val prefijo = error.segundo?.let { "Segundo $it" } ?: error.articulacion
+    val detectado = error.anguloDetectado
+    val esperado = error.anguloEsperado
+    return if (detectado != null && esperado != null) {
+        "$prefijo — ángulo incorrecto: ${detectado.toInt()}° (esperado ${esperado.toInt()}°)"
+    } else {
+        "$prefijo — ${error.tipo}"
+    }
+}
+
+// Idea 10 (mockup fisio): listado COMPLETO de las repeticiones con error, en
+// el mismo formato que la pantalla principal, y al final cuáles no tuvieron
+// ningún error.
+@Composable
+private fun ModalRepeticiones(
+    conError: List<DetalleRepeticion>,
+    todas: List<DetalleRepeticion>,
+    total: Int,
+    onCerrar: () -> Unit,
+) {
+    val sinError = todas.filter { it.errores.isEmpty() }.map { it.numero }.sorted()
     Dialog(onDismissRequest = onCerrar) {
         TarjetaBase {
-            Column(modifier = Modifier.heightIn(max = 480.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleMedium)
-                }
+            Column(modifier = Modifier.heightIn(max = 520.dp)) {
+                Text(text = "Detalle por repetición", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(Spacing.sm))
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    detalles.sortedBy { it.numero }.forEach { detalle ->
-                        TarjetaDetalleRepeticion(detalle)
+                Column(modifier = Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                    conError.forEach { detalle ->
+                        FilaRepeticionConError(detalle, total)
                         Spacer(modifier = Modifier.height(Spacing.sm))
+                    }
+                    if (sinError.isNotEmpty()) {
+                        Text(
+                            text = "Las repeticiones ${listaConY(sinError)} no presentaron ángulos incorrectos.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(Spacing.sm))
@@ -303,25 +387,9 @@ private fun ModalRepeticiones(detalles: List<DetalleRepeticion>, onCerrar: () ->
     }
 }
 
-@Composable
-private fun TarjetaAngulo(angulo: AnguloDetectado) {
-    TarjetaBase(relleno = Spacing.sm + 6.dp) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = angulo.articulacion, style = MaterialTheme.typography.bodyMedium)
-                angulo.anguloEsperado?.let { esperado ->
-                    Text(
-                        text = "Esperado: ${esperado.toInt()}°",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            Text(
-                text = "${angulo.anguloDetectado.toInt()}°",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
+// [2, 4, 5] -> "2, 4 y 5"; [7] -> "7"
+private fun listaConY(numeros: List<Int>): String = when (numeros.size) {
+    0 -> ""
+    1 -> "${numeros[0]}"
+    else -> numeros.dropLast(1).joinToString(", ") + " y ${numeros.last()}"
 }

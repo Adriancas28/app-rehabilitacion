@@ -24,6 +24,10 @@ data class ErrorDetectado(
     // ya guardados antes de esta ampliación.
     val anguloDetectado: Float? = null,
     val anguloEsperado: Float? = null,
+    // Segundo, contado desde el inicio de esa repetición, en que se midió el
+    // ángulo incorrecto (el de mayor desviación). Solo en detallePorRepeticion;
+    // nulo en sesiones guardadas antes de esta ampliación.
+    val segundo: Int? = null,
 )
 
 // HU18-CA04 (actualización del modelo de datos): el mismo error que

@@ -67,6 +67,7 @@ class SesionRepositoryImpl @Inject constructor(
                                 "repeticiones" to it.repeticiones,
                                 "anguloDetectado" to it.anguloDetectado,
                                 "anguloEsperado" to it.anguloEsperado,
+                                "segundo" to it.segundo,
                             )
                         },
                     )
@@ -284,6 +285,7 @@ private fun Map<*, *>.toErrorDetectado(): ErrorDetectado? {
         repeticiones = repeticiones,
         anguloDetectado = (this["anguloDetectado"] as? Number)?.toFloat(),
         anguloEsperado = (this["anguloEsperado"] as? Number)?.toFloat(),
+        segundo = (this["segundo"] as? Number)?.toInt(),
     )
 }
 

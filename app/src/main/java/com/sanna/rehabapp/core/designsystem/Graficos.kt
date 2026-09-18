@@ -48,42 +48,68 @@ fun GraficoBarras(
     colorSobreUmbral: Color = VerdeExitoTexto,
     colorBajoUmbral: Color = AmbarAlertaTexto,
     etiquetas: List<String> = emptyList(),
+    // Con muchas barras (ej. 12 repeticiones) el porcentaje sobre cada una no
+    // cabe: se oculta y se usa el eje Y (0/25/50/75/100) en su lugar.
+    mostrarValores: Boolean = true,
+    mostrarEjeY: Boolean = false,
 ) {
     val colorTrack = MaterialTheme.colorScheme.surfaceVariant
+    val anchoEjeY = if (mostrarEjeY) 34.dp else 0.dp
     Column(modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().height(110.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            valores.forEachIndexed { indice, valor ->
-                val color = if (valor >= umbral) colorSobreUmbral else colorBajoUmbral
+        Row(modifier = Modifier.fillMaxWidth().height(if (mostrarValores) 110.dp else 130.dp)) {
+            if (mostrarEjeY) {
                 Column(
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.width(anchoEjeY).fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Text(
-                        text = "${valor.toInt()}%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = color,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Box(
-                        modifier = Modifier.fillMaxWidth().weight(1f).background(colorTrack, RoundedCornerShape(4.dp)),
-                        contentAlignment = Alignment.BottomCenter,
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight(valor.coerceIn(0f, 100f) / 100f)
-                                .background(color, RoundedCornerShape(4.dp)),
+                    listOf(100, 75, 50, 25, 0).forEach { valor ->
+                        Text(
+                            text = "$valor",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+            }
+            Row(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                horizontalArrangement = Arrangement.spacedBy(if (valores.size > 8) 4.dp else 6.dp),
+            ) {
+                valores.forEach { valor ->
+                    val color = if (valor >= umbral) colorSobreUmbral else colorBajoUmbral
+                    Column(
+                        modifier = Modifier.weight(1f).fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        if (mostrarValores) {
+                            Text(
+                                text = "${valor.toInt()}%",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = color,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                        Box(
+                            modifier = Modifier.fillMaxWidth().weight(1f).background(colorTrack, RoundedCornerShape(4.dp)),
+                            contentAlignment = Alignment.BottomCenter,
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(valor.coerceIn(0f, 100f) / 100f)
+                                    .background(color, RoundedCornerShape(4.dp)),
+                            )
+                        }
                     }
                 }
             }
         }
         if (etiquetas.isNotEmpty()) {
             Spacer(modifier = Modifier.height(6.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = anchoEjeY),
+                horizontalArrangement = Arrangement.spacedBy(if (valores.size > 8) 4.dp else 6.dp),
+            ) {
                 etiquetas.forEach { etiqueta ->
                     Text(
                         text = etiqueta,
