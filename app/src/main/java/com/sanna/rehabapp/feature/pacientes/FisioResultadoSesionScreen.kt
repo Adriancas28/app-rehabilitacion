@@ -38,6 +38,7 @@ import com.sanna.rehabapp.core.designsystem.CampoTexto
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
+import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
 import com.sanna.rehabapp.core.theme.Spacing
@@ -80,16 +81,29 @@ fun FisioResultadoSesionScreen(
                 var mostrarModalRepeticiones by remember { mutableStateOf(false) }
                 var mostrarAvisoVideo by remember { mutableStateOf(false) }
                 if (mostrarAvisoVideo) {
-                    androidx.compose.material3.AlertDialog(
-                        onDismissRequest = { mostrarAvisoVideo = false },
-                        title = { Text("Video de la sesión") },
-                        text = { Text("Video no disponible aún.") },
-                        confirmButton = {
-                            androidx.compose.material3.TextButton(onClick = { mostrarAvisoVideo = false }) {
-                                Text("Entendido")
+                    val videoUrl = uiState.videoUrl
+                    if (videoUrl != null) {
+                        Dialog(onDismissRequest = { mostrarAvisoVideo = false }) {
+                            TarjetaBase {
+                                Text(text = "Video de la sesión", style = MaterialTheme.typography.titleMedium)
+                                Spacer(modifier = Modifier.height(Spacing.sm))
+                                ReproductorVideo(url = videoUrl, alto = 360.dp)
+                                Spacer(modifier = Modifier.height(Spacing.sm))
+                                BotonOutline(texto = "Cerrar", onClick = { mostrarAvisoVideo = false })
                             }
-                        },
-                    )
+                        }
+                    } else {
+                        androidx.compose.material3.AlertDialog(
+                            onDismissRequest = { mostrarAvisoVideo = false },
+                            title = { Text("Video de la sesión") },
+                            text = { Text("Video no disponible aún.") },
+                            confirmButton = {
+                                androidx.compose.material3.TextButton(onClick = { mostrarAvisoVideo = false }) {
+                                    Text("Entendido")
+                                }
+                            },
+                        )
+                    }
                 }
                 Column(
                     modifier = Modifier
@@ -99,6 +113,14 @@ fun FisioResultadoSesionScreen(
                         .verticalScroll(rememberScrollState()),
                 ) {
                     TarjetaResumen(resultado)
+                    Spacer(modifier = Modifier.height(Spacing.md))
+
+                    // El video es independiente del análisis: puede existir aunque
+                    // no haya detalle por repetición.
+                    BotonOutline(
+                        texto = "Ver video de la sesión",
+                        onClick = { mostrarAvisoVideo = true },
+                    )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 
                     if (resultado.detallePorRepeticion.isNotEmpty()) {
@@ -108,16 +130,6 @@ fun FisioResultadoSesionScreen(
                             valores = resultado.detallePorRepeticion
                                 .sortedBy { it.numero }
                                 .map { it.porcentajeEjecucion },
-                        )
-                        Spacer(modifier = Modifier.height(Spacing.md))
-
-                        // Parte 3 (video): placeholder -- grabar y subir video
-                        // contradice RNF06/HU17-CA02 (nunca se sube video a la
-                        // nube) y el consentimiento informado que ve el usuario;
-                        // queda pendiente de decisión explícita.
-                        BotonOutline(
-                            texto = "Ver video de la sesión",
-                            onClick = { mostrarAvisoVideo = true },
                         )
                         Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
 

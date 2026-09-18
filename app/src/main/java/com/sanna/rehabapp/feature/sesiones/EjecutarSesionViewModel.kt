@@ -91,6 +91,7 @@ class EjecutarSesionViewModel @Inject constructor(
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
     private val usuarioRepository: UsuarioRepository,
+    private val subidorVideoSesion: com.sanna.rehabapp.core.camera.SubidorVideoSesion,
 ) : ViewModel() {
 
     // No privado: la Screen lo necesita para navegar al resultado (HU11-CA01)
@@ -252,6 +253,18 @@ class EjecutarSesionViewModel @Inject constructor(
             ultimaCorreccionHablada = claveCorreccion
             instanteUltimaVoz = ahora
             _uiState.update { it.copy(eventoVoz = EventoVoz(fraseCorrectiva(peorMedicion), ahora)) }
+        }
+    }
+
+    // Parte 3 (video): la cámara avisa cuando el archivo ya está completo.
+    // Solo se sube si la sesión terminó con resultado guardado; si el
+    // paciente abandonó con "Salir" (sin registrar nada) el video se descarta.
+    fun onVideoGrabado(archivo: java.io.File) {
+        val idPaciente = pacienteId
+        if (idPaciente != null && _uiState.value.sesionCompletada) {
+            subidorVideoSesion.subir(idPaciente, sesionId, archivo)
+        } else {
+            archivo.delete()
         }
     }
 

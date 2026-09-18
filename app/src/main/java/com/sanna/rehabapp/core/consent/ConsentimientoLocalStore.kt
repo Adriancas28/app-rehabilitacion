@@ -11,7 +11,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private val Context.dataStoreConsentimiento by preferencesDataStore(name = "consentimiento_informado")
-private val CLAVE_ACEPTADO = booleanPreferencesKey("aceptado")
+private val CLAVE_ACEPTADO = booleanPreferencesKey("aceptado_v2")
 
 // RNF06-CA04: recuerda localmente que el usuario ya aceptó el consentimiento
 // informado de tratamiento de datos. Es una preferencia del dispositivo, no

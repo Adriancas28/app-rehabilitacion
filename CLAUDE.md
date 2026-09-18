@@ -31,8 +31,11 @@ historias de usuario y requisitos no funcionales, priorizados por sprint).
 Aplicación móvil con Inteligencia Artificial para análisis postural en el
 monitoreo de ejercicios domiciliarios de rehabilitación musculoesquelética
 (Clínica SANNA). Dos roles: **Paciente** y **Fisioterapeuta**. El análisis de
-postura (MediaPipe Pose) corre **en el dispositivo** (Edge AI): no se procesa
-ni se almacena video en la nube, solo métricas numéricas (ángulos, vectores).
+postura (MediaPipe Pose) corre **en el dispositivo** (Edge AI): el video no
+se procesa en la nube. Se guardan métricas numéricas (ángulos, vectores) y,
+desde 2026-09-18 (decisión del asesor de tesis: el fisioterapeuta debe poder
+ver lo que el paciente realiza), el video de cada sesión en Firebase Storage
+— ver la "Enmienda 2026-09-18" en la sección 11.
 
 ## 2. Estructura del repositorio (monorepo)
 
@@ -1247,7 +1250,7 @@ y priorizados en 5 sprints.
 **Deseo:** Almacenar la información generada durante las sesiones terapéuticas
 **Propósito:** Mantener registrados los resultados de forma segura y respetando la privacidad del paciente.
 - CA01: Dado que finalice una sesión, entonces el sistema almacena resultados, métricas y fecha.
-- CA02: Dado que procese el movimiento corporal, entonces **únicamente almacena datos numéricos** (ángulos, métricas) — **nunca video o imágenes**.
+- CA02: Dado que procese el movimiento corporal, entonces almacena datos numéricos (ángulos, métricas). *(Enmienda 2026-09-18, decisión del asesor de tesis: antes decía "nunca video o imágenes". Ahora, además, se guarda el video de la sesión — sin audio, calidad SD — en Firebase Storage (`sesiones/{pacienteId}/{sesionId}.mp4`) con su URL en `Sesion.videoUrl`, para que el fisioterapeuta lo revise. El análisis con MediaPipe sigue siendo local. Ver sección 11.)*
 - CA03: Dado que se registre una nueva sesión, entonces el sistema actualiza los datos del paciente sin sobrescribir sesiones anteriores.
 
 #### HU18 — Gestionar sesiones y resultados terapéuticos registrados
@@ -1660,7 +1663,7 @@ El sistema debe garantizar consistencia del monitoreo corporal ante condiciones 
 #### RNF06 — Privacidad y procesamiento local de datos biométricos (Edge AI)
 El sistema debe garantizar el procesamiento local de la información biométrica capturada por la cámara, para proteger la privacidad del paciente y cumplir la Ley N.° 29733.
 - CA01: El procesamiento del video debe realizarse localmente en el dispositivo, sin enviarlo a servidores externos.
-- CA02: Solo se deben almacenar/sincronizar datos numéricos (vectores, ángulos, métricas) — nunca imágenes ni video.
+- CA02: Se almacenan/sincronizan datos numéricos (vectores, ángulos, métricas) y, por la enmienda del 2026-09-18 (sección 11), el video de la sesión para revisión del fisioterapeuta; nunca imágenes sueltas.
 - CA03: La app debe solicitar únicamente los permisos estrictamente necesarios (cámara y, cuando corresponda, internet).
 - CA04: En el primer uso, el sistema debe presentar el consentimiento informado sobre el tratamiento de datos personales.
 
@@ -1734,8 +1737,21 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 
 ## 11. Reglas del proyecto (no negociables)
 
-1. Todo procesamiento de cámara/video es **local al dispositivo**; nunca se
-   sube video ni imágenes a Firebase — solo datos numéricos (RNF06).
+1. Todo **procesamiento** de cámara/video es **local al dispositivo** (Edge
+   AI, MediaPipe). Enmienda 2026-09-18 (decisión del asesor de tesis, antes
+   la regla prohibía subir cualquier video): el video de cada sesión SÍ se
+   graba (sin audio, SD) y se sube a Firebase Storage
+   (`sesiones/{pacienteId}/{sesionId}.mp4`, URL en `Sesion.videoUrl`) para
+   que el fisioterapeuta lo vea (botón "Ver video de la sesión" en
+   `FisioResultadoSesionScreen`). Como consecuencia: el consentimiento
+   informado (`ConsentimientoScreen`) lo informa explícitamente y su clave
+   pasó a `aceptado_v2`, así que todos los usuarios lo vuelven a aceptar; las
+   Storage Rules permiten al paciente escribir solo en su carpeta. Si una
+   sesión se abandona con "Salir", el video se descarta. Limitaciones
+   conocidas: al reanudar una sesión (HU06-CA09) el video del tramo nuevo
+   reemplaza al anterior; cualquier usuario autenticado con la URL puede leer
+   el video (Storage no puede cruzar a Firestore para validar al
+   fisioterapeuta asignado).
 2. El control de acceso por rol se implementa con **Firestore Security
    Rules**, no con un backend propio (se evaluó y se descartó Cloud
    Functions por falta de un caso de uso real).

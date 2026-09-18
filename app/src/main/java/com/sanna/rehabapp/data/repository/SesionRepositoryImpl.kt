@@ -24,6 +24,7 @@ private const val SUBCOLECCION_SESIONES = "sesiones"
 
 class SesionRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
+    private val storage: com.google.firebase.storage.FirebaseStorage,
 ) : SesionRepository {
 
     override suspend fun guardarResultado(
@@ -140,6 +141,24 @@ class SesionRepositoryImpl @Inject constructor(
         awaitClose { registro.remove() }
     }
 
+    override suspend fun subirVideoSesion(
+        pacienteId: String,
+        sesionId: String,
+        archivo: java.io.File,
+    ): Result<Unit> = runCatching {
+        val referencia = storage.reference.child("sesiones/$pacienteId/$sesionId.mp4")
+        val metadatos = com.google.firebase.storage.StorageMetadata.Builder().setContentType("video/mp4").build()
+        referencia.putFile(android.net.Uri.fromFile(archivo), metadatos).await()
+        val url = referencia.downloadUrl.await().toString()
+        firestore.collection(COLECCION_USUARIOS)
+            .document(pacienteId)
+            .collection(SUBCOLECCION_SESIONES)
+            .document(sesionId)
+            .set(mapOf("videoUrl" to url), SetOptions.merge())
+            .await()
+        Unit
+    }
+
     override suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion? {
         val snapshot = firestore.collection(COLECCION_USUARIOS)
             .document(pacienteId)
@@ -250,6 +269,7 @@ private fun DocumentSnapshot.toSesion(): Sesion? {
         anguloMinOverride = (get("anguloMinOverride") as? Number)?.toFloat(),
         anguloMaxOverride = (get("anguloMaxOverride") as? Number)?.toFloat(),
         resultado = resultado,
+        videoUrl = getString("videoUrl"),
         sincronizado = getBoolean("sincronizado") ?: true,
     )
 }

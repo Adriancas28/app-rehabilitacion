@@ -21,6 +21,9 @@ data class FisioResultadoSesionUiState(
     val ejercicio: Ejercicio? = null,
     val resultado: ResultadoSesion? = null,
     val cargando: Boolean = true,
+    // Parte 3 (video): null si la sesión no tiene video grabado (sesiones
+    // anteriores a esta función, o dispositivo sin soporte de grabación).
+    val videoUrl: String? = null,
     // HU15 (ampliación, Etapa 4): campo de recomendación embebido en esta
     // misma pantalla (Idea 9 del mockup) -- solo para CREAR una nueva
     // rápidamente; editar/eliminar/ver el historial sigue en la pantalla
@@ -56,7 +59,14 @@ class FisioResultadoSesionViewModel @Inject constructor(
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
-            _uiState.update { it.copy(ejercicio = ejercicio, resultado = sesion?.resultado, cargando = false) }
+            _uiState.update {
+                it.copy(
+                    ejercicio = ejercicio,
+                    resultado = sesion?.resultado,
+                    videoUrl = sesion?.videoUrl,
+                    cargando = false,
+                )
+            }
         }
     }
 

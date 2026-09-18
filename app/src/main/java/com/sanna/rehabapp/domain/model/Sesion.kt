@@ -31,5 +31,8 @@ data class Sesion(
     val anguloMinOverride: Float? = null,
     val anguloMaxOverride: Float? = null,
     val resultado: ResultadoSesion? = null,
+    // Parte 3 (video): URL en Firebase Storage del video grabado durante la
+    // sesión, para que el fisioterapeuta lo revise. Null si no se grabó.
+    val videoUrl: String? = null,
     val sincronizado: Boolean = true,
 )

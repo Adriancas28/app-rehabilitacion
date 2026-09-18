@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import java.io.File
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
@@ -227,6 +228,10 @@ fun EjecutarSesionScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 onResultado = viewModel::procesarResultadoPose,
                                 onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                                archivoVideo = remember(viewModel.sesionId) {
+                                    File(contexto.cacheDir, "sesion_${viewModel.sesionId}.mp4")
+                                },
+                                onVideoGrabado = viewModel::onVideoGrabado,
                             )
                             BadgeEstado(
                                 texto = "Cámara en vivo",

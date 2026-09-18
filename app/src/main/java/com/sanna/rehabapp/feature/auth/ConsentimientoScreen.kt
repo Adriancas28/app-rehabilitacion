@@ -35,8 +35,9 @@ import com.sanna.rehabapp.domain.model.Rol
 
 private val PUNTOS_CONSENTIMIENTO = listOf(
     "El análisis de tu postura mediante la cámara se procesa por completo en tu dispositivo (Edge AI).",
-    "Nunca se graba ni se sube video o imágenes a la nube: solo se guardan métricas numéricas (ángulos y porcentajes de ejecución).",
-    "Tu fisioterapeuta asignado podrá ver el resultado de tus sesiones para dar seguimiento a tu tratamiento.",
+    "Durante cada sesión se graba un video de tu ejercicio (sin audio) y se guarda de forma segura en la nube, únicamente para que tu fisioterapeuta asignado pueda revisar cómo lo realizas.",
+    "Además del video, se guardan métricas numéricas (ángulos y porcentajes de ejecución).",
+    "Solo tu fisioterapeuta asignado podrá ver el resultado y el video de tus sesiones para dar seguimiento a tu tratamiento.",
     "Puedes usar la app sin conexión; tus datos se sincronizan cuando recuperas internet.",
 )
 

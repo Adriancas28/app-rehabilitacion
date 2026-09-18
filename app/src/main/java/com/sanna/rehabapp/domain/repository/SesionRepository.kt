@@ -37,6 +37,10 @@ interface SesionRepository {
     // estadísticas agregadas del panel de administrador.
     fun observarTodasLasSesiones(): Flow<List<Sesion>>
 
+    // Parte 3 (video) — sube el video grabado durante la sesión a Firebase
+    // Storage y guarda su URL en el documento de la sesión.
+    suspend fun subirVideoSesion(pacienteId: String, sesionId: String, archivo: java.io.File): Result<Unit>
+
     // HU03-CA03 — cargar una sesión puntual para editarla.
     suspend fun obtenerSesion(pacienteId: String, sesionId: String): Sesion?
 
