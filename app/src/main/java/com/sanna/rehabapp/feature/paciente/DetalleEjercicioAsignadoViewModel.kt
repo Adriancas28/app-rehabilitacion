@@ -7,12 +7,15 @@ import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.EstadoSesion
 import com.sanna.rehabapp.domain.repository.AuthRepository
+import com.sanna.rehabapp.domain.model.Recomendacion
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
+import com.sanna.rehabapp.domain.repository.RecomendacionRepository
 import com.sanna.rehabapp.domain.repository.SesionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -27,6 +30,8 @@ data class DetalleEjercicioAsignadoUiState(
     val repeticiones: Int = 0,
     // Nota del fisioterapeuta al asignar la sesión (HU03-CA05), si dejó una.
     val notaClinica: String? = null,
+    // Recomendaciones que el fisioterapeuta registró para esta sesión (HU16).
+    val recomendaciones: List<Recomendacion> = emptyList(),
     val cargando: Boolean = true,
 )
 
@@ -38,6 +43,7 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val sesionRepository: SesionRepository,
     private val ejercicioRepository: EjercicioRepository,
+    private val recomendacionRepository: RecomendacionRepository,
 ) : ViewModel() {
 
     val sesionId: String = checkNotNull(savedStateHandle[Rutas.ARG_SESION_ID])
@@ -54,6 +60,11 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
         if (pacienteId == null) {
             _uiState.update { it.copy(cargando = false) }
             return
+        }
+        viewModelScope.launch {
+            recomendacionRepository.observarDe(pacienteId, sesionId)
+                .catch { emit(emptyList()) }
+                .collect { lista -> _uiState.update { it.copy(recomendaciones = lista) } }
         }
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)

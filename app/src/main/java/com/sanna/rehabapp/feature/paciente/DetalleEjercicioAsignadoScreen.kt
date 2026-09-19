@@ -108,6 +108,12 @@ fun DetalleEjercicioAsignadoScreen(
                         NotaDelFisioterapeuta(nota)
                     }
 
+                    // HU16 — recomendaciones registradas por el fisioterapeuta.
+                    uiState.recomendaciones.forEach { rec ->
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        BloqueRecomendacion(rec)
+                    }
+
                     // HU06-CA01/CA02: solo tiene sentido iniciar una sesión
                     // que todavía está pendiente.
                     if (uiState.sesionPendiente) {

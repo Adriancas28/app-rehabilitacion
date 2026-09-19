@@ -155,7 +155,7 @@ fun EjerciciosAsignadosScreen(
                                 Spacer(modifier = Modifier.height(Spacing.sm))
                                 TarjetaProximaSesion(
                                     item = proxima,
-                                    onIniciar = { onIniciarSesionDirecta(proxima.sesionId) },
+                                    onIniciar = { onEjercicioSeleccionado(proxima.sesionId) },
                                     onClick = { onEjercicioSeleccionado(proxima.sesionId) },
                                 )
 
