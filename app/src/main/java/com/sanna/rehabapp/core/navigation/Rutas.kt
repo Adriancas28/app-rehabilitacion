@@ -34,6 +34,8 @@ object Rutas {
     // Pestañas del paciente: "Mis resultados" (historial + detalle) y "Mi progreso".
     const val MIS_RESULTADOS = "paciente/resultados"
     const val PROGRESO_PACIENTE = "paciente/progreso"
+    // Detalle de una sesión realizada, abierto desde "Mis resultados".
+    const val DETALLE_RESULTADO = "paciente/resultados/{sesionId}"
     // Resultado que ve el paciente justo al terminar una sesión.
     const val RESULTADO_SESION = "paciente/resultado/{sesionId}"
 
@@ -82,6 +84,8 @@ object Rutas {
     fun ejecutarSesion(sesionId: String): String = "paciente/ejercicios/$sesionId/ejecutar"
 
     fun resultadoSesion(sesionId: String): String = "paciente/resultado/$sesionId"
+
+    fun detalleResultado(sesionId: String): String = "paciente/resultados/$sesionId"
 
     fun adminPacienteFormulario(usuarioId: String? = null): String =
         "admin/pacientes/formulario" + if (usuarioId != null) "?usuarioId=$usuarioId" else ""

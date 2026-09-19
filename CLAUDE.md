@@ -1234,11 +1234,13 @@ Entonces el sistema indica que el porcentaje se calcula según las correcciones 
 >   su % (verde >= 75%, ámbar si no) y "Ir a mi progreso" -> "Mis
 >   resultados". Se eliminó el modo "solo lectura" y la ruta con
 >   `soloLectura`.
-> - *Mis resultados* (HU13/HU16, `MisResultadosScreen`, nueva): lista de
->   sesiones realizadas (la más reciente seleccionada) y, debajo, su detalle
->   con toggle lista/gráfico y la recomendación del fisioterapeuta con su
->   fecha, leída de la misma subcolección `recomendaciones` donde él la
->   guarda (solo aparece lo ya guardado).
+> - *Mis resultados* (HU13/HU16, `MisResultadosScreen`): solo la lista de
+>   sesiones realizadas, una tarjeta por sesión (`TarjetaConIcono` con
+>   badge de %). Al tocar una se abre `DetalleResultadoScreen` (ruta
+>   `paciente/resultados/{sesionId}`, otra pantalla): tarjetas
+>   Repeticiones/Promedio, detalle por repetición con toggle lista/gráfico
+>   y la recomendación del fisioterapeuta con su fecha (subcolección
+>   `observaciones` de la sesión; solo aparece lo ya guardado).
 > - *Mi progreso* (HU12, `MiProgresoScreen`): "Sesiones realizadas",
 >   "Promedio general" y gráfico de puntos por sesión. Reemplaza al antiguo
 >   historial (`HistorialSesionesScreen`, filtros y racha eliminados).
@@ -1321,13 +1323,13 @@ Entonces el sistema las ordena de la más reciente a la más antigua.
 
 CA03
 Dado que consulte sus resultados,
-Cuando abra la pantalla "Resultados",
-Entonces el sistema muestra seleccionada la sesión más reciente con su detalle.
+Cuando visualice la lista de sesiones,
+Entonces el sistema muestra cada sesión en una tarjeta con el ejercicio, la fecha y el porcentaje de ejecución.
 
 CA04
 Dado que consulte sus resultados,
-Cuando seleccione otra sesión,
-Entonces el sistema muestra el detalle de esa sesión con sus repeticiones y su promedio.
+Cuando seleccione una sesión,
+Entonces el sistema abre en otra pantalla el detalle de esa sesión con sus repeticiones y su promedio.
 
 CA05
 Dado que visualice el detalle de una sesión,

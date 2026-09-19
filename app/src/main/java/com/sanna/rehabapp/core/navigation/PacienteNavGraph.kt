@@ -8,6 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.paciente.DetalleEjercicioAsignadoScreen
+import com.sanna.rehabapp.feature.paciente.DetalleResultadoScreen
 import com.sanna.rehabapp.feature.paciente.EjerciciosAsignadosScreen
 import com.sanna.rehabapp.feature.paciente.MiProgresoScreen
 import com.sanna.rehabapp.feature.paciente.MisResultadosScreen
@@ -55,7 +56,16 @@ fun NavGraphBuilder.pacienteDestinos(
             onNavegarAPerfil = {
                 navController.navigate(Rutas.PERFIL_PACIENTE) { launchSingleTop = true }
             },
+            onSesionSeleccionada = { sesionId ->
+                navController.navigate(Rutas.detalleResultado(sesionId))
+            },
         )
+    }
+    composable(
+        route = Rutas.DETALLE_RESULTADO,
+        arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
+    ) {
+        DetalleResultadoScreen(onVolver = { navController.popBackStack() })
     }
     composable(Rutas.PROGRESO_PACIENTE) {
         var menuVisible by menuBarraLateralVisible
