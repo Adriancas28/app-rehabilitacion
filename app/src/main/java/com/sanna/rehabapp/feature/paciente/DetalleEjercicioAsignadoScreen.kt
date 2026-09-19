@@ -1,5 +1,6 @@
 package com.sanna.rehabapp.feature.paciente
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +35,7 @@ import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
+import com.sanna.rehabapp.core.designsystem.TarjetaCifra
 import com.sanna.rehabapp.core.theme.Spacing
 
 @Composable
@@ -76,25 +78,35 @@ fun DetalleEjercicioAsignadoScreen(
                         Spacer(modifier = Modifier.height(Spacing.md))
                     }
 
-                    // HU03 (ampliación, Etapa 4): si el fisioterapeuta
-                    // personalizó el ángulo objetivo para esta sesión, se
-                    // avisa antes de empezar -- el video/instrucciones son
-                    // los del ejercicio base (referenciales), pero el
-                    // monitoreo usará el rango ajustado.
-                    if (uiState.tieneAnguloPersonalizado) {
-                        AvisoPersonalizacion(notaClinica = uiState.notaClinica)
-                        Spacer(modifier = Modifier.height(Spacing.md))
+                    Text(text = "Cómo realizar el ejercicio", style = MaterialTheme.typography.titleSmall)
+                    Spacer(modifier = Modifier.height(Spacing.xs))
+                    Text(
+                        text = ejercicio.descripcion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(Spacing.md))
+
+                    // Ángulo que medirá la IA en esta sesión y repeticiones asignadas.
+                    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                        TarjetaCifra(
+                            etiqueta = "Ángulo objetivo",
+                            valor = uiState.anguloObjetivo ?: "—",
+                            colorValor = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TarjetaCifra(
+                            etiqueta = "Repeticiones",
+                            valor = "${uiState.repeticiones}",
+                            modifier = Modifier.weight(1f),
+                        )
                     }
 
-                    Text(
-                        text = ejercicio.categoria.etiqueta,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    Spacer(modifier = Modifier.height(Spacing.sm))
-                    Text(text = "Instrucciones", style = MaterialTheme.typography.titleSmall)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = ejercicio.descripcion, style = MaterialTheme.typography.bodyMedium)
+                    // Solo si el fisioterapeuta dejó una nota al asignar la sesión.
+                    uiState.notaClinica?.let { nota ->
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                        NotaDelFisioterapeuta(nota)
+                    }
 
                     // HU06-CA01/CA02: solo tiene sentido iniciar una sesión
                     // que todavía está pendiente.
@@ -113,17 +125,19 @@ fun DetalleEjercicioAsignadoScreen(
 }
 
 @Composable
-private fun AvisoPersonalizacion(notaClinica: String?) {
+private fun NotaDelFisioterapeuta(nota: String) {
     TarjetaBase {
-        Row {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(Spacing.sm))
             Text(
-                text = "Este video es referencial. Tu fisioterapeuta ha ajustado este ejercicio para tu etapa actual" +
-                    if (notaClinica != null) ": $notaClinica" else ".",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Nota de tu fisioterapeuta",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
+        Spacer(modifier = Modifier.height(Spacing.xs))
+        Text(text = nota, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

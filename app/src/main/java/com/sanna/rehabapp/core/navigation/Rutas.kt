@@ -31,12 +31,11 @@ object Rutas {
     const val INICIO_PACIENTE = "paciente/inicio"
     const val DETALLE_EJERCICIO_ASIGNADO = "paciente/ejercicios/{sesionId}"
     const val EJECUTAR_SESION = "paciente/ejercicios/{sesionId}/ejecutar"
-    const val HISTORIAL_SESIONES = "paciente/historial"
-    // soloLectura=false solo cuando se navega recién terminada la sesión
-    // (EjecutarSesionScreen); desde el historial (HU13) siempre es true —
-    // ver nota "Sesión finalizada" en ResultadoSesionScreen.
-    const val RESULTADO_SESION = "paciente/historial/{sesionId}?soloLectura={soloLectura}"
-    const val ARG_SOLO_LECTURA = "soloLectura"
+    // Pestañas del paciente: "Mis resultados" (historial + detalle) y "Mi progreso".
+    const val MIS_RESULTADOS = "paciente/resultados"
+    const val PROGRESO_PACIENTE = "paciente/progreso"
+    // Resultado que ve el paciente justo al terminar una sesión.
+    const val RESULTADO_SESION = "paciente/resultado/{sesionId}"
 
     // HU22/HU23 — Perfil de cuenta propia; "Cerrar sesión" vive únicamente
     // aquí (una ruta por rol porque cada pantalla de Perfil recibe
@@ -82,8 +81,7 @@ object Rutas {
 
     fun ejecutarSesion(sesionId: String): String = "paciente/ejercicios/$sesionId/ejecutar"
 
-    fun resultadoSesion(sesionId: String, soloLectura: Boolean = true): String =
-        "paciente/historial/$sesionId?soloLectura=$soloLectura"
+    fun resultadoSesion(sesionId: String): String = "paciente/resultado/$sesionId"
 
     fun adminPacienteFormulario(usuarioId: String? = null): String =
         "admin/pacientes/formulario" + if (usuarioId != null) "?usuarioId=$usuarioId" else ""

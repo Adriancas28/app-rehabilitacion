@@ -45,6 +45,7 @@ import com.sanna.rehabapp.core.designsystem.CampoTexto
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
+import com.sanna.rehabapp.core.designsystem.TarjetaCifra
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.ErrorColor
 import com.sanna.rehabapp.core.theme.RojoErrorContenedor
@@ -258,33 +259,6 @@ fun FisioResultadoSesionScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun TarjetaCifra(
-    etiqueta: String,
-    valor: String,
-    modifier: Modifier = Modifier,
-    colorValor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface,
-) {
-    TarjetaBase(modifier = modifier) {
-        Text(
-            text = etiqueta,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(modifier = Modifier.height(Spacing.xs))
-        Text(
-            text = valor,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = colorValor,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
     }
 }
 

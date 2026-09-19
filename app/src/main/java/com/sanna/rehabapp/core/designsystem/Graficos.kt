@@ -154,28 +154,32 @@ fun GraficoLinea(
             }
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
-                    if (valores.size < 2) return@Canvas
+                    if (valores.isEmpty()) return@Canvas
                     val maxValor = 100f
-                    val pasoX = size.width / (valores.size - 1)
+                    // Cada punto en el centro de su "casilla" (igual que las
+                    // etiquetas del eje X, que reparten el ancho en partes iguales).
+                    val casilla = size.width / valores.size
                     val puntos = valores.mapIndexed { indice, valor ->
                         Offset(
-                            x = indice * pasoX,
+                            x = (indice + 0.5f) * casilla,
                             y = size.height * (1f - (valor.coerceIn(0f, maxValor) / maxValor)),
                         )
                     }
-                    val lineaPath = androidx.compose.ui.graphics.Path().apply {
-                        moveTo(puntos.first().x, puntos.first().y)
-                        puntos.drop(1).forEach { lineTo(it.x, it.y) }
+                    if (puntos.size > 1) {
+                        val lineaPath = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(puntos.first().x, puntos.first().y)
+                            puntos.drop(1).forEach { lineTo(it.x, it.y) }
+                        }
+                        val relleno = androidx.compose.ui.graphics.Path().apply {
+                            addPath(lineaPath)
+                            lineTo(puntos.last().x, size.height)
+                            lineTo(puntos.first().x, size.height)
+                            close()
+                        }
+                        drawPath(relleno, color = color.copy(alpha = 0.12f), style = Fill)
+                        drawPath(lineaPath, color = color, style = Stroke(width = 2.5.dp.toPx()))
                     }
-                    val relleno = androidx.compose.ui.graphics.Path().apply {
-                        addPath(lineaPath)
-                        lineTo(puntos.last().x, size.height)
-                        lineTo(puntos.first().x, size.height)
-                        close()
-                    }
-                    drawPath(relleno, color = color.copy(alpha = 0.12f), style = Fill)
-                    drawPath(lineaPath, color = color, style = Stroke(width = 2.5.dp.toPx()))
-                    puntos.forEach { punto -> drawCircle(color = color, radius = 3.5.dp.toPx(), center = punto) }
+                    puntos.forEach { punto -> drawCircle(color = color, radius = 4.5.dp.toPx(), center = punto) }
                 }
             }
         }

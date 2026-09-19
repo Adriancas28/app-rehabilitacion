@@ -19,11 +19,13 @@ import kotlinx.coroutines.launch
 data class DetalleEjercicioAsignadoUiState(
     val ejercicio: Ejercicio? = null,
     val sesionPendiente: Boolean = false,
-    // HU03 (ampliación, Etapa 4): true solo si el fisioterapeuta
-    // personalizó el ángulo objetivo para esta sesión puntual.
-    val tieneAnguloPersonalizado: Boolean = false,
-    // Nota clínica opcional a mostrar junto al aviso -- reutiliza
-    // sesion.notas (HU03-CA05), no se agrega un campo nuevo.
+    // Rango de ángulo que la IA medirá en ESTA sesión: el personalizado por
+    // el fisioterapeuta (HU03-CA08) o, si no hay, el del ejercicio. Ya
+    // formateado ("90°–140°"); null si el ejercicio no define ninguno.
+    val anguloObjetivo: String? = null,
+    // Repeticiones de esta sesión: el override del fisio o el valor del ejercicio.
+    val repeticiones: Int = 0,
+    // Nota del fisioterapeuta al asignar la sesión (HU03-CA05), si dejó una.
     val notaClinica: String? = null,
     val cargando: Boolean = true,
 )
@@ -56,13 +58,18 @@ class DetalleEjercicioAsignadoViewModel @Inject constructor(
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(pacienteId, sesionId)
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
-            val tienePersonalizacion = sesion?.anguloMinOverride != null && sesion.anguloMaxOverride != null
+            val rango = if (sesion?.anguloMinOverride != null && sesion.anguloMaxOverride != null) {
+                sesion.anguloMinOverride to sesion.anguloMaxOverride
+            } else {
+                ejercicio?.patronesReferencia?.firstOrNull()?.let { it.anguloMin to it.anguloMax }
+            }
             _uiState.update {
                 it.copy(
                     ejercicio = ejercicio,
                     sesionPendiente = sesion?.estado == EstadoSesion.PENDIENTE,
-                    tieneAnguloPersonalizado = tienePersonalizacion,
-                    notaClinica = sesion?.notas?.takeIf { tienePersonalizacion && it.isNotBlank() },
+                    anguloObjetivo = rango?.let { (min, max) -> "${min.toInt()}°–${max.toInt()}°" },
+                    repeticiones = sesion?.repeticiones ?: ejercicio?.repeticiones ?: 0,
+                    notaClinica = sesion?.notas?.takeIf { it.isNotBlank() },
                     cargando = false,
                 )
             }

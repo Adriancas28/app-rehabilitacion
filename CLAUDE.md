@@ -1136,6 +1136,31 @@ y priorizados en 5 sprints.
 
 ### ÉPICA 04: Gestionar seguimiento terapéutico
 
+> **Rediseño del flujo del paciente (2026-09-19, mockups `paciente_mockups.html`).**
+> Barra lateral del paciente con 4 pestañas (Ejercicios / Resultados /
+> Progreso / Perfil, `BarraLateralPaciente.kt`).
+> - *Detalle del ejercicio* (HU04/HU05, `DetalleEjercicioAsignadoScreen`):
+>   video, "Cómo realizar el ejercicio", tarjetas "Ángulo objetivo" (rango
+>   personalizado de la sesión, HU03-CA08, o el del ejercicio) y
+>   "Repeticiones", y bloque "Nota de tu fisioterapeuta" siempre que la
+>   sesión tenga `notas` (antes solo con ángulo personalizado).
+> - *Resultado al terminar* (HU11, `ResultadoSesionScreen`): "¡Ejercicio
+>   completado!", tarjetas Repeticiones/Promedio, TODAS las repeticiones con
+>   su % (verde >= 75%, ámbar si no) y "Ir a mi progreso" -> "Mis
+>   resultados". Se eliminó el modo "solo lectura" y la ruta con
+>   `soloLectura`.
+> - *Mis resultados* (HU13/HU16, `MisResultadosScreen`, nueva): lista de
+>   sesiones realizadas (la más reciente seleccionada) y, debajo, su detalle
+>   con toggle lista/gráfico y la recomendación del fisioterapeuta con su
+>   fecha, leída de la misma subcolección `recomendaciones` donde él la
+>   guarda (solo aparece lo ya guardado).
+> - *Mi progreso* (HU12, `MiProgresoScreen`): "Sesiones realizadas",
+>   "Promedio general" y gráfico de puntos por sesión. Reemplaza al antiguo
+>   historial (`HistorialSesionesScreen`, filtros y racha eliminados).
+> - Nuevos componentes de Design System: `TarjetaCifra`; `GraficoLinea`
+>   ahora alinea sus puntos con las etiquetas del eje X y dibuja también una
+>   sola sesión.
+
 #### HU12 — Visualizar progreso y evolución terapéutica
 **Rol:** Fisioterapeuta
 **Deseo:** Visualizar el progreso y la evolución terapéutica del paciente

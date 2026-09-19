@@ -5,12 +5,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.sanna.rehabapp.feature.paciente.DetalleEjercicioAsignadoScreen
 import com.sanna.rehabapp.feature.paciente.EjerciciosAsignadosScreen
-import com.sanna.rehabapp.feature.paciente.HistorialSesionesScreen
+import com.sanna.rehabapp.feature.paciente.MiProgresoScreen
+import com.sanna.rehabapp.feature.paciente.MisResultadosScreen
 import com.sanna.rehabapp.feature.paciente.ResultadoSesionScreen
 import com.sanna.rehabapp.feature.perfil.PerfilPacienteScreen
 import com.sanna.rehabapp.feature.sesiones.EjecutarSesionScreen
@@ -30,8 +30,43 @@ fun NavGraphBuilder.pacienteDestinos(
             onIniciarSesionDirecta = { sesionId ->
                 navController.navigate(Rutas.ejecutarSesion(sesionId))
             },
-            onNavegarAHistorial = {
-                navController.navigate(Rutas.HISTORIAL_SESIONES) { launchSingleTop = true }
+            onNavegarAResultados = {
+                navController.navigate(Rutas.MIS_RESULTADOS) { launchSingleTop = true }
+            },
+            onNavegarAProgreso = {
+                navController.navigate(Rutas.PROGRESO_PACIENTE) { launchSingleTop = true }
+            },
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_PACIENTE) { launchSingleTop = true }
+            },
+        )
+    }
+    composable(Rutas.MIS_RESULTADOS) {
+        var menuVisible by menuBarraLateralVisible
+        MisResultadosScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
+            onNavegarAEjercicios = {
+                navController.navigate(Rutas.INICIO_PACIENTE) { launchSingleTop = true }
+            },
+            onNavegarAProgreso = {
+                navController.navigate(Rutas.PROGRESO_PACIENTE) { launchSingleTop = true }
+            },
+            onNavegarAPerfil = {
+                navController.navigate(Rutas.PERFIL_PACIENTE) { launchSingleTop = true }
+            },
+        )
+    }
+    composable(Rutas.PROGRESO_PACIENTE) {
+        var menuVisible by menuBarraLateralVisible
+        MiProgresoScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
+            onNavegarAEjercicios = {
+                navController.navigate(Rutas.INICIO_PACIENTE) { launchSingleTop = true }
+            },
+            onNavegarAResultados = {
+                navController.navigate(Rutas.MIS_RESULTADOS) { launchSingleTop = true }
             },
             onNavegarAPerfil = {
                 navController.navigate(Rutas.PERFIL_PACIENTE) { launchSingleTop = true }
@@ -46,8 +81,11 @@ fun NavGraphBuilder.pacienteDestinos(
             onNavegarAEjercicios = {
                 navController.navigate(Rutas.INICIO_PACIENTE) { launchSingleTop = true }
             },
-            onNavegarAHistorial = {
-                navController.navigate(Rutas.HISTORIAL_SESIONES) { launchSingleTop = true }
+            onNavegarAResultados = {
+                navController.navigate(Rutas.MIS_RESULTADOS) { launchSingleTop = true }
+            },
+            onNavegarAProgreso = {
+                navController.navigate(Rutas.PROGRESO_PACIENTE) { launchSingleTop = true }
             },
             onCerrarSesion = {
                 navController.navigate(Rutas.LOGIN) {
@@ -56,31 +94,17 @@ fun NavGraphBuilder.pacienteDestinos(
             },
         )
     }
-    composable(Rutas.HISTORIAL_SESIONES) {
-        var menuVisible by menuBarraLateralVisible
-        HistorialSesionesScreen(
-            menuVisible = menuVisible,
-            onCambiarMenuVisible = { menuVisible = it },
-            onNavegarAEjercicios = {
-                navController.navigate(Rutas.INICIO_PACIENTE) { launchSingleTop = true }
-            },
-            onNavegarAPerfil = {
-                navController.navigate(Rutas.PERFIL_PACIENTE) { launchSingleTop = true }
-            },
-            onSesionSeleccionada = { sesionId -> navController.navigate(Rutas.resultadoSesion(sesionId)) },
-        )
-    }
     composable(
         route = Rutas.RESULTADO_SESION,
-        arguments = listOf(
-            navArgument(Rutas.ARG_SESION_ID) {},
-            navArgument(Rutas.ARG_SOLO_LECTURA) { type = NavType.BoolType; defaultValue = true },
-        ),
+        arguments = listOf(navArgument(Rutas.ARG_SESION_ID) {}),
     ) {
         ResultadoSesionScreen(
             onVolver = { navController.popBackStack() },
-            onVerProgreso = { navController.navigate(Rutas.HISTORIAL_SESIONES) },
-            onVolverAlInicio = { navController.popBackStack(Rutas.INICIO_PACIENTE, inclusive = false) },
+            onIrAMiProgreso = {
+                navController.navigate(Rutas.MIS_RESULTADOS) {
+                    popUpTo(Rutas.INICIO_PACIENTE)
+                }
+            },
         )
     }
     composable(
@@ -103,7 +127,7 @@ fun NavGraphBuilder.pacienteDestinos(
             // sin datos) -- soloLectura=false porque recién se generó, no
             // viene del historial (HU13).
             onSesionCompletada = { sesionId ->
-                navController.navigate(Rutas.resultadoSesion(sesionId, soloLectura = false)) {
+                navController.navigate(Rutas.resultadoSesion(sesionId)) {
                     popUpTo(Rutas.INICIO_PACIENTE)
                 }
             },

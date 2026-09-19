@@ -57,7 +57,8 @@ fun EjerciciosAsignadosScreen(
     onCambiarMenuVisible: (Boolean) -> Unit,
     onEjercicioSeleccionado: (sesionId: String) -> Unit,
     onIniciarSesionDirecta: (sesionId: String) -> Unit,
-    onNavegarAHistorial: () -> Unit,
+    onNavegarAResultados: () -> Unit,
+    onNavegarAProgreso: () -> Unit,
     onNavegarAPerfil: () -> Unit,
     viewModel: EjerciciosAsignadosViewModel = hiltViewModel(),
 ) {
@@ -67,15 +68,12 @@ fun EjerciciosAsignadosScreen(
     ScaffoldConBarraLateral(
         menuVisible = menuVisible,
         onCambiarMenuVisible = onCambiarMenuVisible,
-        items = listOf(
-            ItemBarraLateral("Ejercicios", Icons.Rounded.FitnessCenter, seleccionado = true, onClick = {}),
-            ItemBarraLateral(
-                "Progreso",
-                Icons.Rounded.History,
-                seleccionado = false,
-                onClick = onNavegarAHistorial,
-            ),
-            ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = false, onClick = onNavegarAPerfil),
+        items = itemsBarraPaciente(
+            actual = PestanaPaciente.EJERCICIOS,
+            onEjercicios = {},
+            onResultados = onNavegarAResultados,
+            onProgreso = onNavegarAProgreso,
+            onPerfil = onNavegarAPerfil,
         ),
         topBar = { onAlternarMenu ->
             // Banner tipo mockup: fondo blanco y saludo grande en vez de la
@@ -115,7 +113,7 @@ fun EjerciciosAsignadosScreen(
             TarjetaConIcono(
                 icono = Icons.Rounded.History,
                 titulo = "Mi progreso",
-                onClick = onNavegarAHistorial,
+                onClick = onNavegarAProgreso,
                 contenidoFinal = {
                     Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 },

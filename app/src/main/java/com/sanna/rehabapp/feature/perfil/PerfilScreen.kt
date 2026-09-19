@@ -38,11 +38,13 @@ import com.sanna.rehabapp.core.designsystem.SeccionFormulario
 import com.sanna.rehabapp.core.designsystem.rememberSnackbarDeMensaje
 import com.sanna.rehabapp.core.navigation.ItemBarraLateral
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
+import com.sanna.rehabapp.feature.paciente.PestanaPaciente
+import com.sanna.rehabapp.feature.paciente.itemsBarraPaciente
 import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.domain.model.Rol
 
 // HU22 — Perfil del paciente: ahora es una pestaña mas de la barra lateral
-// (Ejercicios/Progreso/Perfil), igual criterio de navegacion que
+// (Ejercicios/Resultados/Progreso/Perfil), igual criterio de navegacion que
 // fisioterapeuta/admin -- decision explicita del usuario para dar
 // consistencia entre los 3 roles (antes el paciente no tenia ninguna
 // barra persistente).
@@ -51,7 +53,8 @@ fun PerfilPacienteScreen(
     menuVisible: Boolean,
     onCambiarMenuVisible: (Boolean) -> Unit,
     onNavegarAEjercicios: () -> Unit,
-    onNavegarAHistorial: () -> Unit,
+    onNavegarAResultados: () -> Unit,
+    onNavegarAProgreso: () -> Unit,
     onCerrarSesion: () -> Unit,
     viewModel: PerfilViewModel = hiltViewModel(),
 ) {
@@ -62,20 +65,12 @@ fun PerfilPacienteScreen(
         ScaffoldConBarraLateral(
             menuVisible = menuVisible,
             onCambiarMenuVisible = onCambiarMenuVisible,
-            items = listOf(
-                ItemBarraLateral(
-                    "Ejercicios",
-                    Icons.Rounded.FitnessCenter,
-                    seleccionado = false,
-                    onClick = onNavegarAEjercicios,
-                ),
-                ItemBarraLateral(
-                    "Progreso",
-                    Icons.Rounded.History,
-                    seleccionado = false,
-                    onClick = onNavegarAHistorial,
-                ),
-                ItemBarraLateral("Perfil", Icons.Rounded.Person, seleccionado = true, onClick = {}),
+            items = itemsBarraPaciente(
+                actual = PestanaPaciente.PERFIL,
+                onEjercicios = onNavegarAEjercicios,
+                onResultados = onNavegarAResultados,
+                onProgreso = onNavegarAProgreso,
+                onPerfil = {},
             ),
             topBar = { onAlternarMenu -> BarraSuperior(titulo = "Perfil", onAlternarMenu = onAlternarMenu) },
         ) { padding ->
