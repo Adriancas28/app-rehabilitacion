@@ -66,9 +66,18 @@ Navegación: barra lateral (Dashboard · Pacientes · Fisioterapeutas · Cerrar 
 
 ## 1.5 Estado de las capturas
 
-Al iniciar esta etapa **no existía ninguna captura** del sistema en el repositorio (solo el diagrama E-R `docs/modelo-datos/Modelo_Conceptual_ER_SANNA.png`). Las capturas de la tabla se generan durante las pruebas (etapa 5) desde el emulador; el estado final (existe / falta) se registra en `docs/analisis/05_Pruebas_y_Errores.md`, sección "Capturas".
+Al iniciar el análisis no existía ninguna captura del sistema. Se generaron desde el emulador (2026-09-19/20) y están en `docs/capturas/`:
 
-Pantallas difíciles de capturar (requieren condiciones especiales, se indican si faltan): dispositivo sin cámara (P04), monitoreo en curso con persona real frente a la cámara (P06: el emulador solo tiene cámara virtual sin persona), errores de validación de formularios.
+| Rol | Obtenidas | Faltantes / observaciones |
+|---|---|---|
+| Comunes | C01, C02, C03 | — |
+| Administrador | A01–A13 (13) | — |
+| Fisioterapeuta | F01–F21 (21) | F07 muestra valores de ejemplo no guardados; F17–F19 usan un texto de recomendación de prueba (ya eliminado de la base) |
+| Paciente | P01–P14 (+ P10b) (15) | P04 es el diálogo de permiso del sistema (Android no repite "While using the app" tras dos denegaciones); P06 muestra la escena virtual del emulador, sin persona; P08 usa una sesión de prueba con valores de ejemplo |
+
+**No se pudieron obtener** (limitación del emulador): pantalla de descanso entre repeticiones (dura 5 s), estado sin cámara (RNF03), monitoreo con persona real frente a la cámara y errores de validación de formularios para todos los campos (algunos están como evidencia en `docs/capturas/*/evidencia/`).
+
+Resumen para armar el manual: `docs/Capturas_por_HU.docx` (una captura por HU). Detalle de pruebas: `05_Pruebas_y_Errores.md`.
 
 ## 1.6 Funcionalidades implementadas (verificadas en código) sin equivalente claro en la documentación previa
 
