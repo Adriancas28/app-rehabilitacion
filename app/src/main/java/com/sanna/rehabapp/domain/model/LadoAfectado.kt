@@ -12,9 +12,9 @@ enum class LadoAfectado(val etiqueta: String) {
     AMBOS("Ambos"),
     ;
 
-    fun aFirestore(): String = name
+    fun aFirestore(): String = etiqueta
 
     companion object {
-        fun desdeFirestoreOrNull(valor: String?): LadoAfectado? = entries.find { it.name == valor }
+        fun desdeFirestoreOrNull(valor: String?): LadoAfectado? = entries.find { it.name.equals(valor, true) || it.etiqueta.equals(valor, true) }
     }
 }

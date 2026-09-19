@@ -263,6 +263,21 @@ resolver como tarea aparte antes de dar por cerrado el modelo financiero.
 
 ## 5. Modelo de datos (Firestore)
 
+> **ESTRUCTURA VIGENTE (migración 2026-09-18 al diccionario oficial del equipo,
+> `docs/modelo-datos/DICCIONARIO_DE_DATOS_FIRESTORE.docx` + diagramas E-R).**
+> El esquema detallado que sigue más abajo es el histórico anterior; donde
+> difieran, manda esta nota:
+>
+> - `usuarios/{id}`: correo, rol (`paciente`|`fisioterapeuta`|`administrador`), nombre, fechaCreacion, activo.
+> - `pacientes/{id}` (mismo id, herencia): dni, edad, genero, contacto, ladoAfectado, fisioterapeutaId; subcolección `diagnosticos/{x}`: diagnosticoId, fecha.
+> - `fisioterapeutas/{id}`: edad, genero, contacto, especialidad, numeroColegiatura.
+> - `catalogo_diagnosticos/{id}`: nombre, regionCorporal (ids = enum `TipoDiagnostico`).
+> - `ejercicios/{id}`: nombre, descripcion, fisioterapeutaId, categoria ("Movilidad"/"Control motor"), videoPath, angulosReferencia (mapa articulación → {min,max}), repeticiones ({cantidad, duracionSeg}), diagnosticosAplicables, activo, fechaCreacion.
+> - `sesiones/{id}` (colección de NIVEL SUPERIOR, ya no subcolección del paciente): pacienteId, ejercicioId, fisioterapeutaId, fechaAsignacion, fechaEjecucion, estado (`asignada`|`en curso`|`completada`), nota, repeticionesAsignadas, duracionEstimada, porcentajeEjecucion, desviacionPromedio, repeticiones[] ({numero, porcentaje, desviacionAngular, error, articulacion}), repeticionesCompletadas, repeticionesCorrectas; subcolección `observaciones/{id}` (fisioterapeutaId, texto, fecha) = las recomendaciones (HU15/HU16).
+> - **Atributos añadidos por la app (no están en el diccionario):** en `sesiones`: `duracionSegundos`, `anguloMinOverride`, `anguloMaxOverride` (HU03-CA06/CA08), `videoUrl` (enmienda 2026-09-18); en cada elemento de `repeticiones[]`: `errores` (lista con articulacion, tipo, anguloDetectado, anguloEsperado, segundo — HU18-CA05).
+> - **Desviaciones:** `ejercicios.videoPath` guarda la URL de descarga de Storage (no una ruta); los agregados `angulosDetectados`/`erroresDetectados` ya no se guardan (se derivan del detalle por repetición).
+> - Consultas de sesiones por `whereEqualTo("pacienteId"|"fisioterapeutaId")` ordenadas en memoria (sin índices compuestos). Reglas en `backend/firestore.rules`; migración desde el modelo anterior en `backend/seed/_migrar_modelo.js`.
+
 Contrato entre `/backend` (Security Rules) y `/app` (Repository pattern).
 Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 

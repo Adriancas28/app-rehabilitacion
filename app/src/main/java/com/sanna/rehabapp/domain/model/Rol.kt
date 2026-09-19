@@ -8,14 +8,14 @@ enum class Rol {
     fun aFirestore(): String = when (this) {
         PACIENTE -> "paciente"
         FISIOTERAPEUTA -> "fisioterapeuta"
-        ADMIN -> "admin"
+        ADMIN -> "administrador"
     }
 
     companion object {
         fun desdeFirestore(valor: String?): Rol = when (valor) {
             "paciente" -> PACIENTE
             "fisioterapeuta" -> FISIOTERAPEUTA
-            "admin" -> ADMIN
+            "administrador", "admin" -> ADMIN
             else -> throw IllegalArgumentException("Rol desconocido: $valor")
         }
     }

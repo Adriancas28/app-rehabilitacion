@@ -9,9 +9,9 @@ enum class Genero(val etiqueta: String) {
     OTRO("Otro"),
     ;
 
-    fun aFirestore(): String = name
+    fun aFirestore(): String = etiqueta
 
     companion object {
-        fun desdeFirestoreOrNull(valor: String?): Genero? = entries.find { it.name == valor }
+        fun desdeFirestoreOrNull(valor: String?): Genero? = entries.find { it.name.equals(valor, true) || it.etiqueta.equals(valor, true) }
     }
 }

@@ -9,12 +9,12 @@ enum class CategoriaEjercicio(val etiqueta: String) {
     MOVILIDAD("Movilidad"),
     CONTROL_MOTOR("Control motor");
 
-    fun aFirestore(): String = name
+    fun aFirestore(): String = etiqueta
 
     companion object {
         // Ejercicios creados antes de este cambio (texto libre) se
         // descartan en el mapeo en vez de lanzar una excepción, mismo
         // criterio que Articulacion/TipoDiagnostico.
-        fun desdeFirestoreOrNull(valor: String?): CategoriaEjercicio? = entries.find { it.name == valor }
+        fun desdeFirestoreOrNull(valor: String?): CategoriaEjercicio? = entries.find { it.name.equals(valor, true) || it.etiqueta.equals(valor, true) }
     }
 }

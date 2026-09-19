@@ -1,7 +1,9 @@
 rules_version = '2';
 
 // RNF02 — Seguridad de acceso a la información terapéutica.
-// Roles: "paciente" | "fisioterapeuta" | "admin", definidos en usuarios/{uid}.rol
+// Modelo de datos: DICCIONARIO_DE_DATOS_FIRESTORE (docs/modelo-datos).
+// Roles: "paciente" | "fisioterapeuta" | "administrador", definidos en usuarios/{uid}.rol
+// pacientes/{uid} y fisioterapeutas/{uid} comparten el id de usuarios/{uid} (herencia).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -22,68 +24,85 @@ service cloud.firestore {
     }
 
     // HU20/HU21 — el administrador gestiona cuentas de pacientes y
-    // fisioterapeutas (crear/editar/eliminar su documento en Firestore,
-    // asignar fisioterapeutaId).
+    // fisioterapeutas.
     function esAdmin() {
-      return estaAutenticado() && rolDe(request.auth.uid) == 'admin';
+      return estaAutenticado() && rolDe(request.auth.uid) == 'administrador';
     }
 
-    // HU22-CA01: el paciente debe poder ver el nombre de su propio
-    // fisioterapeuta asignado en su Perfil -- sin esto, la lectura de
-    // usuarios/{fisioUid} desde un paciente queda bloqueada y el listener
-    // de PerfilViewModel crashea la app con PERMISSION_DENIED.
+    // HU22-CA01: el paciente debe poder ver a su propio fisioterapeuta
+    // asignado (nombre y datos) en su Perfil.
     function esPacienteDe(fisioUid) {
       return estaAutenticado() &&
-             get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.fisioterapeutaId == fisioUid;
+             get(/databases/$(database)/documents/pacientes/$(request.auth.uid)).data.fisioterapeutaId == fisioUid;
     }
 
-    // usuarios/{uid}
+    // usuarios/{uid} — cuenta: correo, rol, nombre, fechaCreacion, activo
     match /usuarios/{uid} {
       allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
       allow create, delete: if esDueno(uid) || esAdmin();
-      // HU01-CA06: el fisioterapeuta asignado puede actualizar el
-      // documento de su paciente (en la práctica, solo el diagnóstico —
-      // el resto de campos del paciente los gestiona el admin, HU20).
-      allow update: if esDueno(uid) || esAdmin() ||
-                       (esFisioterapeuta() && resource.data.fisioterapeutaId == request.auth.uid);
+      allow update: if esDueno(uid) || esAdmin();
+    }
 
-      // usuarios/{pacienteId}/sesiones/{sesionId}
-      match /sesiones/{sesionId} {
-        // HU18 (collectionGroup "Resultados") — separado en get/list porque
-        // Firestore no puede probar estáticamente una regla OR que mezcla
-        // una condición de ruta (esDueno) con una de datos
-        // (fisioterapeutaId) para una consulta agregada entre pacientes:
-        // el listener rechazaba TODO el listen con PERMISSION_DENIED aunque
-        // cada documento individualmente cumplía la regla. `list` usa solo
-        // la condición que la propia consulta ya garantiza por su filtro
-        // (fisioterapeutaId==uid del fisio, o ruta fija del paciente dueño).
-        allow get: if esDueno(uid) || esAdmin() ||
-                      (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-        // Etapa 2A (dashboard Admin) — el administrador necesita el
-        // agregado de TODAS las sesiones (sin filtro por fisioterapeutaId)
-        // para las estadísticas globales; esAdmin() no depende de la forma
-        // de la consulta, a diferencia de la condición de fisioterapeuta.
-        allow list: if esDueno(uid) || esAdmin() ||
-                       (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-        allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-        allow update: if esDueno(uid) ||
-                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-        allow delete: if false;
+    // pacientes/{uid} — dni, edad, genero, contacto, ladoAfectado, fisioterapeutaId
+    match /pacientes/{uid} {
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
+      allow create, update, delete: if esAdmin();
 
-        // usuarios/{pacienteId}/sesiones/{sesionId}/recomendaciones/{recomendacionId}
-        match /recomendaciones/{recomendacionId} {
-          allow read: if esDueno(uid) ||
-                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-          allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-          allow update, delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
-        }
+      // pacientes/{uid}/diagnosticos/{id} — diagnosticoId, fecha
+      // HU01-CA06: el fisioterapeuta registra los diagnósticos.
+      match /diagnosticos/{diagnosticoDoc} {
+        allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
+        allow write: if esFisioterapeuta() || esAdmin();
       }
+    }
+
+    // Lectura agregada de diagnósticos (collection group) para las listas de
+    // pacientes del fisioterapeuta y del administrador.
+    match /{path=**}/diagnosticos/{diagnosticoDoc} {
+      allow read: if esFisioterapeuta() || esAdmin();
+    }
+
+    // fisioterapeutas/{uid} — edad, genero, contacto, especialidad, numeroColegiatura
+    match /fisioterapeutas/{uid} {
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
+      allow create, update, delete: if esAdmin();
+    }
+
+    // catalogo_diagnosticos/{id} — nombre, regionCorporal (solo lectura)
+    match /catalogo_diagnosticos/{id} {
+      allow read: if estaAutenticado();
+      allow write: if false;
     }
 
     // ejercicios/{ejercicioId} — catálogo, gestionado por fisioterapeutas
     match /ejercicios/{ejercicioId} {
       allow read: if estaAutenticado();
       allow create, update, delete: if esFisioterapeuta();
+    }
+
+    // sesiones/{sesionId} — colección de nivel superior (pacienteId,
+    // fisioterapeutaId). Las consultas siempre filtran por uno de los dos
+    // (o son del administrador), lo que permite a Firestore probar la regla.
+    match /sesiones/{sesionId} {
+      allow get, list: if esAdmin() ||
+                          (estaAutenticado() &&
+                           (resource.data.pacienteId == request.auth.uid ||
+                            resource.data.fisioterapeutaId == request.auth.uid));
+      allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
+      // El paciente guarda el resultado y el video; el fisioterapeuta edita la asignación.
+      allow update: if estaAutenticado() &&
+                       (resource.data.pacienteId == request.auth.uid ||
+                        resource.data.fisioterapeutaId == request.auth.uid);
+      allow delete: if false;
+
+      // sesiones/{sesionId}/observaciones/{id} — recomendaciones del fisioterapeuta
+      match /observaciones/{observacionId} {
+        allow read: if estaAutenticado() &&
+                       (get(/databases/$(database)/documents/sesiones/$(sesionId)).data.pacienteId == request.auth.uid ||
+                        get(/databases/$(database)/documents/sesiones/$(sesionId)).data.fisioterapeutaId == request.auth.uid);
+        allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
+        allow update, delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
+      }
     }
   }
 }

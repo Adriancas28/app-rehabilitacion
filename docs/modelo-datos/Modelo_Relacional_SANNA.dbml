@@ -1,0 +1,119 @@
+Table USUARIO {
+  id varchar [pk]
+  correo varchar
+  rol varchar
+  nombre varchar
+  fechaCreacion timestamp
+  activo boolean
+}
+
+Table FISIOTERAPEUTA {
+  id varchar [pk]
+  edad int
+  genero varchar
+  contacto varchar
+  especialidad varchar
+  numeroColegiatura varchar
+}
+
+Table PACIENTE {
+  id varchar [pk]
+  dni varchar
+  edad int
+  genero varchar
+  contacto varchar
+  ladoAfectado varchar
+  fisioterapeutaId varchar
+}
+
+Table DIAGNOSTICO {
+  id varchar [pk]
+  nombre varchar
+  regionCorporal varchar
+}
+
+Table PACIENTE_DIAGNOSTICO {
+  pacienteId varchar [pk]
+  diagnosticoId varchar [pk]
+  fecha timestamp
+}
+
+Table EJERCICIO {
+  id varchar [pk]
+  nombre varchar
+  descripcion varchar
+  fisioterapeutaId varchar
+  categoria varchar
+  videoPath varchar
+  cantidadRepeticionesDefault int
+  duracionSegDefault int
+  activo boolean
+}
+
+Table EJERCICIO_DIAGNOSTICO {
+  ejercicioId varchar [pk]
+  diagnosticoId varchar [pk]
+}
+
+Table ANGULO_REFERENCIA {
+  id varchar [pk]
+  ejercicioId varchar
+  articulacion varchar
+  anguloMin decimal
+  anguloMax decimal
+}
+
+Table SESION {
+  id varchar [pk]
+  pacienteId varchar
+  ejercicioId varchar
+  fisioterapeutaId varchar
+  fechaAsignacion timestamp
+  fechaEjecucion timestamp
+  estado varchar
+  nota varchar
+  repeticionesAsignadas int
+  duracionEstimada int
+  porcentajeEjecucion decimal
+  desviacionPromedio decimal
+  repeticionesCompletadas int
+  repeticionesCorrectas int
+}
+
+Table REPETICION {
+  sesionId varchar [pk]
+  numero int [pk]
+  porcentaje decimal
+  desviacionAngular decimal
+  error varchar
+  articulacion varchar
+}
+
+Table OBSERVACION {
+  id varchar [pk]
+  sesionId varchar
+  fisioterapeutaId varchar
+  texto varchar
+  fecha timestamp
+}
+
+// Herencia (Usuario -> Paciente / Fisioterapeuta), PK compartida
+Ref: PACIENTE.id - USUARIO.id
+Ref: FISIOTERAPEUTA.id - USUARIO.id
+
+// Relaciones 1:N
+Ref: FISIOTERAPEUTA.id < PACIENTE.fisioterapeutaId
+Ref: FISIOTERAPEUTA.id < EJERCICIO.fisioterapeutaId
+Ref: EJERCICIO.id < ANGULO_REFERENCIA.ejercicioId
+Ref: PACIENTE.id < SESION.pacienteId
+Ref: EJERCICIO.id < SESION.ejercicioId
+Ref: FISIOTERAPEUTA.id < SESION.fisioterapeutaId
+Ref: SESION.id < REPETICION.sesionId
+Ref: SESION.id < OBSERVACION.sesionId
+Ref: FISIOTERAPEUTA.id < OBSERVACION.fisioterapeutaId
+
+// Relaciones N:M (via tablas intermedias)
+Ref: PACIENTE.id < PACIENTE_DIAGNOSTICO.pacienteId
+Ref: DIAGNOSTICO.id < PACIENTE_DIAGNOSTICO.diagnosticoId
+Ref: EJERCICIO.id < EJERCICIO_DIAGNOSTICO.ejercicioId
+Ref: DIAGNOSTICO.id < EJERCICIO_DIAGNOSTICO.diagnosticoId
