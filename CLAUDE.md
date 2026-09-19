@@ -949,13 +949,50 @@ y priorizados en 5 sprints.
   — no se agregó un campo "nota clínica" nuevo, se reutiliza `notas`.
 
 #### HU04 — Visualizar ejercicios asignados
-**Rol:** Paciente
-**Deseo:** Visualizar los ejercicios terapéuticos asignados
-**Propósito:** Consultar las actividades que debo realizar.
-- CA01: Dado que accede al módulo de ejercicios, entonces el sistema muestra las actividades asignadas.
-- CA02: Dado que existen ejercicios asignados, cuando consulte la información, entonces el sistema muestra el detalle de cada uno.
-- CA03: Dado que desea consultar un ejercicio específico, cuando lo seleccione, entonces el sistema muestra su información.
-- CA04: Dado que no tiene ejercicios asignados, entonces el sistema muestra un mensaje de ausencia.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO VISUALIZAR LOS EJERCICIOS TERAPÉUTICOS ASIGNADOS Y EL DETALLE DE CADA UNO
+
+**Propósito**
+CON EL OBJETIVO DE CONOCER LAS ACTIVIDADES QUE DEBO REALIZAR Y CÓMO EJECUTARLAS
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente acceda al módulo de ejercicios,
+Cuando seleccione "Ejercicios",
+Entonces el sistema muestra las actividades asignadas.
+
+CA02
+Dado que no tenga ejercicios asignados,
+Cuando acceda al módulo de ejercicios,
+Entonces el sistema muestra un mensaje de ausencia.
+
+CA03
+Dado que existan ejercicios asignados,
+Cuando seleccione uno de ellos,
+Entonces el sistema muestra su detalle con el material audiovisual y las instrucciones de ejecución.
+
+CA04
+Dado que consulte el detalle de un ejercicio,
+Cuando visualice la información del ejercicio,
+Entonces el sistema muestra el ángulo objetivo, personalizado por el fisioterapeuta o el predeterminado del ejercicio.
+
+CA05
+Dado que consulte el detalle de un ejercicio,
+Cuando visualice la información del ejercicio,
+Entonces el sistema muestra el número de repeticiones de la sesión.
+
+CA06
+Dado que el fisioterapeuta haya registrado una nota para la sesión,
+Cuando consulte el detalle del ejercicio,
+Entonces el sistema muestra la nota del fisioterapeuta.
+
 
 #### HU05 — Consultar material terapéutico
 **Rol:** Paciente
@@ -1091,31 +1128,64 @@ y priorizados en 5 sprints.
   definir, fuera del alcance de las 19 HU actuales).
 
 #### HU11 — Visualizar resultados y porcentaje de ejecución
-**Rol:** Paciente
-**Deseo:** Visualizar los resultados y el porcentaje de ejecución de mi sesión
-**Propósito:** Conocer mi desempeño referencial en los ejercicios realizados.
-- CA01: Dado que finalice una sesión, entonces el sistema muestra los resultados obtenidos, incluyendo el % de ejecución.
-- CA02: Dado que consulte el detalle, entonces el sistema muestra métricas comprensibles (desviación promedio, % de acierto).
-- CA03: Dado que la sesión incluya más de un ejercicio, entonces el sistema diferencia el resultado por cada uno.
-- CA04: Dado que consulte una sesión anterior, entonces el sistema muestra el mismo detalle de resultados obtenido en su momento.
-- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que la sesión se haya completado o finalizado antes de tiempo
-  (HU06-CA07), entonces el sistema muestra cuántas repeticiones se
-  llegaron a completar sobre el total asignado (ej. "8/12"), y de esas
-  cuántas no tuvieron ningún error ("Correctas") frente a las que sí
-  ("Errores") — así se distingue una ejecución completa de una parcial.
-- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que consulte el resultado de una sesión, entonces el sistema
-  ofrece acceso directo a "Ver mi progreso" (historial, HU13) y "Volver
-  al inicio" (HU04), sin tener que navegar hacia atrás pantalla por
-  pantalla.
-- CA07 *(ampliación acordada, 2026-09-15)*: Dado que el detalle de
-  resultado incluya `detallePorRepeticion` (sección 5), entonces el
-  sistema muestra un gráfico de barras con el % de ejecución de cada
-  repetición individual (verde si ≥75%, ámbar si no), con una nota
-  aclaratoria de que se calcula según las correcciones detectadas por
-  MediaPipe. Implementado en `ResultadoSesionScreen.kt` vía el nuevo
-  componente de Design System `GraficoBarras` (`core/designsystem/Graficos.kt`).
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO VISUALIZAR LOS RESULTADOS Y EL PORCENTAJE DE EJECUCIÓN DE MI SESIÓN
+
+**Propósito**
+CON EL OBJETIVO DE CONOCER MI DESEMPEÑO REFERENCIAL EN LOS EJERCICIOS REALIZADOS
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente finalice una sesión,
+Cuando seleccione "Ver resultado",
+Entonces el sistema muestra la pantalla de resultado del ejercicio.
+
+CA02
+Dado que consulte el resultado de una sesión,
+Cuando visualice el resumen,
+Entonces el sistema muestra las repeticiones completadas sobre las asignadas.
+
+CA03
+Dado que consulte el resultado de una sesión,
+Cuando visualice el resumen,
+Entonces el sistema muestra el porcentaje promedio de ejecución.
+
+CA04
+Dado que consulte el resultado de una sesión,
+Cuando visualice el detalle,
+Entonces el sistema lista todas las repeticiones con su porcentaje de ejecución.
+
+CA05
+Dado que una repetición alcance el 75 % de ejecución o más,
+Cuando visualice el detalle,
+Entonces el sistema la destaca en verde.
+
+CA06
+Dado que una repetición no alcance el 75 % de ejecución,
+Cuando visualice el detalle,
+Entonces el sistema la destaca en ámbar.
+
+CA07
+Dado que la sesión se haya finalizado antes de completar las repeticiones asignadas,
+Cuando consulte su resultado,
+Entonces el sistema muestra las repeticiones realmente completadas sobre el total asignado.
+
+CA08
+Dado que consulte el resultado de una sesión,
+Cuando seleccione "Ir a mi progreso",
+Entonces el sistema lo lleva a la pantalla "Mis resultados".
+
+CA09
+Dado que consulte el resultado de una sesión,
+Cuando lea la aclaración del cálculo,
+Entonces el sistema indica que el porcentaje se calcula según las correcciones detectadas por MediaPipe y es referencial.
 
 > **Bug/brecha real encontrada y corregida (2026-09-15):** al completar
 > una sesión, `EjecutarSesionScreen` solo mostraba un mensaje genérico
@@ -1225,13 +1295,60 @@ y priorizados en 5 sprints.
 > lógica de HU15 no cambió.
 
 #### HU13 — Consultar historial terapéutico
-**Rol:** Paciente
-**Deseo:** Consultar mi historial terapéutico
-**Propósito:** Visualizar las sesiones terapéuticas realizadas.
-- CA01: Dado que consulte su historial, entonces el sistema muestra las sesiones realizadas.
-- CA02: Dado que seleccione un registro, entonces el sistema muestra el detalle de esa sesión.
-- CA03: Dado que existan múltiples sesiones, entonces el sistema las ordena de la más reciente a la más antigua.
-- CA04: Dado que no haya completado ninguna sesión, entonces el sistema muestra un mensaje de ausencia de registros.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO CONSULTAR MIS RESULTADOS Y MI PROGRESO
+
+**Propósito**
+CON EL OBJETIVO DE VISUALIZAR LAS SESIONES TERAPÉUTICAS REALIZADAS Y MI EVOLUCIÓN
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente haya realizado sesiones,
+Cuando seleccione "Resultados",
+Entonces el sistema muestra las sesiones realizadas.
+
+CA02
+Dado que existan múltiples sesiones,
+Cuando consulte sus resultados,
+Entonces el sistema las ordena de la más reciente a la más antigua.
+
+CA03
+Dado que consulte sus resultados,
+Cuando abra la pantalla "Resultados",
+Entonces el sistema muestra seleccionada la sesión más reciente con su detalle.
+
+CA04
+Dado que consulte sus resultados,
+Cuando seleccione otra sesión,
+Entonces el sistema muestra el detalle de esa sesión con sus repeticiones y su promedio.
+
+CA05
+Dado que visualice el detalle de una sesión,
+Cuando seleccione "Mostrar gráfico",
+Entonces el sistema muestra el porcentaje de cada repetición en un gráfico de barras.
+
+CA06
+Dado que no haya completado ninguna sesión,
+Cuando consulte sus resultados,
+Entonces el sistema muestra un mensaje de ausencia de registros.
+
+CA07
+Dado que el paciente haya realizado sesiones,
+Cuando seleccione "Progreso",
+Entonces el sistema muestra el número de sesiones realizadas y el promedio general.
+
+CA08
+Dado que consulte su progreso,
+Cuando visualice la evolución,
+Entonces el sistema muestra un gráfico con el porcentaje de precisión de cada sesión según su número.
+
 
 #### HU14 — Monitorear cumplimiento terapéutico
 **Rol:** Fisioterapeuta
@@ -1273,13 +1390,40 @@ y priorizados en 5 sprints.
   recomendaciones"), que no se eliminó ni se duplicó.
 
 #### HU16 — Consultar recomendaciones terapéuticas
-**Rol:** Paciente
-**Deseo:** Consultar las recomendaciones terapéuticas registradas
-**Propósito:** Visualizar las observaciones realizadas por el fisioterapeuta.
-- CA01: Dado que el fisioterapeuta registre una recomendación, entonces el sistema la muestra al paciente en su sesión.
-- CA02: Dado que seleccione el detalle de una sesión, entonces el sistema visualiza las recomendaciones registradas.
-- CA03: Dado que se registren nuevas recomendaciones, entonces el sistema actualiza la información mostrada.
-- CA04: Dado que no existan recomendaciones para una sesión, entonces el sistema indica que no hay disponibles.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO CONSULTAR LAS RECOMENDACIONES TERAPÉUTICAS REGISTRADAS
+
+**Propósito**
+CON EL OBJETIVO DE VISUALIZAR LAS OBSERVACIONES REALIZADAS POR EL FISIOTERAPEUTA
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el fisioterapeuta haya registrado una recomendación para una sesión,
+Cuando el paciente seleccione esa sesión en "Resultados",
+Entonces el sistema muestra la recomendación con su fecha.
+
+CA02
+Dado que existan varias recomendaciones para una sesión,
+Cuando el paciente consulte el detalle de la sesión,
+Entonces el sistema las muestra todas.
+
+CA03
+Dado que el fisioterapeuta registre una nueva recomendación,
+Cuando el paciente consulte la sesión,
+Entonces el sistema muestra la información actualizada.
+
+CA04
+Dado que no existan recomendaciones para una sesión,
+Cuando el paciente consulte su detalle,
+Entonces el sistema indica que no hay recomendaciones disponibles.
+
 
 ---
 
@@ -1294,40 +1438,64 @@ y priorizados en 5 sprints.
 - CA03: Dado que se registre una nueva sesión, entonces el sistema actualiza los datos del paciente sin sobrescribir sesiones anteriores.
 
 #### HU18 — Gestionar sesiones y resultados terapéuticos registrados
-**Rol:** Fisioterapeuta
-**Deseo:** Gestionar las sesiones y resultados terapéuticos registrados
-**Propósito:** Consultar y administrar la información asociada a sesiones y resultados obtenidos.
-- CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
-- CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
-- CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
-- CA04 *(ampliación acordada, construida en Sprint 4 junto con la versión
-  mínima de CA02 — ver nota de dependencia con HU15 más abajo; redacción
-  actualizada tras la revisión del modelo de datos: reemplaza el booleano
-  original "dentro de rango" por el porcentaje de ejecución calculado)*:
-  Dado que acceda al detalle de una sesión completada, entonces el sistema
-  desglosa el resultado **por repetición** (no solo agregado): para cada
-  una muestra el **porcentaje de ejecución obtenido** (calculado
-  automáticamente por la IA) y, cuando hubo desviación, qué tipo de error
-  se detectó y en qué articulación (ej. "Repetición 5: 78%, hombro
-  derecho, rango incompleto"). Esto es más granular que
-  `erroresDetectados` (HU08-CA04), que hoy agrupa por tipo de error con un
-  conteo total, sin registrar en qué repetición ocurrió cada uno —
-  requiere una estructura nueva (`detallePorRepeticion`, ver sección 5)
-  para poder mostrarlo así. Es la base con la que el fisioterapeuta decide
-  qué recomendación registrar
-  (HU15).
-- CA05 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que el detalle
-  por repetición incluya un error, entonces el sistema muestra también el
-  ángulo real detectado vs el esperado para esa repetición puntual (ej.
-  "Flexión incorrecta — 150° (esperado 120°)"), no solo el tipo de error.
-  Nuevos campos opcionales `anguloDetectado`/`anguloEsperado` en
-  `ErrorDetectado` (sección 5), poblados solo dentro de
-  `detallePorRepeticion` — el agregado de sesión (`erroresDetectados`) no
-  los necesita porque ya tiene su propio desglose en `angulosDetectados`.
-  En `FisioResultadoSesionScreen` se muestran las primeras 3 repeticiones
-  y un botón "Ver más repeticiones" abre un modal con el resto (mockup),
-  además de un gráfico de barras "Precisión por repetición" (reusa
-  `GraficoBarras`, ver sección 3).
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO FISIOTERAPEUTA
+
+**Deseo**
+QUIERO GESTIONAR LAS SESIONES Y RESULTADOS TERAPÉUTICOS REGISTRADOS
+
+**Propósito**
+CON EL OBJETIVO DE CONSULTAR LA INFORMACIÓN ASOCIADA A LAS SESIONES Y RESULTADOS OBTENIDOS POR CADA PACIENTE
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el fisioterapeuta acceda al sistema,
+Cuando seleccione "Resultados",
+Entonces el sistema muestra la lista de sus pacientes asignados.
+
+CA02
+Dado que consulte la lista de pacientes,
+Cuando seleccione un paciente,
+Entonces el sistema muestra todas sus sesiones con su estado: completada, incompleta o por hacer.
+
+CA03
+Dado que consulte las sesiones de un paciente,
+Cuando aplique un filtro por período,
+Entonces el sistema muestra solo las sesiones que cumplen el criterio.
+
+CA04
+Dado que consulte las sesiones de un paciente,
+Cuando aplique un filtro por ejercicio,
+Entonces el sistema muestra solo las sesiones de ese ejercicio.
+
+CA05
+Dado que consulte las sesiones de un paciente,
+Cuando seleccione una sesión,
+Entonces el sistema muestra las repeticiones completas y el promedio de ejecución.
+
+CA06
+Dado que acceda al detalle de una sesión,
+Cuando visualice el detalle por repetición,
+Entonces el sistema muestra el porcentaje de ejecución de cada repetición en lista o en gráfico.
+
+CA07
+Dado que una repetición tenga un error,
+Cuando visualice el detalle por repetición,
+Entonces el sistema muestra el segundo del error, la articulación, el ángulo detectado y el esperado.
+
+CA08
+Dado que existan más repeticiones que las mostradas,
+Cuando seleccione "Ver más repeticiones",
+Entonces el sistema muestra el listado completo de repeticiones.
+
+CA09
+Dado que el paciente haya grabado la sesión,
+Cuando seleccione "Ver video de la sesión",
+Entonces el sistema reproduce la grabación del ejercicio realizado.
 
 > **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
 > recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de
@@ -1470,25 +1638,20 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
 
 > **Etapa 2A — Dashboard del Admin (ampliación acordada, 2026-09-16, no
 > es una HU del backlog original, es refinamiento técnico sobre esta
-> Épica 07).** Nueva pestaña "Dashboard" en la barra lateral del
-> administrador (`AdminDashboardScreen.kt`, primera pestaña, antes de
-> "Pacientes"), con estadísticas agregadas: pacientes/fisioterapeutas
-> activos (`TarjetaEstadistica`), % de adherencia global (sesiones
-> completadas/asignadas de todos los pacientes) y calidad promedio de
-> ejecución, más un desglose "Adherencia por fisioterapeuta" (reusa
-> `GraficoBarras`) con el % de cada fisioterapeuta y su conteo
-> completadas/asignadas. No agrega modelo de datos nuevo: reutiliza
-> `AdminRepository.observarPacientes()/observarFisioterapeutas()` (ya
-> usados por HU20/HU21) y un método nuevo,
-> `SesionRepository.observarTodasLasSesiones()` — a diferencia de
-> `observarTodasLasSesionesDe(fisioterapeutaId)` (HU18, ya filtrado por
-> un fisioterapeuta), este trae el collectionGroup de sesiones SIN
-> filtro, porque el admin necesita el agregado de todos los
-> fisioterapeutas a la vez. Requirió agregar `esAdmin()` a `allow
-> get`/`allow list` de `usuarios/{uid}/sesiones/{sesionId}` en
-> `firestore.rules` (desplegado a producción) — antes solo
-> `esDueno(uid)` o el propio fisioterapeuta dueño de la sesión podían
-> leer ese collectionGroup.
+> Épica 07; rediseñado el 2026-09-18).** Pestaña "Dashboard" en la barra
+> lateral del administrador (`AdminDashboardScreen.kt`, primera pestaña).
+> Muestra la lista de pacientes (mismo estilo que "Pacientes"); al
+> seleccionar uno abre `AdminPacienteDashboardScreen`: tarjetas "Sesiones
+> ejecutadas" y "Precisión prom." (promedio de los `porcentajeEjecucion`
+> de sus sesiones completadas) y "Detalle por sesión" en lista (ejercicio,
+> fecha, % correctas, % completado) o, con "Mostrar gráfico", tendencia de
+> precisión (línea, eje X = número de sesión, eje Y = %) y % completado por
+> sesión (barras). Todo sale de las sesiones reales del paciente en
+> Firestore (`sesiones`, filtradas por `pacienteId`); las sesiones aún por
+> hacer no entran en el promedio. Reutiliza `AdminRepository`/
+> `SesionRepository` y requiere que el administrador pueda leer `sesiones`
+> (`esAdmin()` en `firestore.rules`). Reemplaza al dashboard global de
+> estadísticas (adherencia por fisioterapeuta) de la primera versión.
 
 *(Ampliación acordada — HU22/HU23: hasta ahora esta épica solo cubría al
 Administrador gestionando cuentas ajenas; se extiende con el mismo
