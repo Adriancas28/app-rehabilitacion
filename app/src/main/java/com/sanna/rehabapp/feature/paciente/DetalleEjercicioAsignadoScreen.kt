@@ -71,13 +71,6 @@ fun DetalleEjercicioAsignadoScreen(
                         .padding(Spacing.md)
                         .verticalScroll(rememberScrollState()),
                 ) {
-                    // HU05-CA01/CA02 — material terapéutico (imagen o video),
-                    // si el ejercicio tiene uno asociado (es opcional, HU02-CA03).
-                    if (ejercicio.materialUrl.isNotBlank()) {
-                        MaterialTerapeutico(url = ejercicio.materialUrl)
-                        Spacer(modifier = Modifier.height(Spacing.md))
-                    }
-
                     Text(text = "Cómo realizar el ejercicio", style = MaterialTheme.typography.titleSmall)
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(
@@ -86,6 +79,14 @@ fun DetalleEjercicioAsignadoScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.height(Spacing.md))
+
+                    // HU05-CA01/CA02 — material terapéutico (imagen o video), justo
+                    // después de la descripción, si el ejercicio tiene uno asociado
+                    // (es opcional, HU02-CA03).
+                    if (ejercicio.materialUrl.isNotBlank()) {
+                        MaterialTerapeutico(url = ejercicio.materialUrl)
+                        Spacer(modifier = Modifier.height(Spacing.md))
+                    }
 
                     // Ángulo que medirá la IA en esta sesión y repeticiones asignadas.
                     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
