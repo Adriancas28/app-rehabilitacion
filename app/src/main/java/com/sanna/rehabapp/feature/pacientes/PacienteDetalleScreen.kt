@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.key
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
@@ -81,6 +82,7 @@ fun PacienteDetalleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.md),
         ) {
             uiState.paciente?.let { paciente ->
@@ -146,8 +148,9 @@ fun PacienteDetalleScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                LazyColumn {
-                    items(uiState.sesionesFiltradas, key = { it.id }) { sesion ->
+                Column {
+                    uiState.sesionesFiltradas.forEach { sesion ->
+                        key(sesion.id) {
                         TarjetaSesion(
                             sesion = sesion,
                             ejercicio = uiState.ejerciciosPorId[sesion.ejercicioId],
@@ -160,6 +163,7 @@ fun PacienteDetalleScreen(
                             },
                             onRecomendar = { onRecomendar(viewModel.pacienteId, sesion.id) },
                         )
+                        }
                     }
                 }
             }
