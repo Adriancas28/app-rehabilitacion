@@ -199,6 +199,7 @@ class EjercicioFormViewModel @Inject constructor(
     }
 
     fun guardar() {
+        if (_uiState.value.guardando) return
         val estado = _uiState.value
         val categoria = estado.categoria
         if (estado.nombre.isBlank() || estado.descripcion.isBlank() || categoria == null) {
@@ -221,13 +222,28 @@ class EjercicioFormViewModel @Inject constructor(
             return
         }
 
-        // Filas incompletas (sin articulación o sin ambos ángulos) se ignoran
-        // en silencio: el ROM es opcional en HU02, se puede completar después.
-        val patrones = estado.patronesReferencia.mapNotNull { fila ->
-            val articulacion = fila.articulacion ?: return@mapNotNull null
-            val min = fila.anguloMin.toFloatOrNull() ?: return@mapNotNull null
-            val max = fila.anguloMax.toFloatOrNull() ?: return@mapNotNull null
-            PatronReferencia(articulacion = articulacion, anguloMin = min, anguloMax = max)
+        // Filas sin articulación y sin ángulos se ignoran (el ROM es opcional en
+        // HU02). ERR-FIS-004: una fila con datos debe tener ambos ángulos válidos
+        // y el mínimo menor que el máximo.
+        val patrones = mutableListOf<PatronReferencia>()
+        for (fila in estado.patronesReferencia) {
+            val articulacion = fila.articulacion
+            if (articulacion == null && fila.anguloMin.isBlank() && fila.anguloMax.isBlank()) continue
+            val nombreFila = articulacion?.etiqueta ?: "la fila sin articulación"
+            val min = fila.anguloMin.trim().toFloatOrNull()?.takeIf { it.isFinite() }
+            val max = fila.anguloMax.trim().toFloatOrNull()?.takeIf { it.isFinite() }
+            val mensaje = when {
+                articulacion == null -> "Elige la articulación de cada fila del rango de referencia."
+                min == null || max == null -> "Ingresa un ángulo mínimo y un máximo válidos para $nombreFila."
+                min < 0f || max > 180f -> "Los ángulos de $nombreFila deben estar entre 0° y 180°."
+                min >= max -> "En $nombreFila el ángulo mínimo debe ser menor que el máximo."
+                else -> null
+            }
+            if (mensaje != null) {
+                _uiState.update { it.copy(error = mensaje) }
+                return
+            }
+            patrones += PatronReferencia(articulacion = articulacion!!, anguloMin = min!!, anguloMax = max!!)
         }
 
         val ejercicio = Ejercicio(
@@ -244,8 +260,8 @@ class EjercicioFormViewModel @Inject constructor(
             fechaCreacion = fechaCreacionOriginal,
         )
 
+        _uiState.update { it.copy(guardando = true, error = null) }
         viewModelScope.launch {
-            _uiState.update { it.copy(guardando = true, error = null) }
             ejercicioRepository.guardarEjercicio(ejercicio, estado.archivoSeleccionado).fold(
                 onSuccess = { _uiState.update { it.copy(guardando = false, guardadoExitoso = true) } },
                 onFailure = {

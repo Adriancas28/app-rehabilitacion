@@ -51,12 +51,14 @@ fun AdminUsuarioFormContenido(
                 valor = uiState.nombre,
                 onValorCambiado = onNombreCambiado,
                 etiqueta = "Nombre completo",
+                mensajeError = uiState.errores["nombre"],
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             CampoTexto(
                 valor = uiState.email,
                 onValorCambiado = onEmailCambiado,
                 etiqueta = "Correo electrónico",
+                mensajeError = uiState.errores["email"],
                 tipoTeclado = KeyboardType.Email,
                 habilitado = !esEdicion,
             )
@@ -66,6 +68,7 @@ fun AdminUsuarioFormContenido(
                     valor = uiState.password,
                     onValorCambiado = onPasswordCambiado,
                     etiqueta = "Contraseña",
+                    mensajeError = uiState.errores["password"],
                     esPassword = true,
                 )
             }
@@ -74,6 +77,7 @@ fun AdminUsuarioFormContenido(
                 valor = uiState.edad,
                 onValorCambiado = onEdadCambiado,
                 etiqueta = "Edad",
+                mensajeError = uiState.errores["edad"],
                 tipoTeclado = KeyboardType.Number,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
@@ -84,11 +88,13 @@ fun AdminUsuarioFormContenido(
                 onSeleccionar = onGeneroCambiado,
                 etiqueta = "Género",
             )
+            uiState.errores["genero"]?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             CampoTexto(
                 valor = uiState.numeroContacto,
                 onValorCambiado = onNumeroContactoCambiado,
                 etiqueta = "Número de contacto",
+                mensajeError = uiState.errores["contacto"],
                 tipoTeclado = KeyboardType.Phone,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))

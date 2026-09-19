@@ -8,8 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.key
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
@@ -37,6 +38,7 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
+import com.sanna.rehabapp.core.designsystem.EvolucionPrecisionPorSesion
 import com.sanna.rehabapp.core.designsystem.FilaChipsFiltro
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.ProgresoLineal
@@ -81,6 +83,7 @@ fun PacienteDetalleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.md),
         ) {
             uiState.paciente?.let { paciente ->
@@ -105,6 +108,12 @@ fun PacienteDetalleScreen(
                 porcentajePromedio = uiState.porcentajePromedio,
             )
             Spacer(modifier = Modifier.height(Spacing.md))
+
+            // Evolución sesión a sesión: línea + barras de precisión.
+            if (uiState.precisionPorSesion.isNotEmpty()) {
+                EvolucionPrecisionPorSesion(valores = uiState.precisionPorSesion)
+                Spacer(modifier = Modifier.height(Spacing.md))
+            }
 
             // HU12-CA02 (ampliación): progreso total por cada ejercicio
             // realizado, con barras (mockup pantalla 10).
@@ -146,8 +155,9 @@ fun PacienteDetalleScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                LazyColumn {
-                    items(uiState.sesionesFiltradas, key = { it.id }) { sesion ->
+                Column {
+                    uiState.sesionesFiltradas.forEach { sesion ->
+                        key(sesion.id) {
                         TarjetaSesion(
                             sesion = sesion,
                             ejercicio = uiState.ejerciciosPorId[sesion.ejercicioId],
@@ -160,6 +170,7 @@ fun PacienteDetalleScreen(
                             },
                             onRecomendar = { onRecomendar(viewModel.pacienteId, sesion.id) },
                         )
+                        }
                     }
                 }
             }
@@ -341,9 +352,19 @@ private fun TarjetaSesion(
                 }
             }
             Spacer(modifier = Modifier.width(Spacing.xs))
+            // ERR-FIS-006: mismo criterio que "Resultados" (HU18): una sesión
+            // finalizada antes de tiempo se ve como "Incompleta".
             BadgeEstado(
-                texto = if (sesion.estado == EstadoSesion.COMPLETADA) "Completada" else "Pendiente",
-                tipo = if (sesion.estado == EstadoSesion.COMPLETADA) TipoBadge.EXITO else TipoBadge.ADVERTENCIA,
+                texto = when {
+                    sesion.estaIncompleta -> "Incompleta"
+                    sesion.estado == EstadoSesion.COMPLETADA -> "Completada"
+                    else -> "Pendiente"
+                },
+                tipo = when {
+                    sesion.estaIncompleta -> TipoBadge.ADVERTENCIA
+                    sesion.estado == EstadoSesion.COMPLETADA -> TipoBadge.EXITO
+                    else -> TipoBadge.ADVERTENCIA
+                },
             )
         }
     }

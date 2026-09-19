@@ -21,7 +21,7 @@ import kotlinx.coroutines.tasks.await
 import java.util.UUID
 import javax.inject.Inject
 
-private const val COLECCION_EJERCICIOS = "ejercicios"
+private const val COLECCION_EJERCICIOS = COL_EJERCICIOS
 
 class EjercicioRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -59,22 +59,23 @@ class EjercicioRepositoryImpl @Inject constructor(
             ejercicio.materialUrl
         }
 
+        // Diccionario de datos: angulosReferencia es un mapa articulacion ->
+        // {min, max}; repeticiones es {cantidad, duracionSeg}; videoPath guarda
+        // aquí la URL de descarga (desviación documentada en CLAUDE.md).
         val datos = mapOf(
             "nombre" to ejercicio.nombre,
             "descripcion" to ejercicio.descripcion,
             "categoria" to ejercicio.categoria.aFirestore(),
-            "materialUrl" to materialUrl,
-            "duracionSegundos" to ejercicio.duracionSegundos,
-            "repeticiones" to ejercicio.repeticiones,
-            "patronesReferencia" to ejercicio.patronesReferencia.map {
-                mapOf(
-                    "articulacion" to it.articulacion.aFirestore(),
-                    "anguloMin" to it.anguloMin,
-                    "anguloMax" to it.anguloMax,
-                )
+            "videoPath" to materialUrl,
+            "repeticiones" to mapOf(
+                "cantidad" to ejercicio.repeticiones,
+                "duracionSeg" to ejercicio.duracionSegundos,
+            ),
+            "angulosReferencia" to ejercicio.patronesReferencia.associate {
+                it.articulacion.aFirestore() to mapOf("min" to it.anguloMin, "max" to it.anguloMax)
             },
             "diagnosticosAplicables" to ejercicio.diagnosticosAplicables.map { it.aFirestore() },
-            "creadoPor" to ejercicio.creadoPor,
+            "fisioterapeutaId" to ejercicio.creadoPor,
             "fechaCreacion" to (ejercicio.fechaCreacion ?: FieldValue.serverTimestamp()),
             "activo" to ejercicio.activo,
         )
@@ -112,34 +113,30 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
     // texto libre; ya no es un valor valido del enum y se descartan aqui,
     // igual que el resto de catalogos cerrados del proyecto.
     val categoria = CategoriaEjercicio.desdeFirestoreOrNull(getString("categoria")) ?: return null
-    val patrones = (get("patronesReferencia") as? List<*>)
-        ?.mapNotNull { (it as? Map<*, *>)?.toPatronReferencia() }
-        ?: emptyList()
+    val patrones = (get("angulosReferencia") as? Map<*, *>)?.mapNotNull { (clave, valor) ->
+        val articulacion = Articulacion.desdeFirestoreOrNull(clave as? String) ?: return@mapNotNull null
+        val rango = valor as? Map<*, *> ?: return@mapNotNull null
+        PatronReferencia(
+            articulacion = articulacion,
+            anguloMin = (rango["min"] as? Number)?.toFloat() ?: 0f,
+            anguloMax = (rango["max"] as? Number)?.toFloat() ?: 0f,
+        )
+    } ?: emptyList()
+    val repeticiones = get("repeticiones") as? Map<*, *>
     return Ejercicio(
         id = id,
         nombre = getString("nombre") ?: "",
         descripcion = getString("descripcion") ?: "",
         categoria = categoria,
-        materialUrl = getString("materialUrl") ?: "",
-        duracionSegundos = getLong("duracionSegundos")?.toInt() ?: 30,
-        repeticiones = getLong("repeticiones")?.toInt() ?: 1,
+        materialUrl = getString("videoPath") ?: "",
+        duracionSegundos = (repeticiones?.get("duracionSeg") as? Number)?.toInt() ?: 30,
+        repeticiones = (repeticiones?.get("cantidad") as? Number)?.toInt() ?: 1,
         patronesReferencia = patrones,
         diagnosticosAplicables = (get("diagnosticosAplicables") as? List<*>)
             ?.mapNotNull { TipoDiagnostico.desdeFirestoreOrNull(it as? String) }
             ?: emptyList(),
-        creadoPor = getString("creadoPor") ?: "",
+        creadoPor = getString("fisioterapeutaId") ?: "",
         fechaCreacion = getDate("fechaCreacion"),
         activo = getBoolean("activo") ?: true,
-    )
-}
-
-private fun Map<*, *>.toPatronReferencia(): PatronReferencia? {
-    // Ejercicios creados antes de Sprint 3 pueden tener articulacion como
-    // texto libre; ya no son un valor valido del enum y se descartan aqui.
-    val articulacion = Articulacion.desdeFirestoreOrNull(this["articulacion"] as? String) ?: return null
-    return PatronReferencia(
-        articulacion = articulacion,
-        anguloMin = (this["anguloMin"] as? Number)?.toFloat() ?: 0f,
-        anguloMax = (this["anguloMax"] as? Number)?.toFloat() ?: 0f,
     )
 }

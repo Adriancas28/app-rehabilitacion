@@ -1,7 +1,9 @@
 rules_version = '2';
 
-// RNF06 — Solo material terapéutico (video/imagen de ejercicios) vive en
-// Storage. Nunca se sube video/imagen del monitoreo del paciente (Edge AI).
+// Storage guarda el material terapéutico (video/imagen de ejercicios) y,
+// desde 2026-09-18, el video de cada sesión del paciente para que su
+// fisioterapeuta lo revise y pueda dar una mejor respuesta. El análisis con MediaPipe
+// sigue siendo local (Edge AI); el paciente lo acepta en el consentimiento.
 service firebase.storage {
   match /b/{bucket}/o {
 
@@ -18,7 +20,25 @@ service firebase.storage {
     // fallara siempre y bloqueara el write con 403 para cualquiera.
     match /ejercicios/{ejercicioId}/{archivo} {
       allow read: if estaAutenticado();
-      allow write: if estaAutenticado();
+      // Solo se pueden CREAR archivos nuevos (la app sube cada material con un
+      // nombre único): nadie puede sobrescribir ni borrar material existente.
+      // Limitación conocida: Storage no distingue fisioterapeuta de paciente
+      // sin custom claims, así que cualquier autenticado puede subir uno nuevo.
+      allow create: if estaAutenticado() && request.resource.size < 200 * 1024 * 1024;
+      allow update, delete: if false;
+    }
+
+    // Parte 3 (video de la sesión): el paciente sube el video de SU sesión
+    // (solo en su propia carpeta, solo video, tope de 200 MB); lo lee
+    // cualquier usuario autenticado que tenga la URL (con token de descarga)
+    // -- Storage no puede cruzar a Firestore para comprobar "es su
+    // fisioterapeuta" (ver nota de ejercicios arriba).
+    match /sesiones/{pacienteId}/{archivo} {
+      allow read: if estaAutenticado();
+      allow write: if estaAutenticado() &&
+                      request.auth.uid == pacienteId &&
+                      request.resource.size < 200 * 1024 * 1024 &&
+                      request.resource.contentType.matches('video/.*');
     }
 
     match /{allPaths=**} {

@@ -9,6 +9,13 @@
          no quedar filtrado silenciosamente por Google Play. -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
+    <!-- ERR-PAC-005: visibilidad del motor TextToSpeech (Android 11+) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
     <application
         android:name=".RehabApplication"
         android:allowBackup="false"

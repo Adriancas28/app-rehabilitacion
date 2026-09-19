@@ -31,8 +31,11 @@ historias de usuario y requisitos no funcionales, priorizados por sprint).
 Aplicación móvil con Inteligencia Artificial para análisis postural en el
 monitoreo de ejercicios domiciliarios de rehabilitación musculoesquelética
 (Clínica SANNA). Dos roles: **Paciente** y **Fisioterapeuta**. El análisis de
-postura (MediaPipe Pose) corre **en el dispositivo** (Edge AI): no se procesa
-ni se almacena video en la nube, solo métricas numéricas (ángulos, vectores).
+postura (MediaPipe Pose) corre **en el dispositivo** (Edge AI): el video no
+se procesa en la nube. Se guardan métricas numéricas (ángulos, vectores) y,
+desde 2026-09-18 el video de cada sesión en Firebase Storage, para que el
+fisioterapeuta vea lo que el paciente realiza y pueda dar una mejor respuesta
+— ver la "Enmienda 2026-09-18" en la sección 11.
 
 ## 2. Estructura del repositorio (monorepo)
 
@@ -179,9 +182,10 @@ aquí:
 | `EstadoCargando` / `EstadoVacio` / `EstadoError` | `EstadosPantalla.kt` | Los 3 estados que toda pantalla con datos remotos debe cubrir |
 | `DialogoConfirmacion` | `Dialogos.kt` | Confirmar eliminar/descartar |
 | `rememberSnackbarDeMensaje` | `SnackbarDS.kt` | Reemplaza el `SnackbarHostState`+`LaunchedEffect` repetido a mano en el panel admin |
-| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` (ya existía) | Su `topBar` ya usa `BarraSuperior` (con `onAlternarMenu`) en todas las pantallas que lo consumen (fisio y admin) |
+| NavigationRail lateral | `core/navigation/ScaffoldConBarraLateral.kt` | Su `topBar` ya usa `BarraSuperior` (con `onAlternarMenu`) en todas las pantallas que lo consumen — **fisio, admin y (ampliación acordada, 2026-09-10) también paciente**: `EjerciciosAsignadosScreen`/`HistorialSesionesScreen`/`PerfilPacienteScreen` ahora comparten la misma barra lateral (Ejercicios/Progreso/Perfil) en vez de navegar solo con "Accesos rápidos" sueltos — decisión explícita del usuario para dar consistencia de navegación entre los 3 roles |
+| `TarjetaEjercicio` (rediseño) | `TarjetaEjercicio.kt` | (Ampliación acordada, 2026-09-10) La miniatura ya no es un ícono genérico: si el ejercicio tiene `materialUrl`, se reproduce el video ahí mismo (`ReproductorVideo`); ícono de mancuerna solo si aún no tiene video. Se quitaron las líneas de categoría/repeticiones/duración (esta pantalla es de gestión del catálogo, no de ejecución). El menú "⋮" gana la opción "Ver video" (abre el video a pantalla completa en un `Dialog`) — no se usa tocar la miniatura directamente porque `PlayerView`/ExoPlayer capturaba el toque antes de que llegara a un `clickable` puesto encima |
 | `BotonSelectorFecha` | `SelectorFecha.kt` | Botón que abre un `DatePickerDialog`; resuelve internamente la conversión de zona horaria UTC↔local (antes vivía inline en `AsignarSesionScreen`) |
-| Gráfico de línea (evolución semanal) | *pendiente* | No existe todavía — se construye cuando se aplique a la pantalla de Progreso |
+| `GraficoBarras` / `GraficoLinea` | `Graficos.kt` | (Ampliación acordada, 2026-09-15) Gráficos simples dibujados a mano con `Canvas` — el proyecto no tiene ninguna librería de gráficos (Vico/MPAndroidChart) como dependencia. `GraficoBarras` recibe una lista de porcentajes 0-100 y colorea cada barra verde/ámbar según un umbral (precisión por repetición, HU11-CA07); `GraficoLinea` dibuja una línea con relleno para una serie en orden cronológico (evolución de precisión, HU12) |
 
 Componentes visuales que **ya existen dentro de una pantalla concreta y no
 se han extraído todavía** (se migran cuando se rediseñe esa pantalla, no
@@ -259,6 +263,21 @@ resolver como tarea aparte antes de dar por cerrado el modelo financiero.
 
 ## 5. Modelo de datos (Firestore)
 
+> **ESTRUCTURA VIGENTE (migración 2026-09-18 al diccionario oficial del equipo,
+> `docs/modelo-datos/DICCIONARIO_DE_DATOS_FIRESTORE.docx` + diagramas E-R).**
+> El esquema detallado que sigue más abajo es el histórico anterior; donde
+> difieran, manda esta nota:
+>
+> - `usuarios/{id}`: correo, rol (`paciente`|`fisioterapeuta`|`administrador`), nombre, fechaCreacion, activo.
+> - `pacientes/{id}` (mismo id, herencia): dni, edad, genero, contacto, ladoAfectado, fisioterapeutaId; subcolección `diagnosticos/{x}`: diagnosticoId, fecha.
+> - `fisioterapeutas/{id}`: edad, genero, contacto, especialidad, numeroColegiatura.
+> - `catalogo_diagnosticos/{id}`: nombre, regionCorporal (ids = enum `TipoDiagnostico`).
+> - `ejercicios/{id}`: nombre, descripcion, fisioterapeutaId, categoria ("Movilidad"/"Control motor"), videoPath, angulosReferencia (mapa articulación → {min,max}), repeticiones ({cantidad, duracionSeg}), diagnosticosAplicables, activo, fechaCreacion.
+> - `sesiones/{id}` (colección de NIVEL SUPERIOR, ya no subcolección del paciente): pacienteId, ejercicioId, fisioterapeutaId, fechaAsignacion, fechaEjecucion, estado (`asignada`|`en curso`|`completada`), nota, repeticionesAsignadas, duracionEstimada, porcentajeEjecucion, desviacionPromedio, repeticiones[] ({numero, porcentaje, desviacionAngular, error, articulacion}), repeticionesCompletadas, repeticionesCorrectas; subcolección `observaciones/{id}` (fisioterapeutaId, texto, fecha) = las recomendaciones (HU15/HU16).
+> - **Atributos añadidos por la app (no están en el diccionario):** en `sesiones`: `duracionSegundos`, `anguloMinOverride`, `anguloMaxOverride` (HU03-CA06/CA08), `videoUrl` (enmienda 2026-09-18); en cada elemento de `repeticiones[]`: `errores` (lista con articulacion, tipo, anguloDetectado, anguloEsperado, segundo — HU18-CA05).
+> - **Desviaciones:** `ejercicios.videoPath` guarda la URL de descarga de Storage (no una ruta); los agregados `angulosDetectados`/`erroresDetectados` ya no se guardan (se derivan del detalle por repetición).
+> - Consultas de sesiones por `whereEqualTo("pacienteId"|"fisioterapeutaId")` ordenadas en memoria (sin índices compuestos). Reglas en `backend/firestore.rules`; migración desde el modelo anterior en `backend/seed/_migrar_modelo.js`.
+
 Contrato entre `/backend` (Security Rules) y `/app` (Repository pattern).
 Cualquier cambio de campos se actualiza aquí primero, antes de tocar código.
 
@@ -330,9 +349,28 @@ usuarios/{uid}
                                 ejercicio SOLO para esta sesión puntual —
                                 HU03-CA06, Sprint 3. Si es null, se usa el
                                 valor por defecto de `ejercicios.repeticiones`)
+    - duracionSegundos         (opcional; override de la duración por
+                                repetición SOLO para esta sesión puntual —
+                                HU03-CA06, ampliación 2026-09-10. Si es
+                                null, se usa el valor por defecto de
+                                `ejercicios.duracionSegundos`)
+    - anguloMinOverride, anguloMaxOverride
+                               (opcionales; override del ángulo objetivo
+                                (mín/máx) SOLO para esta sesión/paciente —
+                                HU03-CA08, ampliación 2026-09-16. Aplica
+                                sobre la PRIMERA articulación de
+                                `ejercicios.patronesReferencia`
+                                (simplificación: el catálogo actual define
+                                un solo patrón por ejercicio). Si
+                                cualquiera de los dos es null, se usa el
+                                rango por defecto del ejercicio)
     - resultado: {
         angulosDetectados, desviacionPromedio, porcentajeEjecucion,
-        erroresDetectados: [{ articulacion, tipo, repeticiones }],
+        erroresDetectados: [{ articulacion, tipo, repeticiones }]
+                             (anguloDetectado/anguloEsperado opcionales,
+                              ampliación 2026-09-16 — HU18-CA05: solo se
+                              completan dentro de detallePorRepeticion,
+                              nunca aquí en el agregado de sesión),
         repeticionesCompletadas, repeticionesAsignadas, repeticionesCorrectas
                              (HU11-CA05, Sprint 3: completadas puede ser
                               menor a asignadas si se finalizó antes de
@@ -880,22 +918,81 @@ y priorizados en 5 sprints.
   sin alterar el valor por defecto del ejercicio ni el de otras sesiones
   ya asignadas o futuras. El sistema también muestra la duración total
   estimada de la sesión (repeticiones × duración por repetición) como
-  referencia antes de guardar.
+  referencia antes de guardar. *(Ampliación posterior, 2026-09-10: el
+  mismo criterio de override aplica tambien a la duración por
+  repetición — el sistema precarga el valor por defecto del ejercicio
+  (ej. 10s) pero el fisioterapeuta puede cambiarlo solo para esa sesión
+  puntual (ej. 30s), sin alterar el ejercicio ni otras sesiones. La
+  duración total estimada se recalcula con el valor que el fisio haya
+  puesto, y la propia ejecución de la sesión (HU06) usa ese valor
+  override, no el default del ejercicio, para el cronómetro de cada
+  repetición.)*
 - CA07 *(ampliación acordada, no en la versión original de la tesis)*: Dado
   que el paciente tenga uno o más diagnósticos registrados (HU01-CA06),
   cuando el fisioterapeuta abra el selector de ejercicios para asignar,
   entonces el sistema resalta primero (★) los ejercicios sugeridos para
   esos diagnósticos (según `ejercicios/{id}.diagnosticosAplicables`, sección
   9), sin impedir seleccionar cualquier otro ejercicio del catálogo.
+- CA08 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que esté
+  asignando o editando una sesión, cuando marque "Personalizar ángulo
+  objetivo para este paciente" e ingrese un mínimo/máximo, entonces el
+  sistema guarda ese rango SOLO para esta sesión/paciente (campos
+  `anguloMinOverride`/`anguloMaxOverride` en `Sesion`, sección 5) — el
+  monitoreo (HU07/HU08) usa ese rango en vez del `patronesReferencia` por
+  defecto del ejercicio para la primera articulación medida
+  (simplificación: el catálogo actual define un solo patrón por
+  ejercicio). El campo se precarga con el rango por defecto del ejercicio
+  al seleccionarlo. Si el paciente tiene una nota (HU03-CA05) y hay
+  personalización activa, el paciente ve un aviso antes de iniciar la
+  sesión ("Este video es referencial. Tu fisioterapeuta ha ajustado este
+  ejercicio para tu etapa actual...") en `DetalleEjercicioAsignadoScreen`
+  — no se agregó un campo "nota clínica" nuevo, se reutiliza `notas`.
 
 #### HU04 — Visualizar ejercicios asignados
-**Rol:** Paciente
-**Deseo:** Visualizar los ejercicios terapéuticos asignados
-**Propósito:** Consultar las actividades que debo realizar.
-- CA01: Dado que accede al módulo de ejercicios, entonces el sistema muestra las actividades asignadas.
-- CA02: Dado que existen ejercicios asignados, cuando consulte la información, entonces el sistema muestra el detalle de cada uno.
-- CA03: Dado que desea consultar un ejercicio específico, cuando lo seleccione, entonces el sistema muestra su información.
-- CA04: Dado que no tiene ejercicios asignados, entonces el sistema muestra un mensaje de ausencia.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO VISUALIZAR LOS EJERCICIOS TERAPÉUTICOS ASIGNADOS Y EL DETALLE DE CADA UNO
+
+**Propósito**
+CON EL OBJETIVO DE CONOCER LAS ACTIVIDADES QUE DEBO REALIZAR Y CÓMO EJECUTARLAS
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente acceda al módulo de ejercicios,
+Cuando seleccione "Ejercicios",
+Entonces el sistema muestra las actividades asignadas.
+
+CA02
+Dado que no tenga ejercicios asignados,
+Cuando acceda al módulo de ejercicios,
+Entonces el sistema muestra un mensaje de ausencia.
+
+CA03
+Dado que existan ejercicios asignados,
+Cuando seleccione uno de ellos,
+Entonces el sistema muestra su detalle con el material audiovisual y las instrucciones de ejecución.
+
+CA04
+Dado que consulte el detalle de un ejercicio,
+Cuando visualice la información del ejercicio,
+Entonces el sistema muestra el ángulo objetivo, personalizado por el fisioterapeuta o el predeterminado del ejercicio.
+
+CA05
+Dado que consulte el detalle de un ejercicio,
+Cuando visualice la información del ejercicio,
+Entonces el sistema muestra el número de repeticiones de la sesión.
+
+CA06
+Dado que el fisioterapeuta haya registrado una nota para la sesión,
+Cuando consulte el detalle del ejercicio,
+Entonces el sistema muestra la nota del fisioterapeuta.
+
 
 #### HU05 — Consultar material terapéutico
 **Rol:** Paciente
@@ -1031,28 +1128,125 @@ y priorizados en 5 sprints.
   definir, fuera del alcance de las 19 HU actuales).
 
 #### HU11 — Visualizar resultados y porcentaje de ejecución
-**Rol:** Paciente
-**Deseo:** Visualizar los resultados y el porcentaje de ejecución de mi sesión
-**Propósito:** Conocer mi desempeño referencial en los ejercicios realizados.
-- CA01: Dado que finalice una sesión, entonces el sistema muestra los resultados obtenidos, incluyendo el % de ejecución.
-- CA02: Dado que consulte el detalle, entonces el sistema muestra métricas comprensibles (desviación promedio, % de acierto).
-- CA03: Dado que la sesión incluya más de un ejercicio, entonces el sistema diferencia el resultado por cada uno.
-- CA04: Dado que consulte una sesión anterior, entonces el sistema muestra el mismo detalle de resultados obtenido en su momento.
-- CA05 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que la sesión se haya completado o finalizado antes de tiempo
-  (HU06-CA07), entonces el sistema muestra cuántas repeticiones se
-  llegaron a completar sobre el total asignado (ej. "8/12"), y de esas
-  cuántas no tuvieron ningún error ("Correctas") frente a las que sí
-  ("Errores") — así se distingue una ejecución completa de una parcial.
-- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que consulte el resultado de una sesión, entonces el sistema
-  ofrece acceso directo a "Ver mi progreso" (historial, HU13) y "Volver
-  al inicio" (HU04), sin tener que navegar hacia atrás pantalla por
-  pantalla.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO VISUALIZAR LOS RESULTADOS Y EL PORCENTAJE DE EJECUCIÓN DE MI SESIÓN
+
+**Propósito**
+CON EL OBJETIVO DE CONOCER MI DESEMPEÑO REFERENCIAL EN LOS EJERCICIOS REALIZADOS
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente finalice una sesión,
+Cuando seleccione "Ver resultado",
+Entonces el sistema muestra la pantalla de resultado del ejercicio.
+
+CA02
+Dado que consulte el resultado de una sesión,
+Cuando visualice el resumen,
+Entonces el sistema muestra las repeticiones completadas sobre las asignadas.
+
+CA03
+Dado que consulte el resultado de una sesión,
+Cuando visualice el resumen,
+Entonces el sistema muestra el porcentaje promedio de ejecución.
+
+CA04
+Dado que consulte el resultado de una sesión,
+Cuando visualice el detalle,
+Entonces el sistema lista todas las repeticiones con su porcentaje de ejecución.
+
+CA05
+Dado que una repetición alcance el 75 % de ejecución o más,
+Cuando visualice el detalle,
+Entonces el sistema la destaca en verde.
+
+CA06
+Dado que una repetición no alcance el 75 % de ejecución,
+Cuando visualice el detalle,
+Entonces el sistema la destaca en ámbar.
+
+CA07
+Dado que la sesión se haya finalizado antes de completar las repeticiones asignadas,
+Cuando consulte su resultado,
+Entonces el sistema muestra las repeticiones realmente completadas sobre el total asignado.
+
+CA08
+Dado que consulte el resultado de una sesión,
+Cuando seleccione "Ir a mi progreso",
+Entonces el sistema lo lleva a la pantalla "Mis resultados".
+
+CA09
+Dado que consulte el resultado de una sesión,
+Cuando lea la aclaración del cálculo,
+Entonces el sistema indica que el porcentaje se calcula según las correcciones detectadas por MediaPipe y es referencial.
+
+> **Bug/brecha real encontrada y corregida (2026-09-15):** al completar
+> una sesión, `EjecutarSesionScreen` solo mostraba un mensaje genérico
+> "Sesión completada" + botón "Volver" — el paciente nunca veía el % de
+> ejecución ni nada del resultado ahí mismo (CA01 no se cumplía en la
+> práctica); para verlo tenía que ir manualmente a "Mi progreso" y
+> volver a abrir esa sesión desde el historial. Se agregó
+> `onSesionCompletada(sesionId)` (`EjecutarSesionScreen.kt`) que navega
+> de inmediato a `ResultadoSesionScreen` con `soloLectura=false` en
+> cuanto la sesión termina. La misma pantalla, cuando se abre desde el
+> historial (HU13, siempre `soloLectura=true` por defecto en la ruta),
+> muestra en cambio un aviso "Sesión finalizada — vista de solo lectura"
+> — nueva ruta `Rutas.RESULTADO_SESION` con query param opcional
+> `soloLectura` (`ARG_SOLO_LECTURA`, default `true`).
+>
+> **Segundo bug encontrado y corregido en el mismo cambio (2026-09-15):**
+> el botón "Iniciar sesión" de `EjecutarSesionScreen` (pantalla previa al
+> monitoreo) no respondía al toque en el emulador — confirmado con
+> `uiautomator`: el botón se dibujaba superpuesto (`Box` + `align(BottomCenter)`)
+> encima de `CamaraConDeteccionPose`, cuyo `PreviewView` (AndroidView/CameraX)
+> intercepta el toque antes de que llegue a un `clickable` de Compose dibujado
+> encima — mismo problema ya visto antes con `PlayerView` en `TarjetaEjercicio`
+> (ver el rediseño de esa tarjeta más arriba). Se resolvió reestructurando ese
+> estado a un `Column` con la cámara y el botón en zonas separadas sin
+> superposición (`Box.fillMaxHeight(0.8f)` para la cámara + un `Box` propio
+> debajo para el botón, en vez de `weight(1f)` — con `weight(1f)` la cámara
+> igual reclamaba casi toda la altura y el botón quedaba comprimido a unos
+> pocos píxeles al fondo de la pantalla, fuera del área táctil visible).
+> Confirmado con una ejecución completa end-to-end en el emulador (iniciar →
+> cuenta regresiva → repeticiones → finalizar → "Ver resultado").
 
 ---
 
 ### ÉPICA 04: Gestionar seguimiento terapéutico
+
+> **Rediseño del flujo del paciente (2026-09-19, mockups `paciente_mockups.html`).**
+> Barra lateral del paciente con 4 pestañas (Ejercicios / Resultados /
+> Progreso / Perfil, `BarraLateralPaciente.kt`).
+> - *Detalle del ejercicio* (HU04/HU05, `DetalleEjercicioAsignadoScreen`):
+>   video, "Cómo realizar el ejercicio", tarjetas "Ángulo objetivo" (rango
+>   personalizado de la sesión, HU03-CA08, o el del ejercicio) y
+>   "Repeticiones", y bloque "Nota de tu fisioterapeuta" siempre que la
+>   sesión tenga `notas` (antes solo con ángulo personalizado).
+> - *Resultado al terminar* (HU11, `ResultadoSesionScreen`): "¡Ejercicio
+>   completado!", tarjetas Repeticiones/Promedio, TODAS las repeticiones con
+>   su % (verde >= 75%, ámbar si no) y "Ir a mi progreso" -> "Mis
+>   resultados". Se eliminó el modo "solo lectura" y la ruta con
+>   `soloLectura`.
+> - *Mis resultados* (HU13/HU16, `MisResultadosScreen`): solo la lista de
+>   sesiones realizadas, una tarjeta por sesión (`TarjetaConIcono` con
+>   badge de %). Al tocar una se abre `DetalleResultadoScreen` (ruta
+>   `paciente/resultados/{sesionId}`, otra pantalla): tarjetas
+>   Repeticiones/Promedio, detalle por repetición con toggle lista/gráfico
+>   y la recomendación del fisioterapeuta con su fecha (subcolección
+>   `observaciones` de la sesión; solo aparece lo ya guardado).
+> - *Mi progreso* (HU12, `MiProgresoScreen`): "Sesiones realizadas",
+>   "Promedio general" y gráfico de puntos por sesión. Reemplaza al antiguo
+>   historial (`HistorialSesionesScreen`, filtros y racha eliminados).
+> - Nuevos componentes de Design System: `TarjetaCifra`; `GraficoLinea`
+>   ahora alinea sus puntos con las etiquetas del eje X y dibuja también una
+>   sola sesión.
 
 #### HU12 — Visualizar progreso y evolución terapéutica
 **Rol:** Fisioterapeuta
@@ -1079,6 +1273,16 @@ y priorizados en 5 sprints.
 > — no es parte de esta HU (que es del fisioterapeuta), pero es una
 > mejora razonable sobre HU13 que ya existía, no le hace daño a nadie.
 >
+> **Ampliación posterior (2026-09-15):** ese regalo del paciente ganó su
+> propio gráfico de líneas — "Evolución de precisión" en
+> `HistorialSesionesScreen`, con el `%` de cada sesión completada en
+> orden cronológico (respeta el filtro de período vigente), vía el nuevo
+> componente `GraficoLinea` (`core/designsystem/Graficos.kt`). Desde 2026-09-19 el
+> componente compartido `EvolucionPrecisionPorSesion` (línea + barras de
+> precisión por sesión, `core/designsystem/Graficos.kt`) se usa tanto en
+> "Mi progreso" (paciente) como en el detalle del paciente del
+> fisioterapeuta (`PacienteDetalleScreen`).
+>
 > **Ampliación posterior (corrección, no en la versión original):**
 > "Progreso por ejercicio" — una tarjeta nueva debajo del resumen general
 > que agrupa las sesiones completadas por ejercicio y muestra, para cada
@@ -1094,13 +1298,60 @@ y priorizados en 5 sprints.
 > lógica de HU15 no cambió.
 
 #### HU13 — Consultar historial terapéutico
-**Rol:** Paciente
-**Deseo:** Consultar mi historial terapéutico
-**Propósito:** Visualizar las sesiones terapéuticas realizadas.
-- CA01: Dado que consulte su historial, entonces el sistema muestra las sesiones realizadas.
-- CA02: Dado que seleccione un registro, entonces el sistema muestra el detalle de esa sesión.
-- CA03: Dado que existan múltiples sesiones, entonces el sistema las ordena de la más reciente a la más antigua.
-- CA04: Dado que no haya completado ninguna sesión, entonces el sistema muestra un mensaje de ausencia de registros.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO CONSULTAR MIS RESULTADOS Y MI PROGRESO
+
+**Propósito**
+CON EL OBJETIVO DE VISUALIZAR LAS SESIONES TERAPÉUTICAS REALIZADAS Y MI EVOLUCIÓN
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente haya realizado sesiones,
+Cuando seleccione "Resultados",
+Entonces el sistema muestra las sesiones realizadas.
+
+CA02
+Dado que existan múltiples sesiones,
+Cuando consulte sus resultados,
+Entonces el sistema las ordena de la más reciente a la más antigua.
+
+CA03
+Dado que consulte sus resultados,
+Cuando visualice la lista de sesiones,
+Entonces el sistema muestra cada sesión en una tarjeta con el ejercicio, la fecha y el porcentaje de ejecución.
+
+CA04
+Dado que consulte sus resultados,
+Cuando seleccione una sesión,
+Entonces el sistema abre en otra pantalla el detalle de esa sesión con sus repeticiones y su promedio.
+
+CA05
+Dado que visualice el detalle de una sesión,
+Cuando seleccione "Mostrar gráfico",
+Entonces el sistema muestra el porcentaje de cada repetición en un gráfico de barras.
+
+CA06
+Dado que no haya completado ninguna sesión,
+Cuando consulte sus resultados,
+Entonces el sistema muestra un mensaje de ausencia de registros.
+
+CA07
+Dado que el paciente haya realizado sesiones,
+Cuando seleccione "Progreso",
+Entonces el sistema muestra el número de sesiones realizadas y el promedio general.
+
+CA08
+Dado que consulte su progreso,
+Cuando visualice la evolución,
+Entonces el sistema muestra un gráfico con el porcentaje de precisión de cada sesión según su número.
+
 
 #### HU14 — Monitorear cumplimiento terapéutico
 **Rol:** Fisioterapeuta
@@ -1131,15 +1382,51 @@ y priorizados en 5 sprints.
 - CA02: Dado que complete la información requerida, entonces el sistema almacena la recomendación.
 - CA03: Dado que desee actualizar una recomendación, entonces el sistema guarda los cambios.
 - CA04: Dado que desee eliminar una recomendación, cuando confirme, entonces el sistema la elimina.
+- CA05 *(ampliación acordada, 2026-09-16, Etapa 4)*: Dado que esté viendo
+  el resultado de una sesión (`FisioResultadoSesionScreen`), entonces el
+  sistema ofrece un campo de recomendación embebido ahí mismo (mockup
+  Idea 9) para registrar una nueva sin navegar a otra pantalla — llama al
+  mismo `RecomendacionRepository.crear()` que ya usaba
+  `RegistrarRecomendacionScreen`. Ese campo es solo para CREAR rápido;
+  editar, eliminar o ver el historial completo de recomendaciones de la
+  sesión sigue en `RegistrarRecomendacionScreen` (botón "Ver todas las
+  recomendaciones"), que no se eliminó ni se duplicó.
 
 #### HU16 — Consultar recomendaciones terapéuticas
-**Rol:** Paciente
-**Deseo:** Consultar las recomendaciones terapéuticas registradas
-**Propósito:** Visualizar las observaciones realizadas por el fisioterapeuta.
-- CA01: Dado que el fisioterapeuta registre una recomendación, entonces el sistema la muestra al paciente en su sesión.
-- CA02: Dado que seleccione el detalle de una sesión, entonces el sistema visualiza las recomendaciones registradas.
-- CA03: Dado que se registren nuevas recomendaciones, entonces el sistema actualiza la información mostrada.
-- CA04: Dado que no existan recomendaciones para una sesión, entonces el sistema indica que no hay disponibles.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO CONSULTAR LAS RECOMENDACIONES TERAPÉUTICAS REGISTRADAS
+
+**Propósito**
+CON EL OBJETIVO DE VISUALIZAR LAS OBSERVACIONES REALIZADAS POR EL FISIOTERAPEUTA
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el fisioterapeuta haya registrado una recomendación para una sesión,
+Cuando el paciente seleccione esa sesión en "Resultados",
+Entonces el sistema muestra la recomendación con su fecha.
+
+CA02
+Dado que existan varias recomendaciones para una sesión,
+Cuando el paciente consulte el detalle de la sesión,
+Entonces el sistema las muestra todas.
+
+CA03
+Dado que el fisioterapeuta registre una nueva recomendación,
+Cuando el paciente consulte la sesión,
+Entonces el sistema muestra la información actualizada.
+
+CA04
+Dado que no existan recomendaciones para una sesión,
+Cuando el paciente consulte su detalle,
+Entonces el sistema indica que no hay recomendaciones disponibles.
+
 
 ---
 
@@ -1150,32 +1437,68 @@ y priorizados en 5 sprints.
 **Deseo:** Almacenar la información generada durante las sesiones terapéuticas
 **Propósito:** Mantener registrados los resultados de forma segura y respetando la privacidad del paciente.
 - CA01: Dado que finalice una sesión, entonces el sistema almacena resultados, métricas y fecha.
-- CA02: Dado que procese el movimiento corporal, entonces **únicamente almacena datos numéricos** (ángulos, métricas) — **nunca video o imágenes**.
+- CA02: Dado que procese el movimiento corporal, entonces almacena datos numéricos (ángulos, métricas). *(Enmienda 2026-09-18: antes decía "nunca video o imágenes". Ahora, además, se guarda el video de la sesión — sin audio, calidad SD — en Firebase Storage (`sesiones/{pacienteId}/{sesionId}.mp4`) con su URL en `Sesion.videoUrl`, para que el fisioterapeuta lo revise y pueda dar una mejor respuesta. El análisis con MediaPipe sigue siendo local. Ver sección 11.)*
 - CA03: Dado que se registre una nueva sesión, entonces el sistema actualiza los datos del paciente sin sobrescribir sesiones anteriores.
 
 #### HU18 — Gestionar sesiones y resultados terapéuticos registrados
-**Rol:** Fisioterapeuta
-**Deseo:** Gestionar las sesiones y resultados terapéuticos registrados
-**Propósito:** Consultar y administrar la información asociada a sesiones y resultados obtenidos.
-- CA01: Dado que consulte sesiones y resultados registrados, entonces el sistema muestra la información correspondiente.
-- CA02: Dado que acceda al detalle, entonces el sistema visualiza los resultados asociados a cada sesión.
-- CA03: Dado que aplique un filtro por fecha o tipo de ejercicio, entonces el sistema muestra solo las sesiones que cumplen el criterio.
-- CA04 *(ampliación acordada, construida en Sprint 4 junto con la versión
-  mínima de CA02 — ver nota de dependencia con HU15 más abajo; redacción
-  actualizada tras la revisión del modelo de datos: reemplaza el booleano
-  original "dentro de rango" por el porcentaje de ejecución calculado)*:
-  Dado que acceda al detalle de una sesión completada, entonces el sistema
-  desglosa el resultado **por repetición** (no solo agregado): para cada
-  una muestra el **porcentaje de ejecución obtenido** (calculado
-  automáticamente por la IA) y, cuando hubo desviación, qué tipo de error
-  se detectó y en qué articulación (ej. "Repetición 5: 78%, hombro
-  derecho, rango incompleto"). Esto es más granular que
-  `erroresDetectados` (HU08-CA04), que hoy agrupa por tipo de error con un
-  conteo total, sin registrar en qué repetición ocurrió cada uno —
-  requiere una estructura nueva (`detallePorRepeticion`, ver sección 5)
-  para poder mostrarlo así. Es la base con la que el fisioterapeuta decide
-  qué recomendación registrar
-  (HU15).
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO FISIOTERAPEUTA
+
+**Deseo**
+QUIERO GESTIONAR LAS SESIONES Y RESULTADOS TERAPÉUTICOS REGISTRADOS
+
+**Propósito**
+CON EL OBJETIVO DE CONSULTAR LA INFORMACIÓN ASOCIADA A LAS SESIONES Y RESULTADOS OBTENIDOS POR CADA PACIENTE
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el fisioterapeuta acceda al sistema,
+Cuando seleccione "Resultados",
+Entonces el sistema muestra la lista de sus pacientes asignados.
+
+CA02
+Dado que consulte la lista de pacientes,
+Cuando seleccione un paciente,
+Entonces el sistema muestra todas sus sesiones con su estado: completada, incompleta o por hacer.
+
+CA03
+Dado que consulte las sesiones de un paciente,
+Cuando aplique un filtro por período,
+Entonces el sistema muestra solo las sesiones que cumplen el criterio.
+
+CA04
+Dado que consulte las sesiones de un paciente,
+Cuando aplique un filtro por ejercicio,
+Entonces el sistema muestra solo las sesiones de ese ejercicio.
+
+CA05
+Dado que consulte las sesiones de un paciente,
+Cuando seleccione una sesión,
+Entonces el sistema muestra las repeticiones completas y el promedio de ejecución.
+
+CA06
+Dado que acceda al detalle de una sesión,
+Cuando visualice el detalle por repetición,
+Entonces el sistema muestra el porcentaje de ejecución de cada repetición en lista o en gráfico.
+
+CA07
+Dado que una repetición tenga un error,
+Cuando visualice el detalle por repetición,
+Entonces el sistema muestra el segundo del error, la articulación, el ángulo detectado y el esperado.
+
+CA08
+Dado que existan más repeticiones que las mostradas,
+Cuando seleccione "Ver más repeticiones",
+Entonces el sistema muestra el listado completo de repeticiones.
+
+CA09
+Dado que el paciente haya grabado la sesión,
+Cuando seleccione "Ver video de la sesión",
+Entonces el sistema reproduce la grabación del ejercicio realizado.
 
 > **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
 > recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de
@@ -1199,6 +1522,15 @@ y priorizados en 5 sprints.
 > hubo que desplegarlo). Filtro por ejercicio (dropdown) y por período
 > (Todos/Última semana/Último mes) — CA03 pide "fecha o tipo de
 > ejercicio", se cubre con ambos.
+>
+> **Bug real encontrado y corregido (2026-09-10):** el filtro de período
+> comparaba contra `fechaAsignacion` en vez de `fechaEjecucion` —
+> sesiones asignadas hace tiempo pero completadas recientemente quedaban
+> excluidas de "Última semana"/"Último mes" aunque sí correspondían. Y el
+> dropdown de ejercicio no incluía "Todos los ejercicios" como opción
+> seleccionable, así que una vez elegido un ejercicio específico no había
+> forma de volver a quitar ese filtro desde la UI (quedaba "atascado").
+> Corregido en `ResultadosViewModel.kt`/`ResultadosScreen.kt`.
 
 #### HU19 — Sincronizar información terapéutica
 **Rol:** Sistema
@@ -1306,6 +1638,23 @@ antes solo era posible mediante el script `crear-usuario.ts`.)*
   asignadas, recomendaciones) se conservan. El administrador puede
   revertirlo seleccionando "Activar". Convive con "Eliminar" (CA04), no
   la reemplaza.
+
+> **Etapa 2A — Dashboard del Admin (ampliación acordada, 2026-09-16, no
+> es una HU del backlog original, es refinamiento técnico sobre esta
+> Épica 07; rediseñado el 2026-09-18).** Pestaña "Dashboard" en la barra
+> lateral del administrador (`AdminDashboardScreen.kt`, primera pestaña).
+> Muestra la lista de pacientes (mismo estilo que "Pacientes"); al
+> seleccionar uno abre `AdminPacienteDashboardScreen`: tarjetas "Sesiones
+> ejecutadas" y "Precisión prom." (promedio de los `porcentajeEjecucion`
+> de sus sesiones completadas) y "Detalle por sesión" en lista (ejercicio,
+> fecha, % correctas, % completado) o, con "Mostrar gráfico", tendencia de
+> precisión (línea, eje X = número de sesión, eje Y = %) y % completado por
+> sesión (barras). Todo sale de las sesiones reales del paciente en
+> Firestore (`sesiones`, filtradas por `pacienteId`); las sesiones aún por
+> hacer no entran en el promedio. Reutiliza `AdminRepository`/
+> `SesionRepository` y requiere que el administrador pueda leer `sesiones`
+> (`esAdmin()` en `firestore.rules`). Reemplaza al dashboard global de
+> estadísticas (adherencia por fisioterapeuta) de la primera versión.
 
 *(Ampliación acordada — HU22/HU23: hasta ahora esta épica solo cubría al
 Administrador gestionando cuentas ajenas; se extiende con el mismo
@@ -1436,12 +1785,28 @@ Entonces no la encuentra — "Perfil" es la única pantalla desde la que el fisi
 > (`Rutas.PERFIL_PACIENTE`/`PERFIL_FISIOTERAPEUTA`) — una por rol, ya que
 > cada pantalla de Perfil recibe parámetros de navegación distintos
 > (el fisioterapeuta la ve como una pestaña más de su barra lateral; el
-> paciente, como pantalla de detalle con botón atrás). El ícono de
+> paciente, como pantalla de detalle -- ver ampliación posterior abajo).
+> El ícono de
 > cerrar sesión se retiró de `PacientesListScreen` (HU01) y
 > `EjerciciosAsignadosScreen` (HU04); el administrador conserva su
 > logout, ahora como opción "Cerrar sesión" dentro de la barra de
 > navegación lateral (`AdminPacientesScreen`/`AdminFisioterapeutasScreen`),
 > con el mismo `DialogoConfirmacion` antes de cerrar sesión.
+>
+> **Ampliacion posterior (2026-09-10):** el paciente ahora tambien ve
+> Perfil como una pestana mas de su propia barra lateral (Ejercicios/
+> Progreso/Perfil), igual que fisio/admin -- antes era una pantalla de
+> detalle con solo boton atras, sin barra persistente. Ver la nota de
+> `ScaffoldConBarraLateral` en la seccion 3 (Design System).
+>
+> **Bug real encontrado y corregido (2026-09-10):** al navegar a Perfil,
+> la app crasheaba con `PERMISSION_DENIED` -- las Firestore Security
+> Rules no dejaban a un paciente leer el documento de su propio
+> fisioterapeuta asignado (necesario para mostrar "Fisioterapeuta
+> asignado" en su perfil, HU22-CA01). Se agrego la funcion
+> `esPacienteDe(fisioUid)` en `firestore.rules` (compara
+> `fisioterapeutaId` del documento del solicitante) y se desplego a
+> produccion.
 
 ---
 
@@ -1504,7 +1869,7 @@ El sistema debe garantizar consistencia del monitoreo corporal ante condiciones 
 #### RNF06 — Privacidad y procesamiento local de datos biométricos (Edge AI)
 El sistema debe garantizar el procesamiento local de la información biométrica capturada por la cámara, para proteger la privacidad del paciente y cumplir la Ley N.° 29733.
 - CA01: El procesamiento del video debe realizarse localmente en el dispositivo, sin enviarlo a servidores externos.
-- CA02: Solo se deben almacenar/sincronizar datos numéricos (vectores, ángulos, métricas) — nunca imágenes ni video.
+- CA02: Se almacenan/sincronizan datos numéricos (vectores, ángulos, métricas) y, por la enmienda del 2026-09-18 (sección 11), el video de la sesión para revisión del fisioterapeuta; nunca imágenes sueltas.
 - CA03: La app debe solicitar únicamente los permisos estrictamente necesarios (cámara y, cuando corresponda, internet).
 - CA04: En el primer uso, el sistema debe presentar el consentimiento informado sobre el tratamiento de datos personales.
 
@@ -1578,8 +1943,21 @@ El sistema debe garantizar el procesamiento local de la información biométrica
 
 ## 11. Reglas del proyecto (no negociables)
 
-1. Todo procesamiento de cámara/video es **local al dispositivo**; nunca se
-   sube video ni imágenes a Firebase — solo datos numéricos (RNF06).
+1. Todo **procesamiento** de cámara/video es **local al dispositivo** (Edge
+   AI, MediaPipe). Enmienda 2026-09-18 (antes
+   la regla prohibía subir cualquier video): el video de cada sesión SÍ se
+   graba (sin audio, SD) y se sube a Firebase Storage
+   (`sesiones/{pacienteId}/{sesionId}.mp4`, URL en `Sesion.videoUrl`) para
+   que el fisioterapeuta lo vea y pueda dar una mejor respuesta (botón "Ver video de la sesión" en
+   `FisioResultadoSesionScreen`). Como consecuencia: el consentimiento
+   informado (`ConsentimientoScreen`) lo informa explícitamente y su clave
+   pasó a `aceptado_v2`, así que todos los usuarios lo vuelven a aceptar; las
+   Storage Rules permiten al paciente escribir solo en su carpeta. Si una
+   sesión se abandona con "Salir", el video se descarta. Limitaciones
+   conocidas: al reanudar una sesión (HU06-CA09) el video del tramo nuevo
+   reemplaza al anterior; cualquier usuario autenticado con la URL puede leer
+   el video (Storage no puede cruzar a Firestore para validar al
+   fisioterapeuta asignado).
 2. El control de acceso por rol se implementa con **Firestore Security
    Rules**, no con un backend propio (se evaluó y se descartó Cloud
    Functions por falta de un caso de uso real).

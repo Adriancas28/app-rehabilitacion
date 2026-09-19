@@ -11,6 +11,7 @@ object Rutas {
     // HU18-CA01/CA03 (Sprint 5) — vista agregada de sesiones/resultados de
     // todos los pacientes del fisioterapeuta, con filtros.
     const val RESULTADOS = "fisioterapeuta/resultados"
+    const val RESULTADOS_PACIENTE = "fisioterapeuta/resultados/{pacienteId}"
 
     const val EJERCICIOS = "fisioterapeuta/ejercicios"
     const val EJERCICIO_FORMULARIO = "fisioterapeuta/ejercicios/formulario?ejercicioId={ejercicioId}"
@@ -30,8 +31,13 @@ object Rutas {
     const val INICIO_PACIENTE = "paciente/inicio"
     const val DETALLE_EJERCICIO_ASIGNADO = "paciente/ejercicios/{sesionId}"
     const val EJECUTAR_SESION = "paciente/ejercicios/{sesionId}/ejecutar"
-    const val HISTORIAL_SESIONES = "paciente/historial"
-    const val RESULTADO_SESION = "paciente/historial/{sesionId}"
+    // Pestañas del paciente: "Mis resultados" (historial + detalle) y "Mi progreso".
+    const val MIS_RESULTADOS = "paciente/resultados"
+    const val PROGRESO_PACIENTE = "paciente/progreso"
+    // Detalle de una sesión realizada, abierto desde "Mis resultados".
+    const val DETALLE_RESULTADO = "paciente/resultados/{sesionId}"
+    // Resultado que ve el paciente justo al terminar una sesión.
+    const val RESULTADO_SESION = "paciente/resultado/{sesionId}"
 
     // HU22/HU23 — Perfil de cuenta propia; "Cerrar sesión" vive únicamente
     // aquí (una ruta por rol porque cada pantalla de Perfil recibe
@@ -41,11 +47,22 @@ object Rutas {
     const val PERFIL_PACIENTE = "paciente/perfil"
     const val PERFIL_FISIOTERAPEUTA = "fisioterapeuta/perfil"
 
+    // Etapa 2A (dashboard Admin, ampliación acordada) — estadísticas
+    // agregadas de pacientes/fisioterapeutas/sesiones.
+    const val ADMIN_DASHBOARD = "admin/dashboard"
+    const val ADMIN_DASHBOARD_PACIENTE = "admin/dashboard/{pacienteId}?nombre={nombre}"
+    const val ARG_ADMIN_PACIENTE_ID = "pacienteId"
+    const val ARG_ADMIN_PACIENTE_NOMBRE = "nombre"
     const val ADMIN_PACIENTES = "admin/pacientes"
     const val ADMIN_PACIENTE_FORMULARIO = "admin/pacientes/formulario?usuarioId={usuarioId}"
     const val ADMIN_FISIOTERAPEUTAS = "admin/fisioterapeutas"
     const val ADMIN_FISIOTERAPEUTA_FORMULARIO = "admin/fisioterapeutas/formulario?usuarioId={usuarioId}"
     const val ARG_ADMIN_USUARIO_ID = "usuarioId"
+
+    fun adminDashboardPaciente(pacienteId: String, nombre: String): String =
+        "admin/dashboard/$pacienteId?nombre=${java.net.URLEncoder.encode(nombre, "UTF-8")}"
+
+    fun resultadosPaciente(pacienteId: String): String = "fisioterapeuta/resultados/$pacienteId"
 
     fun pacienteDetalle(pacienteId: String): String = "fisioterapeuta/pacientes/$pacienteId"
 
@@ -66,7 +83,9 @@ object Rutas {
 
     fun ejecutarSesion(sesionId: String): String = "paciente/ejercicios/$sesionId/ejecutar"
 
-    fun resultadoSesion(sesionId: String): String = "paciente/historial/$sesionId"
+    fun resultadoSesion(sesionId: String): String = "paciente/resultado/$sesionId"
+
+    fun detalleResultado(sesionId: String): String = "paciente/resultados/$sesionId"
 
     fun adminPacienteFormulario(usuarioId: String? = null): String =
         "admin/pacientes/formulario" + if (usuarioId != null) "?usuarioId=$usuarioId" else ""

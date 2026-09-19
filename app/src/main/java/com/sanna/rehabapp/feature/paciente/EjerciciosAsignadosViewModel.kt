@@ -27,6 +27,9 @@ data class EjercicioAsignado(
     val ejercicio: Ejercicio,
     val fechaAsignacion: Date?,
     val repeticiones: Int,
+    // HU03-CA06 (ampliacion): duracion por repeticion, con el override de
+    // la sesion ya resuelto (igual criterio que "repeticiones").
+    val duracionSegundos: Int,
 )
 
 // HU06-CA09 — una sesión que se finalizó antes de tiempo (no completó
@@ -91,6 +94,7 @@ class EjerciciosAsignadosViewModel @Inject constructor(
                                 ejercicio = ejercicio,
                                 fechaAsignacion = sesion.fechaAsignacion,
                                 repeticiones = sesion.repeticiones ?: ejercicio.repeticiones,
+                                duracionSegundos = sesion.duracionSegundos ?: ejercicio.duracionSegundos,
                             )
                         }
                     }

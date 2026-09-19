@@ -28,6 +28,7 @@ class RaizViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val usuarioRepository: UsuarioRepository,
     private val consentimientoLocalStore: ConsentimientoLocalStore,
+    private val avisoLogin: AvisoLogin,
 ) : ViewModel() {
 
     private val _destino = MutableStateFlow<DestinoInicial>(DestinoInicial.Cargando)
@@ -46,6 +47,10 @@ class RaizViewModel @Inject constructor(
             }
             val usuario = usuarioRepository.obtenerUsuario(uid)
             if (usuario == null || !usuario.activo) {
+                // ERR-ADM-009: explicar por qué se vuelve al login.
+                if (usuario != null) {
+                    avisoLogin.publicar("Tu cuenta está desactivada. Contacta al administrador.")
+                }
                 authRepository.logout()
                 _destino.value = DestinoInicial.Login
                 return@launch

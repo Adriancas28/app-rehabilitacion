@@ -1,7 +1,12 @@
 package com.sanna.rehabapp.feature.sesiones
 
 import android.Manifest
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,7 +53,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import java.io.File
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
@@ -69,9 +80,19 @@ import com.sanna.rehabapp.core.tts.rememberLectorInstrucciones
 private const val SEGUNDOS_PREPARACION_INICIAL = 10
 private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 
+private fun Context.buscarActividad(): android.app.Activity? {
+    var actual: Context? = this
+    while (actual is ContextWrapper) {
+        if (actual is android.app.Activity) return actual
+        actual = actual.baseContext
+    }
+    return null
+}
+
 @Composable
 fun EjecutarSesionScreen(
     onVolver: () -> Unit,
+    onSesionCompletada: (sesionId: String) -> Unit,
     viewModel: EjecutarSesionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -84,9 +105,31 @@ fun EjecutarSesionScreen(
                 PackageManager.PERMISSION_GRANTED,
         )
     }
+    // ERR-PAC-006: tras denegar de forma permanente, el sistema ya no muestra
+    // el diálogo; "Conceder permiso" debe llevar a los Ajustes de la app.
+    var permisoDenegadoPermanente by remember { mutableStateOf(false) }
     val solicitarPermiso = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-    ) { concedido -> permisoConcedido = concedido }
+    ) { concedido ->
+        permisoConcedido = concedido
+        if (!concedido) {
+            val actividad = contexto.buscarActividad()
+            permisoDenegadoPermanente = actividad != null &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(actividad, Manifest.permission.CAMERA)
+        }
+    }
+    // Al volver de Ajustes se vuelve a comprobar el permiso.
+    val duenoCicloVida = LocalLifecycleOwner.current
+    DisposableEffect(duenoCicloVida) {
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME) {
+                permisoConcedido = ContextCompat.checkSelfPermission(contexto, Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+            }
+        }
+        duenoCicloVida.lifecycle.addObserver(observador)
+        onDispose { duenoCicloVida.lifecycle.removeObserver(observador) }
+    }
 
     LaunchedEffect(Unit) {
         if (!permisoConcedido) solicitarPermiso.launch(Manifest.permission.CAMERA)
@@ -151,8 +194,17 @@ fun EjecutarSesionScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(
-                        texto = "Conceder permiso",
-                        onClick = { solicitarPermiso.launch(Manifest.permission.CAMERA) },
+                        texto = if (permisoDenegadoPermanente) "Abrir ajustes" else "Conceder permiso",
+                        onClick = {
+                            if (permisoDenegadoPermanente) {
+                                contexto.startActivity(
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        .setData(Uri.fromParts("package", contexto.packageName, null)),
+                                )
+                            } else {
+                                solicitarPermiso.launch(Manifest.permission.CAMERA)
+                            }
+                        },
                         modifier = Modifier.width(220.dp),
                     )
                 }
@@ -160,24 +212,50 @@ fun EjecutarSesionScreen(
                 uiState.sesionCompletada -> EstadoCentrado {
                     MensajeConIcono(Icons.Rounded.CheckCircle, "Sesión completada")
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
-                    BotonPrimario(texto = "Volver", onClick = onVolver, modifier = Modifier.width(200.dp))
+                    BotonPrimario(
+                        texto = "Ver resultado",
+                        onClick = { onSesionCompletada(viewModel.sesionId) },
+                        modifier = Modifier.width(200.dp),
+                    )
                 }
 
-                !uiState.sesionIniciada -> Box(modifier = Modifier.fillMaxSize()) {
-                    CamaraConDeteccionPose(
-                        modifier = Modifier.fillMaxSize(),
-                        onResultado = viewModel::procesarResultadoPose,
-                        onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
-                    )
-                    BotonPrimario(
-                        texto = "Iniciar sesión",
-                        onClick = viewModel::iniciarSesion,
-                        icono = Icons.Rounded.PlayArrow,
+                // El botón NO va superpuesto sobre la cámara: PreviewView
+                // (AndroidView/CameraX) intercepta el toque antes de que
+                // llegue a un clickable de Compose dibujado encima -- mismo
+                // problema ya visto con PlayerView en TarjetaEjercicio. Se
+                // resuelve igual que el estado "en curso" de abajo: cámara y
+                // botón en zonas separadas, sin superposición.
+                !uiState.sesionIniciada -> Column(modifier = Modifier.fillMaxSize()) {
+                    // Altura fija por fracción (no weight()): con weight(1f)
+                    // la cámara reclamaba casi toda la altura disponible y el
+                    // botón quedaba comprimido a unos pocos píxeles al fondo
+                    // de la pantalla, fuera del área visible/táctil real.
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 32.dp)
-                            .width(220.dp),
-                    )
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.8f),
+                    ) {
+                        CamaraConDeteccionPose(
+                            modifier = Modifier.fillMaxSize(),
+                            onResultado = viewModel::procesarResultadoPose,
+                            onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(Spacing.md),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BotonPrimario(
+                            texto = "Iniciar sesión",
+                            onClick = viewModel::iniciarSesion,
+                            icono = Icons.Rounded.PlayArrow,
+                            modifier = Modifier.width(220.dp),
+                        )
+                    }
                 }
 
                 // Fiel al mockup original (HU06): video + instrucciones lado a
@@ -200,6 +278,10 @@ fun EjecutarSesionScreen(
                                 modifier = Modifier.fillMaxSize(),
                                 onResultado = viewModel::procesarResultadoPose,
                                 onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                                archivoVideo = remember(viewModel.sesionId) {
+                                    File(contexto.cacheDir, "sesion_${viewModel.sesionId}.mp4")
+                                },
+                                onVideoGrabado = viewModel::onVideoGrabado,
                             )
                             BadgeEstado(
                                 texto = "Cámara en vivo",
@@ -242,7 +324,7 @@ fun EjecutarSesionScreen(
                         repeticionActual = uiState.repeticionActual,
                         totalRepeticiones = uiState.totalRepeticiones,
                         segundosRestantes = uiState.segundosRestantes,
-                        duracionRepeticionSegundos = uiState.ejercicio?.duracionSegundos ?: 1,
+                        duracionRepeticionSegundos = uiState.duracionRepeticionSegundos,
                         enDescanso = uiState.enDescanso,
                         segundosDescanso = uiState.segundosDescanso,
                         onFinalizar = viewModel::finalizarAntesDeTiempo,

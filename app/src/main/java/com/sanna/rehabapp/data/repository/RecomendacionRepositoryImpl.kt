@@ -13,20 +13,17 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-private const val COLECCION_USUARIOS = "usuarios"
-private const val SUBCOLECCION_SESIONES = "sesiones"
-private const val SUBCOLECCION_RECOMENDACIONES = "recomendaciones"
-
 class RecomendacionRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore,
 ) : RecomendacionRepository {
 
-    private fun coleccion(pacienteId: String, sesionId: String) = firestore
-        .collection(COLECCION_USUARIOS)
-        .document(pacienteId)
-        .collection(SUBCOLECCION_SESIONES)
+    // Diccionario de datos: las recomendaciones del fisioterapeuta son
+    // "observaciones" de una sesión de nivel superior: sesiones/{id}/observaciones.
+    // (pacienteId ya no forma parte de la ruta; se conserva en la interfaz.)
+    private fun coleccion(@Suppress("UNUSED_PARAMETER") pacienteId: String, sesionId: String) = firestore
+        .collection(COL_SESIONES)
         .document(sesionId)
-        .collection(SUBCOLECCION_RECOMENDACIONES)
+        .collection(COL_OBSERVACIONES)
 
     override fun observarDe(pacienteId: String, sesionId: String): Flow<List<Recomendacion>> = callbackFlow {
         val registro = coleccion(pacienteId, sesionId)

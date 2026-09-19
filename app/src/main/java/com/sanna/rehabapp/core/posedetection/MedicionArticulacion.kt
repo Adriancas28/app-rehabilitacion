@@ -50,6 +50,9 @@ fun construirResultadoSesion(
     repeticionesCompletadas: Int,
     repeticionesAsignadas: Int,
     numeroRepeticionInicial: Int = 1,
+    // Segundo (desde el inicio de su repetición) en que se midió cada frame;
+    // paralelo a medicionesPorRepeticion. Null si no se registró.
+    segundosPorFrame: List<List<Int>>? = null,
 ): ResultadoSesion {
     val medicionesPorFrame = medicionesPorRepeticion.flatten()
     val todasLasMediciones = medicionesPorFrame.flatten()
@@ -99,12 +102,30 @@ fun construirResultadoSesion(
     // sesión (framesDentroDeRango / totalFrames), pero acotado a los
     // frames de esta repetición puntual — no un simple sí/no.
     val detallePorRepeticion = medicionesPorRepeticion.mapIndexed { indice, frames ->
-        val medicionesRepeticion = frames.flatten()
-        val erroresRepeticion = medicionesRepeticion
-            .filterNot { it.dentroDeRango }
-            .groupBy { it.articulacion to it.tipoDeError }
-            .map { (clave, mediciones) ->
-                ErrorDetectado(articulacion = clave.first.etiqueta, tipo = clave.second, repeticiones = mediciones.size)
+        // Un error por (articulación, tipo) en esta repetición, descrito por su
+        // peor instante: el segundo y el ángulo medidos ahí, contra el límite
+        // del rango que se incumplió (ej. "Segundo 15 — 120° (esperado 90°)").
+        val erroresRepeticion = frames
+            .flatMapIndexed { i, frame ->
+                frame.filterNot { it.dentroDeRango }.map { medicion ->
+                    medicion to segundosPorFrame?.getOrNull(indice)?.getOrNull(i)
+                }
+            }
+            .groupBy { (medicion, _) -> medicion.articulacion to medicion.tipoDeError }
+            .map { (clave, pares) ->
+                val (peor, segundo) = pares.maxBy { (medicion, _) -> medicion.desviacion }
+                ErrorDetectado(
+                    articulacion = clave.first.etiqueta,
+                    tipo = clave.second,
+                    repeticiones = pares.size,
+                    anguloDetectado = peor.angulo,
+                    anguloEsperado = when {
+                        peor.motivoErrorForzado != null -> (peor.anguloMin + peor.anguloMax) / 2f
+                        peor.angulo < peor.anguloMin -> peor.anguloMin
+                        else -> peor.anguloMax
+                    },
+                    segundo = segundo,
+                )
             }
         val framesRepeticionDentroDeRango = frames.count { frame -> frame.isNotEmpty() && frame.all { it.dentroDeRango } }
         val porcentajeRepeticion = if (frames.isNotEmpty()) {

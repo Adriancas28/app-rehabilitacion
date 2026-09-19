@@ -70,6 +70,7 @@ fun RegistrarRecomendacionScreen(
                     valor = uiState.texto,
                     onValorCambiado = viewModel::onTextoCambiado,
                     etiqueta = "Recomendación",
+                    maxCaracteres = LIMITE_RECOMENDACION,
                     soloUnaLinea = false,
                     lineasMinimas = 3,
                 )
@@ -144,7 +145,11 @@ private fun TarjetaRecomendacion(recomendacion: Recomendacion, onEditar: () -> U
     TarjetaBase(modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = recomendacion.texto, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = recomendacion.texto,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 recomendacion.fecha?.let { fecha ->
                     Spacer(modifier = Modifier.height(Spacing.xs))
                     Text(

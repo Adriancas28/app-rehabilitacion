@@ -5,13 +5,13 @@ enum class EstadoSesion {
     COMPLETADA;
 
     fun aFirestore(): String = when (this) {
-        PENDIENTE -> "pendiente"
+        PENDIENTE -> "asignada"
         COMPLETADA -> "completada"
     }
 
     companion object {
         fun desdeFirestore(valor: String?): EstadoSesion = when (valor) {
-            "pendiente" -> PENDIENTE
+            "asignada", "en curso", "pendiente" -> PENDIENTE
             "completada" -> COMPLETADA
             else -> throw IllegalArgumentException("Estado desconocido: $valor")
         }

@@ -1,7 +1,9 @@
 rules_version = '2';
 
 // RNF02 — Seguridad de acceso a la información terapéutica.
-// Roles: "paciente" | "fisioterapeuta" | "admin", definidos en usuarios/{uid}.rol
+// Modelo de datos: DICCIONARIO_DE_DATOS_FIRESTORE (docs/modelo-datos).
+// Roles: "paciente" | "fisioterapeuta" | "administrador", definidos en usuarios/{uid}.rol
+// pacientes/{uid} y fisioterapeutas/{uid} comparten el id de usuarios/{uid} (herencia).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -22,45 +24,118 @@ service cloud.firestore {
     }
 
     // HU20/HU21 — el administrador gestiona cuentas de pacientes y
-    // fisioterapeutas (crear/editar/eliminar su documento en Firestore,
-    // asignar fisioterapeutaId).
+    // fisioterapeutas.
     function esAdmin() {
-      return estaAutenticado() && rolDe(request.auth.uid) == 'admin';
+      return estaAutenticado() && rolDe(request.auth.uid) == 'administrador';
     }
 
-    // usuarios/{uid}
+    // HU22-CA01: el paciente debe poder ver a su propio fisioterapeuta
+    // asignado (nombre y datos) en su Perfil.
+    function esPacienteDe(fisioUid) {
+      return estaAutenticado() &&
+             get(/databases/$(database)/documents/pacientes/$(request.auth.uid)).data.fisioterapeutaId == fisioUid;
+    }
+
+    // Devuelve true si la escritura solo toca los campos indicados (los demás
+    // deben quedar idénticos): evita que el dueño de un documento cambie campos
+    // que no le corresponden (rol, activo, fisioterapeutaId, etc.).
+    function soloCambia(campos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
+    }
+
+    // El fisioterapeuta asignado al paciente {pacienteId}.
+    function esFisioDe(pacienteId) {
+      return esFisioterapeuta() &&
+             get(/databases/$(database)/documents/pacientes/$(pacienteId)).data.fisioterapeutaId == request.auth.uid;
+    }
+
+    // usuarios/{uid} — cuenta: correo, rol, nombre, fechaCreacion, activo
     match /usuarios/{uid} {
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
+      // Las cuentas las crea/elimina solo el administrador (la app crea el
+      // documento con la sesión del admin). El dueño solo puede cambiar su
+      // nombre: no puede tocar `rol` ni `activo` (escalada de privilegios).
+      allow create, delete: if esAdmin();
+      allow update: if esAdmin() || (esDueno(uid) && soloCambia(['nombre']));
+    }
+
+    // pacientes/{uid} — dni, edad, genero, contacto, ladoAfectado, fisioterapeutaId
+    match /pacientes/{uid} {
       allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
-      allow create, delete: if esDueno(uid) || esAdmin();
-      // HU01-CA06: el fisioterapeuta asignado puede actualizar el
-      // documento de su paciente (en la práctica, solo el diagnóstico —
-      // el resto de campos del paciente los gestiona el admin, HU20).
-      allow update: if esDueno(uid) || esAdmin() ||
-                       (esFisioterapeuta() && resource.data.fisioterapeutaId == request.auth.uid);
+      allow create, update, delete: if esAdmin();
 
-      // usuarios/{pacienteId}/sesiones/{sesionId}
-      match /sesiones/{sesionId} {
-        allow read: if esDueno(uid) ||
-                       (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-        allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-        allow update: if esDueno(uid) ||
-                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-        allow delete: if false;
-
-        // usuarios/{pacienteId}/sesiones/{sesionId}/recomendaciones/{recomendacionId}
-        match /recomendaciones/{recomendacionId} {
-          allow read: if esDueno(uid) ||
-                         (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid);
-          allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-          allow update, delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
-        }
+      // pacientes/{uid}/diagnosticos/{id} — diagnosticoId, fecha
+      // HU01-CA06: el fisioterapeuta registra los diagnósticos.
+      match /diagnosticos/{diagnosticoDoc} {
+        allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
+        allow write: if esFisioDe(uid) || esAdmin();
       }
+    }
+
+    // Lectura agregada de diagnósticos (collection group) para las listas de
+    // pacientes del fisioterapeuta y del administrador.
+    match /{path=**}/diagnosticos/{diagnosticoDoc} {
+      allow read: if esFisioterapeuta() || esAdmin();
+    }
+
+    // fisioterapeutas/{uid} — edad, genero, contacto, especialidad, numeroColegiatura
+    match /fisioterapeutas/{uid} {
+      allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
+      allow create, update, delete: if esAdmin();
+    }
+
+    // catalogo_diagnosticos/{id} — nombre, regionCorporal (solo lectura)
+    match /catalogo_diagnosticos/{id} {
+      allow read: if estaAutenticado();
+      allow write: if false;
     }
 
     // ejercicios/{ejercicioId} — catálogo, gestionado por fisioterapeutas
     match /ejercicios/{ejercicioId} {
       allow read: if estaAutenticado();
       allow create, update, delete: if esFisioterapeuta();
+    }
+
+    // sesiones/{sesionId} — colección de nivel superior (pacienteId,
+    // fisioterapeutaId). Las consultas siempre filtran por uno de los dos
+    // (o son del administrador), lo que permite a Firestore probar la regla.
+    match /sesiones/{sesionId} {
+      allow get, list: if esAdmin() ||
+                          (estaAutenticado() &&
+                           (resource.data.pacienteId == request.auth.uid ||
+                            resource.data.fisioterapeutaId == request.auth.uid));
+      // Solo el fisioterapeuta ASIGNADO al paciente puede crearle sesiones.
+      allow create: if esFisioterapeuta() &&
+                       request.resource.data.fisioterapeutaId == request.auth.uid &&
+                       get(/databases/$(database)/documents/pacientes/$(request.resource.data.pacienteId)).data.fisioterapeutaId == request.auth.uid;
+      allow update:
+        // El paciente guarda el resultado de SU sesión (mientras no esté completa) y
+        // la URL del video; ningún otro campo (estado de asignación, dueño, ejercicio...).
+        if (estaAutenticado() && resource.data.pacienteId == request.auth.uid &&
+            ((soloCambia(['estado', 'fechaEjecucion', 'porcentajeEjecucion', 'desviacionPromedio',
+                          'repeticionesAsignadas', 'repeticionesCompletadas', 'repeticionesCorrectas', 'repeticiones']) &&
+              (resource.data.estado != 'completada' ||
+               resource.data.repeticionesCompletadas < resource.data.repeticionesAsignadas)) ||
+             soloCambia(['videoUrl'])))
+        // El fisioterapeuta solo edita los parámetros de asignación de una sesión pendiente.
+        || (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid &&
+            resource.data.estado == 'asignada' &&
+            soloCambia(['ejercicioId', 'fechaAsignacion', 'nota', 'duracionSegundos',
+                        'anguloMinOverride', 'anguloMaxOverride', 'repeticionesAsignadas', 'duracionEstimada']));
+      allow delete: if false;
+
+      // sesiones/{sesionId}/observaciones/{id} — recomendaciones del fisioterapeuta
+      match /observaciones/{observacionId} {
+        allow read: if estaAutenticado() &&
+                       (get(/databases/$(database)/documents/sesiones/$(sesionId)).data.pacienteId == request.auth.uid ||
+                        get(/databases/$(database)/documents/sesiones/$(sesionId)).data.fisioterapeutaId == request.auth.uid);
+        // Solo el fisioterapeuta de la sesión registra recomendaciones; al editar solo cambia el texto.
+        allow create: if esFisioterapeuta() &&
+                         request.resource.data.fisioterapeutaId == request.auth.uid &&
+                         get(/databases/$(database)/documents/sesiones/$(sesionId)).data.fisioterapeutaId == request.auth.uid;
+        allow update: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid && soloCambia(['texto']);
+        allow delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
+      }
     }
   }
 }

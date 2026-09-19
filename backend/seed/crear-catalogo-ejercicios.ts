@@ -201,19 +201,23 @@ async function crearCatalogo(argumentos: Argumentos): Promise<void> {
     const datos = {
       nombre: ejercicio.nombre,
       descripcion: ejercicio.descripcion,
-      categoria: ejercicio.categoria,
-      materialUrl: "",
-      duracionSegundos: ejercicio.duracionSegundos,
-      repeticiones: ejercicio.repeticiones,
-      patronesReferencia: ejercicio.patronesReferencia,
+      categoria: ejercicio.categoria === "CONTROL_MOTOR" ? "Control motor" : "Movilidad",
+      repeticiones: { cantidad: ejercicio.repeticiones, duracionSeg: ejercicio.duracionSegundos },
+      angulosReferencia: Object.fromEntries(
+        ejercicio.patronesReferencia.map((p) => [p.articulacion, { min: p.anguloMin, max: p.anguloMax }]),
+      ),
       diagnosticosAplicables: ejercicio.diagnosticosAplicables,
-      creadoPor: fisio.uid,
+      fisioterapeutaId: fisio.uid,
       fechaCreacion: admin.firestore.FieldValue.serverTimestamp(),
       activo: true,
     };
 
     if (existente.empty) {
-      await firestore.collection("ejercicios").add(datos);
+      // videoPath solo se inicializa vacio al CREAR -- en una
+      // actualizacion (merge abajo) no se toca, para no borrar un video
+      // ya subido a un ejercicio existente (bug real: un re-seed
+      // anterior borro los materialUrl de 5 ejercicios ya con video).
+      await firestore.collection("ejercicios").add({ ...datos, videoPath: "" });
       console.log(`Creado: ${ejercicio.codigo} - ${ejercicio.nombre}`);
     } else {
       await existente.docs[0].ref.set(datos, { merge: true });

@@ -4,9 +4,9 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import com.sanna.rehabapp.domain.model.DiagnosticoRegistrado
 import com.sanna.rehabapp.domain.model.Genero
 import com.sanna.rehabapp.domain.model.LadoAfectado
@@ -15,36 +15,27 @@ import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.AdminRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-private const val COLECCION_USUARIOS = "usuarios"
+class FisioterapeutaConPacientesException(val cantidad: Int) :
+    Exception("Tiene $cantidad paciente(s) asignado(s)")
+
 private const val APP_TEMPORAL_ADMIN = "app_admin_temporal"
 
+// Cuentas según el diccionario de datos: usuarios/{uid} (cuenta) +
+// pacientes/{uid} | fisioterapeutas/{uid} (datos del rol, mismo id) +
+// pacientes/{uid}/diagnosticos. Ver UsuariosFirestore.
 class AdminRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val firestore: FirebaseFirestore,
+    private val usuarios: UsuariosFirestore,
 ) : AdminRepository {
 
-    override fun observarPacientes(): Flow<List<Usuario>> = observarPorRol(Rol.PACIENTE)
+    override fun observarPacientes(): Flow<List<Usuario>> = usuarios.observarPacientes(null)
 
-    override fun observarFisioterapeutas(): Flow<List<Usuario>> = observarPorRol(Rol.FISIOTERAPEUTA)
-
-    private fun observarPorRol(rol: Rol): Flow<List<Usuario>> = callbackFlow {
-        val registro = firestore.collection(COLECCION_USUARIOS)
-            .whereEqualTo("rol", rol.aFirestore())
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    close(error)
-                    return@addSnapshotListener
-                }
-                trySend(snapshot?.documents?.mapNotNull { it.toUsuario() } ?: emptyList())
-            }
-        awaitClose { registro.remove() }
-    }
+    override fun observarFisioterapeutas(): Flow<List<Usuario>> = usuarios.observarFisioterapeutas()
 
     override suspend fun crearPaciente(
         nombre: String,
@@ -56,20 +47,24 @@ class AdminRepositoryImpl @Inject constructor(
         ladoAfectado: LadoAfectado,
         genero: Genero,
         numeroContacto: String,
-    ): Result<Unit> = crearCuenta(
-        nombre,
-        email,
-        password,
-        Rol.PACIENTE,
-        datosAdicionales = mapOf(
-            "dni" to dni,
-            "edad" to edad,
-            "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
-            "ladoAfectado" to ladoAfectado.aFirestore(),
-            "genero" to genero.aFirestore(),
-            "numeroContacto" to numeroContacto,
-        ),
-    )
+    ): Result<Unit> = crearCuenta(nombre, email, password, Rol.PACIENTE) { uid, batch ->
+        batch.set(
+            firestore.collection(COL_PACIENTES).document(uid),
+            mapOf(
+                "dni" to dni,
+                "edad" to edad,
+                "genero" to genero.aFirestore(),
+                "contacto" to numeroContacto,
+                "ladoAfectado" to ladoAfectado.aFirestore(),
+            ),
+        )
+        diagnosticos.forEach { diagnostico ->
+            batch.set(
+                firestore.collection(COL_PACIENTES).document(uid).collection(COL_DIAGNOSTICOS).document(),
+                mapOf("diagnosticoId" to diagnostico.aFirestore(), "fecha" to Timestamp.now()),
+            )
+        }
+    }
 
     override suspend fun crearFisioterapeuta(
         nombre: String,
@@ -80,32 +75,31 @@ class AdminRepositoryImpl @Inject constructor(
         numeroContacto: String,
         especialidad: String?,
         numeroColegiatura: String?,
-    ): Result<Unit> = crearCuenta(
-        nombre,
-        email,
-        password,
-        Rol.FISIOTERAPEUTA,
-        datosAdicionales = buildMap {
-            put("edad", edad)
-            put("genero", genero.aFirestore())
-            put("numeroContacto", numeroContacto)
-            if (!especialidad.isNullOrBlank()) put("especialidad", especialidad)
-            if (!numeroColegiatura.isNullOrBlank()) put("numeroColegiatura", numeroColegiatura)
-        },
-    )
+    ): Result<Unit> = crearCuenta(nombre, email, password, Rol.FISIOTERAPEUTA) { uid, batch ->
+        batch.set(
+            firestore.collection(COL_FISIOTERAPEUTAS).document(uid),
+            buildMap {
+                put("edad", edad)
+                put("genero", genero.aFirestore())
+                put("contacto", numeroContacto)
+                if (!especialidad.isNullOrBlank()) put("especialidad", especialidad)
+                if (!numeroColegiatura.isNullOrBlank()) put("numeroColegiatura", numeroColegiatura)
+            },
+        )
+    }
 
     // Instancia secundaria de FirebaseApp: createUserWithEmailAndPassword
     // inicia sesión automáticamente en la instancia donde se ejecuta, así
     // que usar la instancia por defecto cerraría la sesión del
     // administrador. Se crea la cuenta en una instancia aparte, se limpia,
-    // y el documento en Firestore se escribe con el Firestore normal (bajo
-    // la sesión real del admin, validada por las Security Rules).
+    // y los documentos en Firestore se escriben (en un solo batch atómico)
+    // con el Firestore normal, bajo la sesión real del admin.
     private suspend fun crearCuenta(
         nombre: String,
         email: String,
         password: String,
         rol: Rol,
-        datosAdicionales: Map<String, Any> = emptyMap(),
+        escribirPerfil: (uid: String, batch: com.google.firebase.firestore.WriteBatch) -> Unit,
     ): Result<Unit> = runCatching {
         val appTemporal = obtenerAppTemporal()
         val authTemporal = FirebaseAuth.getInstance(appTemporal)
@@ -113,14 +107,19 @@ class AdminRepositoryImpl @Inject constructor(
             val resultado = authTemporal.createUserWithEmailAndPassword(email, password).await()
             val uid = checkNotNull(resultado.user?.uid) { "No se pudo crear el usuario" }
 
-            val datos = mapOf(
-                "nombre" to nombre,
-                "email" to email,
-                "rol" to rol.aFirestore(),
-                "fechaRegistro" to FieldValue.serverTimestamp(),
-                "activo" to true,
-            ) + datosAdicionales
-            firestore.collection(COLECCION_USUARIOS).document(uid).set(datos).await()
+            val batch = firestore.batch()
+            batch.set(
+                firestore.collection(COL_USUARIOS).document(uid),
+                mapOf(
+                    "nombre" to nombre,
+                    "correo" to email,
+                    "rol" to rol.aFirestore(),
+                    "fechaCreacion" to FieldValue.serverTimestamp(),
+                    "activo" to true,
+                ),
+            )
+            escribirPerfil(uid, batch)
+            batch.commit().await()
             Unit
         } finally {
             authTemporal.signOut()
@@ -135,9 +134,9 @@ class AdminRepositoryImpl @Inject constructor(
     }
 
     override suspend fun actualizarUsuario(uid: String, nombre: String, email: String): Result<Unit> = runCatching {
-        firestore.collection(COLECCION_USUARIOS)
+        firestore.collection(COL_USUARIOS)
             .document(uid)
-            .update(mapOf("nombre" to nombre, "email" to email))
+            .update(mapOf("nombre" to nombre, "correo" to email))
             .await()
         Unit
     }
@@ -153,22 +152,21 @@ class AdminRepositoryImpl @Inject constructor(
         genero: Genero,
         numeroContacto: String,
     ): Result<Unit> = runCatching {
-        firestore.collection(COLECCION_USUARIOS)
-            .document(uid)
-            .update(
-                mapOf(
-                    "nombre" to nombre,
-                    "email" to email,
-                    "dni" to dni,
-                    "edad" to edad,
-                    "diagnosticos" to diagnosticos.map { mapOf("codigo" to it.aFirestore(), "fecha" to Timestamp.now()) },
-                    "ladoAfectado" to ladoAfectado.aFirestore(),
-                    "genero" to genero.aFirestore(),
-                    "numeroContacto" to numeroContacto,
-                ),
-            )
-            .await()
-        Unit
+        val batch = firestore.batch()
+        batch.update(firestore.collection(COL_USUARIOS).document(uid), mapOf("nombre" to nombre, "correo" to email))
+        batch.set(
+            firestore.collection(COL_PACIENTES).document(uid),
+            mapOf(
+                "dni" to dni,
+                "edad" to edad,
+                "genero" to genero.aFirestore(),
+                "contacto" to numeroContacto,
+                "ladoAfectado" to ladoAfectado.aFirestore(),
+            ),
+            SetOptions.merge(),
+        )
+        batch.commit().await()
+        usuarios.reemplazarDiagnosticos(uid, diagnosticos.map { DiagnosticoRegistrado(tipo = it, fecha = null) })
     }
 
     override suspend fun actualizarFisioterapeuta(
@@ -181,65 +179,55 @@ class AdminRepositoryImpl @Inject constructor(
         especialidad: String?,
         numeroColegiatura: String?,
     ): Result<Unit> = runCatching {
-        firestore.collection(COLECCION_USUARIOS)
-            .document(uid)
-            .update(
-                mapOf(
-                    "nombre" to nombre,
-                    "email" to email,
-                    "edad" to edad,
-                    "genero" to genero.aFirestore(),
-                    "numeroContacto" to numeroContacto,
-                    "especialidad" to (especialidad ?: ""),
-                    "numeroColegiatura" to (numeroColegiatura ?: ""),
-                ),
-            )
-            .await()
+        val batch = firestore.batch()
+        batch.update(firestore.collection(COL_USUARIOS).document(uid), mapOf("nombre" to nombre, "correo" to email))
+        batch.set(
+            firestore.collection(COL_FISIOTERAPEUTAS).document(uid),
+            mapOf(
+                "edad" to edad,
+                "genero" to genero.aFirestore(),
+                "contacto" to numeroContacto,
+                "especialidad" to (especialidad ?: ""),
+                "numeroColegiatura" to (numeroColegiatura ?: ""),
+            ),
+            SetOptions.merge(),
+        )
+        batch.commit().await()
         Unit
     }
 
     override suspend fun cambiarEstadoActivoUsuario(uid: String, activo: Boolean): Result<Unit> = runCatching {
-        firestore.collection(COLECCION_USUARIOS).document(uid).update("activo", activo).await()
+        firestore.collection(COL_USUARIOS).document(uid).update("activo", activo).await()
         Unit
     }
 
     override suspend fun eliminarUsuario(uid: String): Result<Unit> = runCatching {
-        firestore.collection(COLECCION_USUARIOS).document(uid).delete().await()
+        // ERR-ADM-003: no se elimina a un fisioterapeuta con pacientes asignados
+        // (quedarían huérfanos, sin poder reasignarse desde la app).
+        val asignados = firestore.collection(COL_PACIENTES)
+            .whereEqualTo("fisioterapeutaId", uid).get().await().size()
+        if (asignados > 0) throw FisioterapeutaConPacientesException(asignados)
+        val diagnosticos = firestore.collection(COL_PACIENTES).document(uid)
+            .collection(COL_DIAGNOSTICOS).get().await().documents
+        val batch = firestore.batch()
+        diagnosticos.forEach { batch.delete(it.reference) }
+        batch.delete(firestore.collection(COL_PACIENTES).document(uid))
+        batch.delete(firestore.collection(COL_FISIOTERAPEUTAS).document(uid))
+        batch.delete(firestore.collection(COL_USUARIOS).document(uid))
+        batch.commit().await()
         Unit
     }
 
+    override suspend fun existeDni(dni: String, excluirUid: String?): Boolean =
+        firestore.collection(COL_PACIENTES).whereEqualTo("dni", dni).get().await()
+            .documents.any { it.id != excluirUid }
+
     override suspend fun asignarFisioterapeuta(pacienteId: String, fisioterapeutaId: String): Result<Unit> =
         runCatching {
-            firestore.collection(COLECCION_USUARIOS)
+            firestore.collection(COL_PACIENTES)
                 .document(pacienteId)
                 .update("fisioterapeutaId", fisioterapeutaId)
                 .await()
             Unit
         }
-}
-
-private fun DocumentSnapshot.toUsuario(): Usuario? {
-    if (!exists()) return null
-    val rolStr = getString("rol") ?: return null
-    return Usuario(
-        uid = id,
-        nombre = getString("nombre") ?: "",
-        email = getString("email") ?: "",
-        rol = Rol.desdeFirestore(rolStr),
-        fisioterapeutaId = getString("fisioterapeutaId"),
-        diagnosticos = (get("diagnosticos") as? List<*>)?.mapNotNull { entrada ->
-            val mapa = entrada as? Map<*, *> ?: return@mapNotNull null
-            val tipo = TipoDiagnostico.desdeFirestoreOrNull(mapa["codigo"] as? String) ?: return@mapNotNull null
-            DiagnosticoRegistrado(tipo = tipo, fecha = (mapa["fecha"] as? Timestamp)?.toDate())
-        } ?: emptyList(),
-        dni = getString("dni"),
-        edad = (get("edad") as? Number)?.toInt(),
-        fechaRegistro = getDate("fechaRegistro"),
-        ladoAfectado = LadoAfectado.desdeFirestoreOrNull(getString("ladoAfectado")) ?: LadoAfectado.DERECHO,
-        genero = Genero.desdeFirestoreOrNull(getString("genero")),
-        numeroContacto = getString("numeroContacto"),
-        especialidad = getString("especialidad"),
-        numeroColegiatura = getString("numeroColegiatura"),
-        activo = getBoolean("activo") ?: true,
-    )
 }

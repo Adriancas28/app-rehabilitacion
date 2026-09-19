@@ -635,3 +635,119 @@ zoom en los 12 videos.
   baja"). SDS-02 re-renderizado (301 frames) y reensamblado con este
   ajuste — pendiente aprobación del usuario antes de aplicar el mismo
   ajuste a los otros 11 y volver a exportar sus videos finales.
+
+## Rama `mejora-videos` (2026-09-08 en adelante): rediseño visual profesional
+
+A partir de aquí, el usuario pidió una mejora significativa y sistemática
+del lenguaje visual de los 12 videos — no cosmética, sino de fondo:
+personaje, materiales, iluminación, cámara, indicadores de movimiento,
+presentación y un sistema reutilizable para aplicar todo esto a los 12 sin
+rehacerlo a mano. Se creó la rama `mejora-videos` (desde `master`) y se
+trabajó por etapas sobre SDS-02 como piloto, con aprobación del usuario
+entre cada etapa antes de seguir a la siguiente.
+
+### Análisis previo (por qué se veía "básico")
+
+Revisando el `.blend` real de SDS-02 (no una opinión genérica):
+- El personaje es el **"Y Bot" de muestra de Mixamo** (el maniquí que
+  Mixamo usa para *previsualizar* animaciones, no pensado para
+  producción): mesh `Alpha_Surface` (color azul-verdoso plano, sin ropa)
+  + mesh `Alpha_Joints` (esferas grises **metálicas**, `metallic=0.5`, en
+  cada articulación) — esas esferas metálicas son la causa #1 de que se
+  vea como un maniquí de prueba/robot de juguete, no una persona.
+  `roughness=0.55` fijo, sin variación — piel plana.
+- Iluminación de 3 puntos ya existía pero sin intención real de dar
+  volumen; `world=None` en la base, fondo gris liso agregado recién en el
+  script de cámara — sin piso, sin profundidad, sin sombra de contacto.
+- Cámara estática en todo el clip, sin ningún movimiento.
+- Animación: **ya usaba** interpolación BEZIER + EASE_IN_OUT (no era el
+  problema).
+- Export final con OpenCV/códec `mp4v` (MPEG-4 Part 2, viejo) en vez de
+  H.264.
+
+### Etapa 1 — Materiales + iluminación + entorno
+
+- Se oculta `Alpha_Joints` (esferas metálicas) permanentemente.
+- Material de piel nuevo: gris-azulado neutro (no metálico), con ruido
+  sutil en `roughness` para evitar plástico perfectamente uniforme.
+- Piso nuevo con sombra de contacto + fondo con degradado (antes gris
+  plano).
+- **Bug real encontrado y corregido**: el primer intento se veía
+  "lavado"/blanco sin importar qué tan bajo se pusiera la energía de las
+  luces de área — la causa era que el **World Background tenía
+  Strength=1.0**, actuando como una luz ambiental gigante (softbox) que
+  anulaba por completo el key/fill/rim. Se bajó a `Strength=0.25` y las
+  energías de las luces de área se recalibraron a un rango realista para
+  la distancia (decenas de W, no cientos — Watts en Blender son potencia
+  radiométrica absoluta).
+
+### Etapa 2 — Cámara cinematográfica
+
+- Push-in + orbit muy leve animado a lo largo de todo el clip (distancia
+  2.9→2.55, ángulo 27°→21° para la vista lateral-oblicua), interpolación
+  LINEAL (dolly de velocidad constante, no debe "notarse" como
+  movimiento de cámara). Nunca compite con el movimiento del cuerpo.
+
+### Etapa 3 — Indicador de movimiento
+
+- Marcador de articulación activa: esfera + anillo emisivos (color teal
+  de marca, `#12A79B`) siguiendo al hueso vía constraint `COPY_LOCATION`
+  — persistente durante todo el clip.
+- Arco de trayectoria: curva NURBS muestreada de la **pose real** de la
+  muñeca (no un arco geométrico ideal), con `bevel_depth` delgado.
+- **Problema real encontrado y corregido**: con el arco siempre visible
+  de punta a punta, en la pose de reposo (brazo abajo) se veía "flotando"
+  desconectado de la mano. Se corrigió animando `bevel_factor_end` de la
+  curva para que se dibuje/borre exactamente sincronizado con los mismos
+  tiempos/keyframes de la animación del hombro — invisible en reposo,
+  completo en el pico.
+
+### Etapa 4 — Texto de presentación
+
+- Overlay 2D (PIL sobre los PNG ya renderizados, no objeto 3D en Blender
+  — tipografía más nítida y no requiere re-renderizar para ajustar texto)
+  con el nombre del ejercicio, ~1.6s a opacidad completa + 0.6s de
+  fade-out. Colores tomados directo del Design System de la app
+  (`GrisTextoPrincipal` #1F2937). Por pedido explícito del usuario, se
+  quitó el subtítulo/instrucción que iba en teal debajo — solo queda el
+  título.
+
+### Etapa 5 — Sistema reutilizable (`videos_3d/blender_rehab/`)
+
+Estructura creada:
+```
+blender_rehab/
+├── character/cargar_personaje.py       (abrir animacion, limpiar camaras/luces, bounds)
+├── materials/materiales_clinicos.py    (piel, piso, ocultar esferas, material emisivo)
+├── environment/entorno_estudio.py      (piso, fondo degradado)
+├── lighting/iluminacion_estudio.py     (3 puntos)
+├── cameras/camara_cinematografica.py   (frontal/lateral/lateral_oblicua/lateral_baja + push-in/orbit)
+├── indicators/indicadores_movimiento.py (marcador articulacion + trayectoria)
+├── render/configurar_render.py         (resolucion/fps/samples)
+├── render/render_frames.py             (renderiza animacion a PNG, corre dentro de Blender)
+├── render/texto_presentacion.py        (overlay 2D del nombre del ejercicio)
+├── render/exportar_video.py            (ffmpeg H.264 desde PNGs via stdin — ver nota abajo)
+├── exercises/SDS-02.json               (config de ejemplo)
+└── construir_ejercicio.py              (orquestador: JSON de config -> .blend listo para render)
+```
+Validado corriendo `construir_ejercicio.py` con `exercises/SDS-02.json`
+contra el `YBot_animado.blend` real de SDS-02: el resultado fue pixel a
+pixel equivalente al logrado a mano en las etapas 1-3 (mismo frame de
+prueba comparado). Con esto, para producir LUM-01...SDS-04 solo hace
+falta un JSON de config por ejercicio (vista de cámara, hueso de la
+articulación activa, hueso/tiempos de trayectoria) — no hay que repetir
+el trabajo de materiales/luces/entorno/cámara/indicadores a mano.
+
+**Nota técnica (export H.264)**: el ffmpeg disponible en este equipo
+(`C:\Program Files\Synfig\bin\ffmpeg.exe`, versión 3.1.5 de 2016,
+empaquetado con Synfig Studio) no trae decodificador PNG ("No decoder for
+stream 0") — por eso `exportar_video.py` no le pasa los PNG directamente,
+sino que los decodifica con Pillow y se los da como video crudo (`rawvideo`,
+`rgb24`) por stdin. Reemplaza el ensamblado anterior con OpenCV/`mp4v`
+(códec viejo) — el export final ahora es H.264 real.
+
+**Render final de validación**: SDS-02 con las 4 etapas juntas, 301
+frames a 64 samples (antes 32 — se subió por la geometría/materiales
+emisivos de los indicadores), ~42 minutos de render en este equipo.
+Pendiente aprobación del usuario del resultado final antes de aplicar el
+sistema a los otros 11 ejercicios.

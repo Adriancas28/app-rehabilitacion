@@ -27,13 +27,26 @@ import com.sanna.rehabapp.domain.model.ResultadoSesion
 class ProcesadorMovimiento(
     private val ejercicio: Ejercicio,
     private val ladoAfectado: LadoAfectado = LadoAfectado.DERECHO,
+    // HU03 (ampliación, Etapa 4): el fisioterapeuta puede personalizar el
+    // ángulo objetivo SOLO para esta sesión/paciente (ej. 120° en vez de
+    // 80° para un paciente en primera sesión) -- si es null, se usa el
+    // patronesReferencia por defecto del ejercicio, igual criterio que
+    // repeticiones/duracionSegundos en Sesion.
+    patronesReferenciaOverride: List<PatronReferencia>? = null,
 ) {
 
+    private val patronesReferencia = patronesReferenciaOverride ?: ejercicio.patronesReferencia
     private val medicionesPorRepeticion = mutableListOf<MutableList<List<MedicionArticulacion>>>()
+    // Segundo (desde el inicio de su repetición) de cada frame medido; paralelo
+    // a medicionesPorRepeticion, para poder decir "Segundo 15" del error.
+    private val segundosPorRepeticion = mutableListOf<MutableList<Int>>()
+    private var inicioRepeticionMs = 0L
 
     // Se llama al empezar cada repetición del ciclo de monitoreo (HU06-CA06).
     fun marcarNuevaRepeticion() {
         medicionesPorRepeticion.add(mutableListOf())
+        segundosPorRepeticion.add(mutableListOf())
+        inicioRepeticionMs = android.os.SystemClock.elapsedRealtime()
     }
 
     // HU10 — devuelve las mediciones de ESTE frame (además de seguir
@@ -45,8 +58,10 @@ class ProcesadorMovimiento(
         // Sin persona detectada en este frame: se ignora sin interrumpir el
         // procesamiento (RNF05-CA02/CA03), no se cuenta como frame medido.
         val landmarks = resultado.landmarks().firstOrNull() ?: return emptyList()
-        val mediciones = ejercicio.patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
+        val mediciones = patronesReferencia.mapNotNull { patron -> medirArticulacion(patron, landmarks) }
         bucketRepeticionActual.add(mediciones)
+        segundosPorRepeticion.lastOrNull()
+            ?.add(((android.os.SystemClock.elapsedRealtime() - inicioRepeticionMs) / 1000L).toInt())
         return mediciones
     }
 
@@ -68,6 +83,7 @@ class ProcesadorMovimiento(
             repeticionesCompletadas = repeticionesCompletadas,
             repeticionesAsignadas = repeticionesAsignadas,
             numeroRepeticionInicial = numeroRepeticionInicial,
+            segundosPorFrame = segundosPorRepeticion.take(repeticionesMedidasEnEstaEjecucion.coerceAtLeast(0)),
         )
     }
 

@@ -74,17 +74,21 @@ async function crearUsuario(argumentos: Argumentos): Promise<void> {
     displayName: argumentos.nombre,
   });
 
-  const datosFirestore: Record<string, unknown> = {
+  // Diccionario de datos: usuarios/{uid} + pacientes/{uid} | fisioterapeutas/{uid}.
+  const db = admin.firestore();
+  const rolFirestore = argumentos.rol === "admin" ? "administrador" : argumentos.rol;
+  await db.collection("usuarios").doc(usuarioAuth.uid).set({
     nombre: argumentos.nombre,
-    email: argumentos.email,
-    rol: argumentos.rol,
-    fechaRegistro: admin.firestore.FieldValue.serverTimestamp(),
-  };
+    correo: argumentos.email,
+    rol: rolFirestore,
+    fechaCreacion: admin.firestore.FieldValue.serverTimestamp(),
+    activo: true,
+  });
   if (argumentos.rol === "paciente") {
-    datosFirestore.fisioterapeutaId = argumentos.fisioterapeutaId;
+    await db.collection("pacientes").doc(usuarioAuth.uid).set({ fisioterapeutaId: argumentos.fisioterapeutaId });
+  } else if (argumentos.rol === "fisioterapeuta") {
+    await db.collection("fisioterapeutas").doc(usuarioAuth.uid).set({});
   }
-
-  await admin.firestore().collection("usuarios").doc(usuarioAuth.uid).set(datosFirestore);
 
   console.log("Usuario creado correctamente:");
   console.log(`  uid:        ${usuarioAuth.uid}`);

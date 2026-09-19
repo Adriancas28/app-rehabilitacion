@@ -34,7 +34,7 @@ data class PacienteDetalleUiState(
         get() = sesiones.filter { cumplePeriodo(it.fechaAsignacion, filtroPeriodo) }
 
     val sesionesCompletadas: Int
-        get() = sesionesFiltradas.count { it.estado == EstadoSesion.COMPLETADA }
+        get() = sesionesFiltradas.count { it.estaCompletada }
 
     // HU12-CA01/CA02: progreso general (promedio del % de ejecución) sobre
     // las sesiones completadas que cumplen el filtro — la evolución
@@ -44,6 +44,14 @@ data class PacienteDetalleUiState(
         get() = sesionesFiltradas
             .mapNotNull { it.resultado?.porcentajeEjecucion }
             .let { valores -> if (valores.isEmpty()) 0f else valores.average().toFloat() }
+
+    // Precisión (% de ejecución) de cada sesión completada, la más antigua
+    // primero, para el gráfico de evolución. Respeta el filtro de período.
+    val precisionPorSesion: List<Float>
+        get() = sesionesFiltradas
+            .filter { it.estado == EstadoSesion.COMPLETADA && it.resultado != null }
+            .sortedBy { it.fechaEjecucion ?: it.fechaAsignacion }
+            .map { it.resultado!!.porcentajeEjecucion }
 
     // HU12-CA02 (ampliación acordada): progreso total por cada ejercicio
     // que el paciente ha realizado, para mostrarlo como barras (mockup

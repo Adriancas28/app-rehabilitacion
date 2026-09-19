@@ -8,8 +8,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.sanna.rehabapp.feature.admin.AdminDashboardScreen
 import com.sanna.rehabapp.feature.admin.AdminFisioterapeutaFormScreen
 import com.sanna.rehabapp.feature.admin.AdminFisioterapeutasScreen
+import com.sanna.rehabapp.feature.admin.AdminPacienteDashboardScreen
 import com.sanna.rehabapp.feature.admin.AdminPacienteFormScreen
 import com.sanna.rehabapp.feature.admin.AdminPacientesScreen
 
@@ -17,6 +19,39 @@ fun NavGraphBuilder.adminDestinos(
     navController: NavHostController,
     menuBarraLateralVisible: MutableState<Boolean>,
 ) {
+    composable(Rutas.ADMIN_DASHBOARD) {
+        var menuVisible by menuBarraLateralVisible
+        AdminDashboardScreen(
+            menuVisible = menuVisible,
+            onCambiarMenuVisible = { menuVisible = it },
+            onSeleccionarPaciente = { pacienteId, nombre ->
+                navController.navigate(Rutas.adminDashboardPaciente(pacienteId, nombre))
+            },
+            onNavegarAPacientes = {
+                navController.navigate(Rutas.ADMIN_PACIENTES) { launchSingleTop = true }
+            },
+            onNavegarAFisioterapeutas = {
+                navController.navigate(Rutas.ADMIN_FISIOTERAPEUTAS) { launchSingleTop = true }
+            },
+            onCerrarSesion = {
+                navController.irALoginLimpiandoPila()
+            },
+        )
+    }
+    composable(
+        route = Rutas.ADMIN_DASHBOARD_PACIENTE,
+        arguments = listOf(
+            navArgument(Rutas.ARG_ADMIN_PACIENTE_ID) { type = NavType.StringType },
+            navArgument(Rutas.ARG_ADMIN_PACIENTE_NOMBRE) {
+                type = NavType.StringType
+                nullable = true
+                defaultValue = null
+            },
+        ),
+    ) {
+        AdminPacienteDashboardScreen(onVolver = { navController.popBackStack() })
+    }
+
     composable(Rutas.ADMIN_PACIENTES) {
         var menuVisible by menuBarraLateralVisible
         AdminPacientesScreen(
@@ -28,13 +63,14 @@ fun NavGraphBuilder.adminDestinos(
             onEditarPaciente = { usuarioId ->
                 navController.navigate(Rutas.adminPacienteFormulario(usuarioId))
             },
+            onNavegarADashboard = {
+                navController.navigate(Rutas.ADMIN_DASHBOARD) { launchSingleTop = true }
+            },
             onNavegarAFisioterapeutas = {
                 navController.navigate(Rutas.ADMIN_FISIOTERAPEUTAS) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }
@@ -65,13 +101,14 @@ fun NavGraphBuilder.adminDestinos(
             onEditarFisioterapeuta = { usuarioId ->
                 navController.navigate(Rutas.adminFisioterapeutaFormulario(usuarioId))
             },
+            onNavegarADashboard = {
+                navController.navigate(Rutas.ADMIN_DASHBOARD) { launchSingleTop = true }
+            },
             onNavegarAPacientes = {
                 navController.navigate(Rutas.ADMIN_PACIENTES) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }
