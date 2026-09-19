@@ -45,6 +45,14 @@ data class PacienteDetalleUiState(
             .mapNotNull { it.resultado?.porcentajeEjecucion }
             .let { valores -> if (valores.isEmpty()) 0f else valores.average().toFloat() }
 
+    // Precisión (% de ejecución) de cada sesión completada, la más antigua
+    // primero, para el gráfico de evolución. Respeta el filtro de período.
+    val precisionPorSesion: List<Float>
+        get() = sesionesFiltradas
+            .filter { it.estado == EstadoSesion.COMPLETADA && it.resultado != null }
+            .sortedBy { it.fechaEjecucion ?: it.fechaAsignacion }
+            .map { it.resultado!!.porcentajeEjecucion }
+
     // HU12-CA02 (ampliación acordada): progreso total por cada ejercicio
     // que el paciente ha realizado, para mostrarlo como barras (mockup
     // pantalla 10) — a diferencia de porcentajePromedio (un solo número

@@ -1277,10 +1277,11 @@ Entonces el sistema indica que el porcentaje se calcula según las correcciones 
 > propio gráfico de líneas — "Evolución de precisión" en
 > `HistorialSesionesScreen`, con el `%` de cada sesión completada en
 > orden cronológico (respeta el filtro de período vigente), vía el nuevo
-> componente `GraficoLinea` (`core/designsystem/Graficos.kt`). Sigue sin
-> existir un gráfico de líneas equivalente en la vista del fisioterapeuta
-> (`PacienteDetalleScreen`), que sigue usando solo la lista — fuera de
-> alcance de este cambio.
+> componente `GraficoLinea` (`core/designsystem/Graficos.kt`). Desde 2026-09-19 el
+> componente compartido `EvolucionPrecisionPorSesion` (línea + barras de
+> precisión por sesión, `core/designsystem/Graficos.kt`) se usa tanto en
+> "Mi progreso" (paciente) como en el detalle del paciente del
+> fisioterapeuta (`PacienteDetalleScreen`).
 >
 > **Ampliación posterior (corrección, no en la versión original):**
 > "Progreso por ejercicio" — una tarjeta nueva debajo del resumen general

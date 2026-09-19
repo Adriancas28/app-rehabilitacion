@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sanna.rehabapp.core.theme.AmbarAlertaTexto
+import com.sanna.rehabapp.core.theme.Spacing
 import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 
 // Design System — gráficos simples dibujados a mano (el proyecto no tiene
@@ -197,5 +198,36 @@ fun GraficoLinea(
                 }
             }
         }
+    }
+}
+
+// Evolución de la precisión sesión a sesión: gráfico de línea y, debajo, el
+// mismo dato como barras. Lo comparten "Mi progreso" (paciente) y el detalle
+// del paciente (fisioterapeuta). `valores` va en orden cronológico.
+@Composable
+fun EvolucionPrecisionPorSesion(valores: List<Float>, modifier: Modifier = Modifier) {
+    // Con muchas sesiones "Sesión N" no cabe en su casilla: solo el número.
+    val etiquetas = valores.indices.map { if (valores.size <= 5) "Sesión ${it + 1}" else "${it + 1}" }
+    Column(modifier = modifier.fillMaxWidth()) {
+        Text(text = "Evolución por sesión", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        GraficoLinea(valores = valores, etiquetas = etiquetas)
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        Text(
+            text = "Eje X: número de sesión · Eje Y: % de precisión de cada sesión",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(modifier = Modifier.height(Spacing.md))
+        Text(text = "Precisión por sesión", style = MaterialTheme.typography.titleSmall)
+        Spacer(modifier = Modifier.height(Spacing.sm))
+        GraficoBarras(
+            valores = valores,
+            etiquetas = etiquetas,
+            mostrarValores = valores.size <= 8,
+            mostrarEjeY = true,
+        )
     }
 }

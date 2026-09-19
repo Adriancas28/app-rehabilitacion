@@ -23,7 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.EstadoVacio
-import com.sanna.rehabapp.core.designsystem.GraficoLinea
+import com.sanna.rehabapp.core.designsystem.EvolucionPrecisionPorSesion
 import com.sanna.rehabapp.core.designsystem.TarjetaCifra
 import com.sanna.rehabapp.core.navigation.ScaffoldConBarraLateral
 import com.sanna.rehabapp.core.theme.Spacing
@@ -84,23 +84,7 @@ fun MiProgresoScreen(
                 }
                 Spacer(modifier = Modifier.height(Spacing.md))
 
-                Text(text = "Evolución por sesión", style = MaterialTheme.typography.titleSmall)
-                Spacer(modifier = Modifier.height(Spacing.sm))
-                GraficoLinea(
-                    valores = uiState.precisionPorSesion,
-                    // Con muchas sesiones "Sesión N" no cabe en su casilla: solo el número.
-                    etiquetas = uiState.precisionPorSesion.indices.map {
-                        if (uiState.precisionPorSesion.size <= 5) "Sesión ${it + 1}" else "${it + 1}"
-                    },
-                )
-                Spacer(modifier = Modifier.height(Spacing.sm))
-                Text(
-                    text = "Eje X: número de sesión · Eje Y: % de precisión de cada sesión",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                EvolucionPrecisionPorSesion(valores = uiState.precisionPorSesion)
             }
         }
     }

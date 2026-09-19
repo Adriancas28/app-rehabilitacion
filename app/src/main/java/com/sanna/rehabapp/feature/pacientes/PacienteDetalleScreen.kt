@@ -38,6 +38,7 @@ import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
 import com.sanna.rehabapp.core.designsystem.BotonPrimario
 import com.sanna.rehabapp.core.designsystem.ChecklistAgrupado
+import com.sanna.rehabapp.core.designsystem.EvolucionPrecisionPorSesion
 import com.sanna.rehabapp.core.designsystem.FilaChipsFiltro
 import com.sanna.rehabapp.core.designsystem.ProgresoCircular
 import com.sanna.rehabapp.core.designsystem.ProgresoLineal
@@ -107,6 +108,12 @@ fun PacienteDetalleScreen(
                 porcentajePromedio = uiState.porcentajePromedio,
             )
             Spacer(modifier = Modifier.height(Spacing.md))
+
+            // Evolución sesión a sesión: línea + barras de precisión.
+            if (uiState.precisionPorSesion.isNotEmpty()) {
+                EvolucionPrecisionPorSesion(valores = uiState.precisionPorSesion)
+                Spacer(modifier = Modifier.height(Spacing.md))
+            }
 
             // HU12-CA02 (ampliación): progreso total por cada ejercicio
             // realizado, con barras (mockup pantalla 10).
