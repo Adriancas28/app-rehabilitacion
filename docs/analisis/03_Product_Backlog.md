@@ -52,12 +52,23 @@ Prioridad y sprint: los del backlog de `CLAUDE.md` §10 (plan de 5 sprints). Est
 | ID | Ítem | Descripción | Prioridad propuesta | Estado | Origen |
 |---|---|---|---|---|---|
 | PB-40 | Eliminar usuario de Auth al eliminar cuenta | Hoy solo se borran documentos de Firestore; queda el usuario en Firebase Auth | Media | Pendiente | HU20-CA04 / HU21-CA04 |
-| PB-41 | Aterrizaje del administrador en Dashboard | Hoy abre "Pacientes" aunque Dashboard es la primera pestaña | Baja | Por confirmar en QA | Observación de pruebas |
+| PB-41 | Aterrizaje del administrador en Dashboard | Abría "Pacientes" aunque Dashboard es la primera pestaña | Baja | Hecho (2026-09-20) | ERR-ADM-010 |
 | PB-42 | Medir latencia de retroalimentación (≤ 500 ms) | No hay instrumentación ni prueba | Media | Pendiente | HU10-CA04 |
 | PB-43 | Verificación de modo sin conexión | Probar ejecución de sesión y sincronización en modo avión | Media | Pendiente | RNF01 / HU19 |
 | PB-44 | Prueba del monitoreo con persona real en dispositivo físico | Iluminación, oclusión, distancia | Alta | Pendiente | RNF05 / HU07–HU09 |
-| PB-45 | Reglas de seguridad: restringir campos actualizables | Ver ERR-SEG en `05_Pruebas_y_Errores.md` (si se confirma) | Alta | Por confirmar en QA | RNF02 |
-| PB-46 | Prueba unitaria `FechaDatePickerTest` | Error de compilación previo que puede bloquear la suite | Media | Por confirmar en QA | Pruebas |
+| PB-45 | Reglas de seguridad: restringir campos actualizables | Escalada de rol, `activo`, reescritura de sesiones, sesiones a pacientes ajenos, Storage de ejercicios | Alta | Hecho (2026-09-20, desplegado) | ERR-SEG-003/004/005/008, ERR-FIS-016 |
+| PB-46 | Pruebas unitarias | `FechaDatePickerTest` no compilaba y `RolTest` estaba desactualizado | Media | Hecho (2026-09-20, suite en verde: 35 pruebas) | ERR-SEG-001/002 |
 | PB-47 | Documentar HU nuevas | Ampliar/actualizar las HU con lo listado en `02_Historias_de_Usuario.md` | Media | Hecho parcialmente (este documento) | Documentación |
 | PB-48 | Modelo financiero | Inconsistencia de Tabla 4 vs. Tabla 8 (TIR) señalada en CLAUDE.md §4 | Baja | Pendiente | Tesis (fuera de la app) |
 | PB-49 | Videos públicos de sesión | Evaluar acceso restringido al fisioterapeuta asignado (limitación de Storage Rules) | Media | Pendiente | RNF06 |
+
+## 3.4 Pendientes tras el QA (requieren decisión)
+
+| ID | Ítem | Descripción | Prioridad propuesta | Estado | Origen |
+|---|---|---|---|---|---|
+| PB-50 | Sesión sin persona detectada | Hoy se guarda como completada con 0 % y baja el promedio | Media | Decisión pendiente | ERR-PAC-004 |
+| PB-51 | Reanudar con detalle vacío | El resultado no avanza si el tramo nuevo no genera repeticiones | Media | Decisión pendiente | ERR-PAC-003 |
+| PB-52 | Aislamiento de lectura entre fisioterapeutas | Cualquier fisio lee `pacientes/*` y `usuarios/*` de pacientes ajenos; requiere rehacer las consultas de la app | Media | Pendiente | ERR-SEG-006 |
+| PB-53 | Storage con custom claims | Restringir escritura de material a fisioterapeutas y lectura del video de sesión al fisio asignado | Media | Pendiente | ERR-SEG-007/008 |
+| PB-54 | Borrado completo de cuentas | Eliminar usuario de Auth y, si corresponde, sesiones/observaciones | Media | Pendiente | ERR-ADM-006/007 |
+| PB-55 | Confirmar la voz en teléfono real | El emulador no tiene motor TTS; se declaró `<queries>` en el manifiesto | Media | Por verificar | ERR-PAC-005 |

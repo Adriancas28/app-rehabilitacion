@@ -30,6 +30,7 @@ Como fisioterapeuta quiero registrar y administrar ejercicios para asignarlos a 
 Como fisioterapeuta quiero asignar sesiones a mis pacientes para indicar los ejercicios que deben realizar.
 - CA01 Desde el detalle del paciente, ícono "+" abre el formulario (F06). CA02 Guarda ejercicio y fecha de asignación. CA03 Una sesión pendiente se edita (ejercicio, fecha, parámetros).
 - CA04 El paciente ve las sesiones asignadas (P01). CA05 Nota opcional. CA06 Repeticiones y duración por repetición editables solo para esa sesión; se muestra la duración estimada total.
+- Validaciones (desde 2026-09-20): repeticiones y duración enteros > 0; con "Personalizar ángulo" marcado, mínimo y máximo obligatorios y mínimo < máximo.
 - CA07 Los ejercicios sugeridos para el diagnóstico del paciente aparecen primero con ★. CA08 "Personalizar ángulo objetivo" (mín./máx.) solo para esa sesión; el paciente lo ve en la tarjeta "Ángulo objetivo" (P02).
 - **Diferencias:** el aviso al paciente "Este video es referencial. Tu fisioterapeuta ha ajustado este ejercicio…" descrito en CLAUDE.md **ya no existe**: el paciente ve el ángulo personalizado en la tarjeta "Ángulo objetivo" y la nota en "Nota de tu fisioterapeuta".
 - **Estado:** Implementada con diferencias. **Pantallas:** F06, F07, P01, P02.
@@ -79,6 +80,7 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 ### HU11 — Visualizar resultados y % de ejecución · Paciente
 - CA01 Al terminar, "Ver resultado" abre "¡Ejercicio completado!". CA02 Repeticiones completadas/asignadas. CA03 Promedio. CA04 Lista de todas las repeticiones con su %. CA05/CA06 Verde ≥ 75 %, ámbar < 75 %. CA07 Sesión parcial: muestra X/Y reales. CA08 "Ir a mi progreso" → "Mis resultados". CA09 Aclaración de que el cálculo (MediaPipe) es referencial.
 - **Diferencia:** ya no existe el modo "solo lectura" ni el desglose "Correctas/Errores" de la versión original.
+- CA09 (aclaración del cálculo referencial): corregido el 2026-09-20 tras la prueba QA (ERR-PAC-015); ahora se muestra en el resultado y en el detalle de la sesión.
 - **Estado:** Implementada con diferencias. **Pantalla:** P08.
 
 ## Épica 04 — Seguimiento
@@ -93,13 +95,13 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 - **Estado:** Implementada. **Pantallas:** P09, P10, P12.
 
 ### HU14 — Monitorear cumplimiento · Fisioterapeuta
-- CA01/CA04 El detalle del paciente distingue sesiones completadas y pendientes (badge). CA02 Se actualiza al finalizar una sesión (listener en vivo). CA03 "Progreso" muestra "X de Y sesiones completadas" y el % de adherencia.
+- CA01/CA04 El detalle del paciente distingue sesiones completadas, incompletas y pendientes (badge); una sesión con menos repeticiones completadas que asignadas es "Incompleta" y no cuenta en la adherencia. CA02 Se actualiza al finalizar una sesión (listener en vivo). CA03 "Progreso" muestra "X de Y sesiones completadas" y el % de adherencia.
 - **Estado:** Implementada. **Pantalla:** F02, F04.
 
 ## Épica 05 — Comunicación
 
 ### HU15 — Registrar y gestionar recomendaciones · Fisioterapeuta
-- CA01 Desde una sesión completada se registra una recomendación. CA02 Se almacena (con fecha y autor). CA03 Editar. CA04 Eliminar con confirmación. CA05 Campo embebido en el resultado de la sesión para crear rápido; "Ver todas las recomendaciones" abre la gestión completa.
+- Límite de 500 caracteres por recomendación. CA01 Desde una sesión completada se registra una recomendación. CA02 Se almacena (con fecha y autor). CA03 Editar. CA04 Eliminar con confirmación. CA05 Campo embebido en el resultado de la sesión para crear rápido; "Ver todas las recomendaciones" abre la gestión completa.
 - **Estado:** Implementada. **Pantallas:** F13, F17, F18, F19.
 
 ### HU16 — Consultar recomendaciones · Paciente
@@ -123,17 +125,18 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 ## Épica 07 — Administración de cuentas
 
 ### HU20 — Gestionar cuentas de pacientes · Administrador
-- CA01 Lista de pacientes. CA02 Alta: nombre, correo, contraseña, DNI, edad, género, contacto, lado afectado (Derecho/Izquierdo/Ambos) y diagnósticos; contraseña oculta con ver/ocultar. CA03 Edición. CA04 Eliminar con confirmación (borra los documentos de Firestore). CA05 Asignar fisioterapeuta (una sola vez; luego el botón desaparece). CA06 La tarjeta muestra el fisioterapeuta asignado. CA07 Lado afectado se guarda. CA08 Desactivar/Activar con confirmación; la cuenta inactiva no puede iniciar sesión.
-- **Diferencia:** eliminar una cuenta **no** elimina su usuario de Firebase Auth (limitación conocida).
+- CA01 Lista de pacientes (orden alfabético). CA02 Alta: nombre, correo, contraseña, DNI (8 dígitos, no repetido), edad (1–120), género, contacto (7–15 dígitos), lado afectado (Derecho/Izquierdo/Ambos) y diagnósticos; contraseña oculta con ver/ocultar; el botón se deshabilita mientras guarda (evita altas duplicadas). CA03 Edición. CA04 Eliminar con confirmación (borra los documentos de Firestore). CA05 Asignar fisioterapeuta (una sola vez; luego el botón desaparece). CA06 La tarjeta muestra el fisioterapeuta asignado. CA07 Lado afectado se guarda. CA08 Desactivar/Activar con confirmación; la cuenta inactiva no puede iniciar sesión.
+- Una cuenta desactivada que intenta entrar vuelve al login con el mensaje "Tu cuenta está desactivada…".
+- **Diferencia:** eliminar una cuenta **no** elimina su usuario de Firebase Auth ni sus sesiones (limitación conocida, ERR-ADM-006/007).
 - **Estado:** Implementada con diferencias. **Pantallas:** A04–A09.
 
 ### HU21 — Gestionar cuentas de fisioterapeutas · Administrador
-- CA01 Lista (con nº de pacientes asignados). CA02 Alta: nombre, correo, contraseña, edad, género, contacto; especialidad y colegiatura opcionales. CA03 Edición. CA04 Eliminar con confirmación. CA05 Desactivar/Activar con confirmación.
+- CA01 Lista (con nº de pacientes asignados). CA02 Alta: nombre, correo, contraseña, edad, género, contacto; especialidad y colegiatura opcionales. CA03 Edición. CA04 Eliminar con confirmación; un fisioterapeuta con pacientes asignados no se puede eliminar ("Tiene N paciente(s) asignado(s)…"). CA05 Desactivar/Activar con confirmación.
 - **Estado:** Implementada (misma diferencia sobre Auth). **Pantallas:** A10, A11.
 
 ### Dashboard del administrador (refinamiento de la Épica 07, no es HU numerada)
 - Lista de pacientes; al seleccionar uno, su dashboard: Sesiones ejecutadas, Precisión prom., detalle por sesión (lista) y gráficos (tendencia y % completado). Sin sesiones: "Este paciente todavía no ejecutó ninguna sesión."
-- **Diferencia:** al iniciar sesión el administrador aterriza en "Pacientes", no en "Dashboard" (según la observación de la prueba manual; se confirma en QA).
+- Al iniciar sesión el administrador aterriza en "Dashboard" (corregido el 2026-09-20, ERR-ADM-010).
 - **Estado:** Implementada. **Pantallas:** A01–A03.
 
 ### HU22 / HU23 — Perfil (Paciente / Fisioterapeuta)
@@ -145,7 +148,7 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 | ID | Requisito | Estado según código | Observación |
 |---|---|---|---|
 | RNF01 | Disponibilidad y uso sin conexión | Implementada por plataforma (Firestore offline por defecto; análisis en dispositivo) | No verificada en emulador (falta prueba en modo avión) |
-| RNF02 | Seguridad de acceso | Implementada: Firebase Auth, rol en Firestore, Security Rules, cierre de sesión con confirmación | Ver hallazgos de seguridad en `05_Pruebas_y_Errores.md` |
+| RNF02 | Seguridad de acceso | Implementada: Firebase Auth, rol en Firestore, Security Rules (endurecidas el 2026-09-20: el dueño solo cambia su nombre, el paciente solo escribe el resultado de su sesión, el fisio solo crea sesiones a sus pacientes), cierre de sesión con confirmación; al cerrar sesión Atrás ya no vuelve al perfil | Pendientes: aislamiento de lectura entre fisioterapeutas y Storage (ERR-SEG-006/007/008) |
 | RNF03 | Compatibilidad Android | Android 10+ (`minSdk 29`); "sin cámara" muestra mensaje | Un mensaje específico de "versión no compatible" no existe: el instalador de Android impide instalar en < 29 |
 | RNF04 | Integridad | Escrituras atómicas por documento; lectura tolerante a campos ausentes | Ver pruebas CP-INT |
 | RNF05 | Consistencia del monitoreo (iluminación, oclusión, distancia) | Implementada parcialmente en código (tolerancia a oclusión); **no verificable** con persona real en emulador | Requiere prueba en dispositivo físico |
