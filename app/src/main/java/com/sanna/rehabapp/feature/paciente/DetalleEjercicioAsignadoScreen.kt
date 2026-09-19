@@ -152,7 +152,7 @@ private fun NotaDelFisioterapeuta(nota: String) {
 private fun MaterialTerapeutico(url: String) {
     val forma = RoundedCornerShape(16.dp)
     if (esMaterialVideo(url)) {
-        ReproductorVideo(url = url)
+        ReproductorVideo(url = url, permitirAmpliar = true)
     } else {
         AsyncImage(
             model = url,
