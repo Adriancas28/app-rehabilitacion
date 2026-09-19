@@ -34,9 +34,7 @@ fun NavGraphBuilder.adminDestinos(
                 navController.navigate(Rutas.ADMIN_FISIOTERAPEUTAS) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }
@@ -72,9 +70,7 @@ fun NavGraphBuilder.adminDestinos(
                 navController.navigate(Rutas.ADMIN_FISIOTERAPEUTAS) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }
@@ -112,9 +108,7 @@ fun NavGraphBuilder.adminDestinos(
                 navController.navigate(Rutas.ADMIN_PACIENTES) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }

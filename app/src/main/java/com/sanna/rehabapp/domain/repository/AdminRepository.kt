@@ -83,5 +83,8 @@ interface AdminRepository {
 
     // HU20-CA05: solo debe llamarse si el paciente aún no tiene
     // fisioterapeuta asignado; la UI oculta la acción en ese caso.
+    // ERR-ADM-002: ¿ya hay otro paciente con este DNI? (excluirUid = el que se edita)
+    suspend fun existeDni(dni: String, excluirUid: String? = null): Boolean
+
     suspend fun asignarFisioterapeuta(pacienteId: String, fisioterapeutaId: String): Result<Unit>
 }

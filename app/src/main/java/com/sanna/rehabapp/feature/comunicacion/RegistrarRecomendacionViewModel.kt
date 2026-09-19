@@ -24,6 +24,9 @@ data class RegistrarRecomendacionUiState(
     val error: String? = null,
 )
 
+// ERR-FIS-007: tope de longitud de una recomendación.
+const val LIMITE_RECOMENDACION = 500
+
 // HU15 — el fisioterapeuta registra, edita y elimina recomendaciones sobre
 // una sesión ya realizada (CA01-CA04).
 @HiltViewModel
@@ -49,7 +52,7 @@ class RegistrarRecomendacionViewModel @Inject constructor(
         }
     }
 
-    fun onTextoCambiado(valor: String) = _uiState.update { it.copy(texto = valor, error = null) }
+    fun onTextoCambiado(valor: String) = _uiState.update { it.copy(texto = valor.take(LIMITE_RECOMENDACION), error = null) }
 
     // HU15-CA03 — precarga el texto de una recomendación existente para editarla.
     fun editar(recomendacion: Recomendacion) =
@@ -58,6 +61,7 @@ class RegistrarRecomendacionViewModel @Inject constructor(
     fun cancelarEdicion() = _uiState.update { it.copy(editandoId = null, texto = "") }
 
     fun guardar() {
+        if (_uiState.value.guardando) return
         val estado = _uiState.value
         val texto = estado.texto.trim()
         if (texto.isEmpty()) {

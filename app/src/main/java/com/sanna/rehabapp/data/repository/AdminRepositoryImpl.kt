@@ -19,6 +19,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
+class FisioterapeutaConPacientesException(val cantidad: Int) :
+    Exception("Tiene $cantidad paciente(s) asignado(s)")
+
 private const val APP_TEMPORAL_ADMIN = "app_admin_temporal"
 
 // Cuentas según el diccionario de datos: usuarios/{uid} (cuenta) +
@@ -199,6 +202,11 @@ class AdminRepositoryImpl @Inject constructor(
     }
 
     override suspend fun eliminarUsuario(uid: String): Result<Unit> = runCatching {
+        // ERR-ADM-003: no se elimina a un fisioterapeuta con pacientes asignados
+        // (quedarían huérfanos, sin poder reasignarse desde la app).
+        val asignados = firestore.collection(COL_PACIENTES)
+            .whereEqualTo("fisioterapeutaId", uid).get().await().size()
+        if (asignados > 0) throw FisioterapeutaConPacientesException(asignados)
         val diagnosticos = firestore.collection(COL_PACIENTES).document(uid)
             .collection(COL_DIAGNOSTICOS).get().await().documents
         val batch = firestore.batch()
@@ -209,6 +217,10 @@ class AdminRepositoryImpl @Inject constructor(
         batch.commit().await()
         Unit
     }
+
+    override suspend fun existeDni(dni: String, excluirUid: String?): Boolean =
+        firestore.collection(COL_PACIENTES).whereEqualTo("dni", dni).get().await()
+            .documents.any { it.id != excluirUid }
 
     override suspend fun asignarFisioterapeuta(pacienteId: String, fisioterapeutaId: String): Result<Unit> =
         runCatching {

@@ -98,9 +98,7 @@ fun NavGraphBuilder.pacienteDestinos(
                 navController.navigate(Rutas.PROGRESO_PACIENTE) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }

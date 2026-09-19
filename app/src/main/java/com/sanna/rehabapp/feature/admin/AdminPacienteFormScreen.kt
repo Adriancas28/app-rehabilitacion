@@ -75,12 +75,14 @@ fun AdminPacienteFormScreen(
                 valor = uiState.nombre,
                 onValorCambiado = viewModel::onNombreCambiado,
                 etiqueta = "Nombre completo",
+                mensajeError = uiState.errores["nombre"],
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             CampoTexto(
                 valor = uiState.email,
                 onValorCambiado = viewModel::onEmailCambiado,
                 etiqueta = "Correo electrónico",
+                mensajeError = uiState.errores["email"],
                 tipoTeclado = KeyboardType.Email,
                 habilitado = !viewModel.esEdicion,
             )
@@ -90,6 +92,7 @@ fun AdminPacienteFormScreen(
                     valor = uiState.password,
                     onValorCambiado = viewModel::onPasswordCambiado,
                     etiqueta = "Contraseña",
+                    mensajeError = uiState.errores["password"],
                     esPassword = true,
                 )
             }
@@ -98,6 +101,7 @@ fun AdminPacienteFormScreen(
                 valor = uiState.dni,
                 onValorCambiado = viewModel::onDniCambiado,
                 etiqueta = "DNI",
+                mensajeError = uiState.errores["dni"],
                 tipoTeclado = KeyboardType.Number,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
@@ -105,6 +109,7 @@ fun AdminPacienteFormScreen(
                 valor = uiState.edad,
                 onValorCambiado = viewModel::onEdadCambiado,
                 etiqueta = "Edad",
+                mensajeError = uiState.errores["edad"],
                 tipoTeclado = KeyboardType.Number,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
@@ -115,11 +120,13 @@ fun AdminPacienteFormScreen(
                 onSeleccionar = viewModel::onGeneroCambiado,
                 etiqueta = "Género",
             )
+            uiState.errores["genero"]?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             CampoTexto(
                 valor = uiState.numeroContacto,
                 onValorCambiado = viewModel::onNumeroContactoCambiado,
                 etiqueta = "Número de contacto",
+                mensajeError = uiState.errores["contacto"],
                 tipoTeclado = KeyboardType.Phone,
             )
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
@@ -140,6 +147,7 @@ fun AdminPacienteFormScreen(
                 etiquetaDeOpcion = { it.etiqueta },
                 onAlternar = viewModel::onDiagnosticoAlternado,
             )
+            uiState.errores["diagnosticos"]?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 
             uiState.error?.let { mensaje ->
                 Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))

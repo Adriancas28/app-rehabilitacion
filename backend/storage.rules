@@ -20,7 +20,12 @@ service firebase.storage {
     // fallara siempre y bloqueara el write con 403 para cualquiera.
     match /ejercicios/{ejercicioId}/{archivo} {
       allow read: if estaAutenticado();
-      allow write: if estaAutenticado();
+      // Solo se pueden CREAR archivos nuevos (la app sube cada material con un
+      // nombre único): nadie puede sobrescribir ni borrar material existente.
+      // Limitación conocida: Storage no distingue fisioterapeuta de paciente
+      // sin custom claims, así que cualquier autenticado puede subir uno nuevo.
+      allow create: if estaAutenticado() && request.resource.size < 200 * 1024 * 1024;
+      allow update, delete: if false;
     }
 
     // Parte 3 (video de la sesión): el paciente sube el video de SU sesión

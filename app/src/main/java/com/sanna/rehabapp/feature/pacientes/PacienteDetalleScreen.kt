@@ -352,9 +352,19 @@ private fun TarjetaSesion(
                 }
             }
             Spacer(modifier = Modifier.width(Spacing.xs))
+            // ERR-FIS-006: mismo criterio que "Resultados" (HU18): una sesión
+            // finalizada antes de tiempo se ve como "Incompleta".
             BadgeEstado(
-                texto = if (sesion.estado == EstadoSesion.COMPLETADA) "Completada" else "Pendiente",
-                tipo = if (sesion.estado == EstadoSesion.COMPLETADA) TipoBadge.EXITO else TipoBadge.ADVERTENCIA,
+                texto = when {
+                    sesion.estaIncompleta -> "Incompleta"
+                    sesion.estado == EstadoSesion.COMPLETADA -> "Completada"
+                    else -> "Pendiente"
+                },
+                tipo = when {
+                    sesion.estaIncompleta -> TipoBadge.ADVERTENCIA
+                    sesion.estado == EstadoSesion.COMPLETADA -> TipoBadge.EXITO
+                    else -> TipoBadge.ADVERTENCIA
+                },
             )
         }
     }

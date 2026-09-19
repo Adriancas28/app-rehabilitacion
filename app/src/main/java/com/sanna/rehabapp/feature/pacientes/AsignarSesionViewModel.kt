@@ -157,6 +157,7 @@ class AsignarSesionViewModel @Inject constructor(
     fun onDuracionSegundosCambiada(valor: String) = _uiState.update { it.copy(duracionSegundosTexto = valor) }
 
     fun guardar() {
+        if (_uiState.value.guardando) return
         val estado = _uiState.value
         val ejercicioId = estado.ejercicioSeleccionadoId
         val fecha = estado.fechaAsignacion
@@ -164,16 +165,44 @@ class AsignarSesionViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Selecciona un ejercicio y una fecha.") }
             return
         }
-        val notas = estado.notas.trim().ifBlank { null }
+        // ERR-FIS-001/003: duración y repeticiones deben ser enteros > 0.
         val duracionSegundos = estado.duracionSegundosTexto.trim().toIntOrNull()
-        // HU03 (ampliación, Etapa 4): el override de ángulo solo se envía si
-        // el checkbox está marcado Y ambos valores son números válidos --
-        // de lo contrario se guarda null (usa el rango por defecto).
-        val anguloMinOverride = estado.anguloMinTexto.trim().toFloatOrNull().takeIf { estado.personalizarAngulo }
-        val anguloMaxOverride = estado.anguloMaxTexto.trim().toFloatOrNull().takeIf { estado.personalizarAngulo }
+        if (duracionSegundos == null || duracionSegundos <= 0) {
+            _uiState.update { it.copy(error = "La duración por repetición debe ser un número entero mayor que 0.") }
+            return
+        }
+        val repeticiones = estado.repeticiones
+        if (repeticiones == null || repeticiones <= 0) {
+            _uiState.update { it.copy(error = "Las repeticiones deben ser un número entero mayor que 0.") }
+            return
+        }
+        val notas = estado.notas.trim().ifBlank { null }
+        // HU03 (ampliación, Etapa 4): el override de ángulo solo se envía si el
+        // checkbox está marcado. ERR-FIS-002/003: en ese caso mínimo y máximo
+        // son obligatorios, numéricos, y el mínimo debe ser menor que el máximo.
+        var anguloMinOverride: Float? = null
+        var anguloMaxOverride: Float? = null
+        if (estado.personalizarAngulo) {
+            val minimo = estado.anguloMinTexto.trim().toFloatOrNull()?.takeIf { it.isFinite() }
+            val maximo = estado.anguloMaxTexto.trim().toFloatOrNull()?.takeIf { it.isFinite() }
+            val mensaje = when {
+                minimo == null || maximo == null ->
+                    "Con \"Personalizar ángulo\" activado, ingresa un ángulo mínimo y un máximo válidos."
+                minimo < 0f || maximo > 180f -> "Los ángulos deben estar entre 0° y 180°."
+                minimo >= maximo -> "El ángulo mínimo debe ser menor que el máximo."
+                else -> null
+            }
+            if (mensaje != null) {
+                _uiState.update { it.copy(error = mensaje) }
+                return
+            }
+            anguloMinOverride = minimo
+            anguloMaxOverride = maximo
+        }
+        // Se marca de forma síncrona: protege contra doble toque.
+        _uiState.update { it.copy(guardando = true, error = null) }
 
         viewModelScope.launch {
-            _uiState.update { it.copy(guardando = true, error = null) }
             val resultado = if (esEdicion) {
                 sesionRepository.actualizarSesion(
                     pacienteId,
@@ -181,7 +210,7 @@ class AsignarSesionViewModel @Inject constructor(
                     ejercicioId,
                     fecha,
                     notas,
-                    estado.repeticiones,
+                    repeticiones,
                     duracionSegundos,
                     anguloMinOverride,
                     anguloMaxOverride,
@@ -198,7 +227,7 @@ class AsignarSesionViewModel @Inject constructor(
                     fisioterapeutaId,
                     fecha,
                     notas,
-                    estado.repeticiones,
+                    repeticiones,
                     duracionSegundos,
                     anguloMinOverride,
                     anguloMaxOverride,

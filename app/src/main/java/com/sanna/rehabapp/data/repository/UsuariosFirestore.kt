@@ -73,7 +73,7 @@ class UsuariosFirestore @Inject constructor(
             val diagnosticosPorPaciente = diagnosticosSnap.documents.groupBy { it.reference.parent.parent?.id }
             perfilesSnap.documents.mapNotNull { perfil ->
                 basePorId[perfil.id]?.let { base -> construir(base, perfil, diagnosticosPorPaciente[perfil.id].orEmpty()) }
-            }
+            }.ordenadosPorNombre()
         }
     }
 
@@ -83,6 +83,7 @@ class UsuariosFirestore @Inject constructor(
     ) { usuarios, perfilesSnap ->
         val perfilPorId = perfilesSnap.documents.associateBy { it.id }
         usuarios.documents.mapNotNull { base -> construir(base, perfilPorId[base.id], emptyList()) }
+            .ordenadosPorNombre()
     }
 
     // Deja los diagnósticos del paciente exactamente como `deseados`: conserva
@@ -136,6 +137,10 @@ class UsuariosFirestore @Inject constructor(
         )
     }
 }
+
+// ERR-ADM-004: orden estable y predecible (alfabético, con el uid como desempate).
+private fun List<Usuario>.ordenadosPorNombre(): List<Usuario> =
+    sortedWith(compareBy<Usuario>({ it.nombre.trim().lowercase() }, { it.uid }))
 
 internal fun escuchar(consulta: Query): Flow<QuerySnapshot> = callbackFlow {
     val registro = consulta.addSnapshotListener { snapshot, error ->

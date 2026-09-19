@@ -20,5 +20,7 @@ data class AdminUsuarioFormUiState(
     val cargando: Boolean = false,
     val guardando: Boolean = false,
     val error: String? = null,
+    // Errores por campo (clave = nombre del campo) — ERR-ADM-001/008/011.
+    val errores: Map<String, String> = emptyMap(),
     val guardadoExitoso: Boolean = false,
 )

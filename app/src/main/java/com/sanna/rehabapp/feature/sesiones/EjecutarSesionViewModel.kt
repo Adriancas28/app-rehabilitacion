@@ -128,6 +128,15 @@ class EjecutarSesionViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val sesion = sesionRepository.obtenerSesion(idPaciente, sesionId)
+            // ERR-PAC-002: una sesión ya completa no se puede volver a ejecutar.
+            if (sesion != null && sesion.estado == com.sanna.rehabapp.domain.model.EstadoSesion.COMPLETADA) {
+                val total = sesion.repeticiones ?: sesion.resultado?.repeticionesAsignadas ?: 0
+                val hechas = sesion.resultado?.repeticionesCompletadas ?: 0
+                if (hechas >= total) {
+                    _uiState.update { it.copy(cargando = false, error = "Esta sesión ya fue completada.") }
+                    return@launch
+                }
+            }
             val ejercicio = sesion?.let { ejercicioRepository.obtenerEjercicio(it.ejercicioId) }
             if (ejercicio != null) {
                 // HU20 (ampliación): se mide el lado que el administrador

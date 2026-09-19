@@ -22,9 +22,11 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    avisoLogin: com.sanna.rehabapp.core.navigation.AvisoLogin,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LoginUiState())
+    // ERR-ADM-009: aviso pendiente (p. ej. cuenta desactivada) al volver al login.
+    private val _uiState = MutableStateFlow(LoginUiState(error = avisoLogin.consumir()))
     val uiState: StateFlow<LoginUiState> = _uiState
 
     fun onEmailChange(valor: String) {
@@ -41,19 +43,26 @@ class LoginViewModel @Inject constructor(
             _uiState.update { it.copy(error = "Ingresa tu correo y contraseña.") }
             return
         }
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(estado.email.trim()).matches()) {
+            _uiState.update { it.copy(error = "El correo no tiene un formato válido (ej. nombre@correo.com).") }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true, error = null) }
             authRepository.login(estado.email.trim(), estado.password).fold(
                 onSuccess = {
                     _uiState.update { it.copy(cargando = false, loginExitoso = true) }
                 },
-                onFailure = {
-                    _uiState.update {
-                        it.copy(
-                            cargando = false,
-                            error = "No se pudo iniciar sesión. Verifica tus credenciales.",
-                        )
+                onFailure = { fallo ->
+                    val mensaje = when (fallo) {
+                        is com.google.firebase.FirebaseNetworkException ->
+                            "Sin conexión a internet. Revisa tu red e intenta de nuevo."
+                        is com.google.firebase.auth.FirebaseAuthInvalidUserException,
+                        is com.google.firebase.auth.FirebaseAuthInvalidCredentialsException ->
+                            "Correo o contraseña incorrectos."
+                        else -> "No se pudo iniciar sesión. Intenta de nuevo."
                     }
+                    _uiState.update { it.copy(cargando = false, error = mensaje) }
                 },
             )
         }

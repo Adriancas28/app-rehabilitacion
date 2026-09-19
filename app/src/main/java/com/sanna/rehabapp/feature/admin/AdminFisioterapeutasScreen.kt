@@ -168,7 +168,7 @@ fun AdminFisioterapeutasScreen(
     fisioAEliminar?.let { fisio ->
         DialogoConfirmacion(
             titulo = "Eliminar fisioterapeuta",
-            mensaje = "¿Seguro que deseas eliminar la cuenta de \"${fisio.nombre}\"?",
+            mensaje = "¿Seguro que deseas eliminar la cuenta de \"${fisio.nombre}\" (${fisio.email})?",
             textoConfirmar = "Eliminar",
             onConfirmar = {
                 viewModel.eliminar(fisio.uid, fisio.nombre)

@@ -181,7 +181,7 @@ fun AdminPacientesScreen(
     pacienteAEliminar?.let { paciente ->
         DialogoConfirmacion(
             titulo = "Eliminar paciente",
-            mensaje = "¿Seguro que deseas eliminar la cuenta de \"${paciente.nombre}\"?",
+            mensaje = "¿Seguro que deseas eliminar la cuenta de \"${paciente.nombre}\" (${paciente.email})?",
             textoConfirmar = "Eliminar",
             onConfirmar = {
                 viewModel.eliminar(paciente.uid, paciente.nombre)

@@ -169,9 +169,7 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
                 navController.navigate(Rutas.RESULTADOS) { launchSingleTop = true }
             },
             onCerrarSesion = {
-                navController.navigate(Rutas.LOGIN) {
-                    popUpTo(Rutas.RAIZ) { inclusive = true }
-                }
+                navController.irALoginLimpiandoPila()
             },
         )
     }

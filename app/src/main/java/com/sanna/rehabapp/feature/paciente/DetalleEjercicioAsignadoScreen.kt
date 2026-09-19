@@ -120,7 +120,7 @@ fun DetalleEjercicioAsignadoScreen(
                     if (uiState.sesionPendiente) {
                         Spacer(modifier = Modifier.height(Spacing.lg))
                         BotonPrimario(
-                            texto = "Iniciar sesión",
+                            texto = if (uiState.reanudable) "Reanudar sesión" else "Iniciar sesión",
                             onClick = { onIniciarSesion(viewModel.sesionId) },
                             icono = Icons.Rounded.PlayArrow,
                         )

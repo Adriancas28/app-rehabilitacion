@@ -1,7 +1,12 @@
 package com.sanna.rehabapp.feature.sesiones
 
 import android.Manifest
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -48,7 +54,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import java.io.File
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
@@ -70,6 +80,15 @@ import com.sanna.rehabapp.core.tts.rememberLectorInstrucciones
 private const val SEGUNDOS_PREPARACION_INICIAL = 10
 private const val SEGUNDOS_DESCANSO_ENTRE_REPETICIONES = 5
 
+private fun Context.buscarActividad(): android.app.Activity? {
+    var actual: Context? = this
+    while (actual is ContextWrapper) {
+        if (actual is android.app.Activity) return actual
+        actual = actual.baseContext
+    }
+    return null
+}
+
 @Composable
 fun EjecutarSesionScreen(
     onVolver: () -> Unit,
@@ -86,9 +105,31 @@ fun EjecutarSesionScreen(
                 PackageManager.PERMISSION_GRANTED,
         )
     }
+    // ERR-PAC-006: tras denegar de forma permanente, el sistema ya no muestra
+    // el diálogo; "Conceder permiso" debe llevar a los Ajustes de la app.
+    var permisoDenegadoPermanente by remember { mutableStateOf(false) }
     val solicitarPermiso = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
-    ) { concedido -> permisoConcedido = concedido }
+    ) { concedido ->
+        permisoConcedido = concedido
+        if (!concedido) {
+            val actividad = contexto.buscarActividad()
+            permisoDenegadoPermanente = actividad != null &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(actividad, Manifest.permission.CAMERA)
+        }
+    }
+    // Al volver de Ajustes se vuelve a comprobar el permiso.
+    val duenoCicloVida = LocalLifecycleOwner.current
+    DisposableEffect(duenoCicloVida) {
+        val observador = LifecycleEventObserver { _, evento ->
+            if (evento == Lifecycle.Event.ON_RESUME) {
+                permisoConcedido = ContextCompat.checkSelfPermission(contexto, Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED
+            }
+        }
+        duenoCicloVida.lifecycle.addObserver(observador)
+        onDispose { duenoCicloVida.lifecycle.removeObserver(observador) }
+    }
 
     LaunchedEffect(Unit) {
         if (!permisoConcedido) solicitarPermiso.launch(Manifest.permission.CAMERA)
@@ -153,8 +194,17 @@ fun EjecutarSesionScreen(
                     )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(
-                        texto = "Conceder permiso",
-                        onClick = { solicitarPermiso.launch(Manifest.permission.CAMERA) },
+                        texto = if (permisoDenegadoPermanente) "Abrir ajustes" else "Conceder permiso",
+                        onClick = {
+                            if (permisoDenegadoPermanente) {
+                                contexto.startActivity(
+                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                                        .setData(Uri.fromParts("package", contexto.packageName, null)),
+                                )
+                            } else {
+                                solicitarPermiso.launch(Manifest.permission.CAMERA)
+                            }
+                        },
                         modifier = Modifier.width(220.dp),
                     )
                 }

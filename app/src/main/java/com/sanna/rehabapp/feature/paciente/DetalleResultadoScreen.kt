@@ -101,6 +101,8 @@ fun DetalleResultadoScreen(
                     } else {
                         ListaRepeticiones(resultado.detallePorRepeticion, total = resultado.repeticionesAsignadas)
                     }
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    AclaracionCalculo()
                     Spacer(modifier = Modifier.height(Spacing.md))
                 }
 

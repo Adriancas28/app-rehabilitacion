@@ -9,6 +9,8 @@ class RolTest {
     fun `desdeFirestore mapea paciente, fisioterapeuta y admin correctamente`() {
         assertEquals(Rol.PACIENTE, Rol.desdeFirestore("paciente"))
         assertEquals(Rol.FISIOTERAPEUTA, Rol.desdeFirestore("fisioterapeuta"))
+        assertEquals(Rol.ADMIN, Rol.desdeFirestore("administrador"))
+        // "admin" se sigue aceptando como alias de lectura (datos antiguos).
         assertEquals(Rol.ADMIN, Rol.desdeFirestore("admin"))
     }
 
@@ -16,7 +18,7 @@ class RolTest {
     fun `aFirestore es el inverso de desdeFirestore`() {
         assertEquals("paciente", Rol.PACIENTE.aFirestore())
         assertEquals("fisioterapeuta", Rol.FISIOTERAPEUTA.aFirestore())
-        assertEquals("admin", Rol.ADMIN.aFirestore())
+        assertEquals("administrador", Rol.ADMIN.aFirestore())
     }
 
     @Test(expected = IllegalArgumentException::class)

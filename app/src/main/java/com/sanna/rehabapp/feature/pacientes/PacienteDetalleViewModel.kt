@@ -34,7 +34,7 @@ data class PacienteDetalleUiState(
         get() = sesiones.filter { cumplePeriodo(it.fechaAsignacion, filtroPeriodo) }
 
     val sesionesCompletadas: Int
-        get() = sesionesFiltradas.count { it.estado == EstadoSesion.COMPLETADA }
+        get() = sesionesFiltradas.count { it.estaCompletada }
 
     // HU12-CA01/CA02: progreso general (promedio del % de ejecución) sobre
     // las sesiones completadas que cumplen el filtro — la evolución

@@ -35,4 +35,14 @@ data class Sesion(
     // sesión, para que el fisioterapeuta lo revise. Null si no se grabó.
     val videoUrl: String? = null,
     val sincronizado: Boolean = true,
-)
+) {
+    // ERR-FIS-006: finalizada antes de tiempo (menos repeticiones completadas
+    // que asignadas, HU06-CA07). No cuenta como completada en la adherencia (HU14).
+    val estaIncompleta: Boolean
+        get() = resultado != null && resultado.repeticionesAsignadas > 0 &&
+            resultado.repeticionesCompletadas < resultado.repeticionesAsignadas
+
+    // Sesión realizada por completo: todas las repeticiones asignadas.
+    val estaCompletada: Boolean
+        get() = estado == EstadoSesion.COMPLETADA && !estaIncompleta
+}

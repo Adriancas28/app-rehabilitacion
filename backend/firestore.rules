@@ -36,11 +36,27 @@ service cloud.firestore {
              get(/databases/$(database)/documents/pacientes/$(request.auth.uid)).data.fisioterapeutaId == fisioUid;
     }
 
+    // Devuelve true si la escritura solo toca los campos indicados (los demás
+    // deben quedar idénticos): evita que el dueño de un documento cambie campos
+    // que no le corresponden (rol, activo, fisioterapeutaId, etc.).
+    function soloCambia(campos) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(campos);
+    }
+
+    // El fisioterapeuta asignado al paciente {pacienteId}.
+    function esFisioDe(pacienteId) {
+      return esFisioterapeuta() &&
+             get(/databases/$(database)/documents/pacientes/$(pacienteId)).data.fisioterapeutaId == request.auth.uid;
+    }
+
     // usuarios/{uid} — cuenta: correo, rol, nombre, fechaCreacion, activo
     match /usuarios/{uid} {
       allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin() || esPacienteDe(uid);
-      allow create, delete: if esDueno(uid) || esAdmin();
-      allow update: if esDueno(uid) || esAdmin();
+      // Las cuentas las crea/elimina solo el administrador (la app crea el
+      // documento con la sesión del admin). El dueño solo puede cambiar su
+      // nombre: no puede tocar `rol` ni `activo` (escalada de privilegios).
+      allow create, delete: if esAdmin();
+      allow update: if esAdmin() || (esDueno(uid) && soloCambia(['nombre']));
     }
 
     // pacientes/{uid} — dni, edad, genero, contacto, ladoAfectado, fisioterapeutaId
@@ -52,7 +68,7 @@ service cloud.firestore {
       // HU01-CA06: el fisioterapeuta registra los diagnósticos.
       match /diagnosticos/{diagnosticoDoc} {
         allow read: if esDueno(uid) || esFisioterapeuta() || esAdmin();
-        allow write: if esFisioterapeuta() || esAdmin();
+        allow write: if esFisioDe(uid) || esAdmin();
       }
     }
 
@@ -88,11 +104,24 @@ service cloud.firestore {
                           (estaAutenticado() &&
                            (resource.data.pacienteId == request.auth.uid ||
                             resource.data.fisioterapeutaId == request.auth.uid));
-      allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-      // El paciente guarda el resultado y el video; el fisioterapeuta edita la asignación.
-      allow update: if estaAutenticado() &&
-                       (resource.data.pacienteId == request.auth.uid ||
-                        resource.data.fisioterapeutaId == request.auth.uid);
+      // Solo el fisioterapeuta ASIGNADO al paciente puede crearle sesiones.
+      allow create: if esFisioterapeuta() &&
+                       request.resource.data.fisioterapeutaId == request.auth.uid &&
+                       get(/databases/$(database)/documents/pacientes/$(request.resource.data.pacienteId)).data.fisioterapeutaId == request.auth.uid;
+      allow update:
+        // El paciente guarda el resultado de SU sesión (mientras no esté completa) y
+        // la URL del video; ningún otro campo (estado de asignación, dueño, ejercicio...).
+        if (estaAutenticado() && resource.data.pacienteId == request.auth.uid &&
+            ((soloCambia(['estado', 'fechaEjecucion', 'porcentajeEjecucion', 'desviacionPromedio',
+                          'repeticionesAsignadas', 'repeticionesCompletadas', 'repeticionesCorrectas', 'repeticiones']) &&
+              (resource.data.estado != 'completada' ||
+               resource.data.repeticionesCompletadas < resource.data.repeticionesAsignadas)) ||
+             soloCambia(['videoUrl'])))
+        // El fisioterapeuta solo edita los parámetros de asignación de una sesión pendiente.
+        || (estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid &&
+            resource.data.estado == 'asignada' &&
+            soloCambia(['ejercicioId', 'fechaAsignacion', 'nota', 'duracionSegundos',
+                        'anguloMinOverride', 'anguloMaxOverride', 'repeticionesAsignadas', 'duracionEstimada']));
       allow delete: if false;
 
       // sesiones/{sesionId}/observaciones/{id} — recomendaciones del fisioterapeuta
@@ -100,8 +129,12 @@ service cloud.firestore {
         allow read: if estaAutenticado() &&
                        (get(/databases/$(database)/documents/sesiones/$(sesionId)).data.pacienteId == request.auth.uid ||
                         get(/databases/$(database)/documents/sesiones/$(sesionId)).data.fisioterapeutaId == request.auth.uid);
-        allow create: if esFisioterapeuta() && request.resource.data.fisioterapeutaId == request.auth.uid;
-        allow update, delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
+        // Solo el fisioterapeuta de la sesión registra recomendaciones; al editar solo cambia el texto.
+        allow create: if esFisioterapeuta() &&
+                         request.resource.data.fisioterapeutaId == request.auth.uid &&
+                         get(/databases/$(database)/documents/sesiones/$(sesionId)).data.fisioterapeutaId == request.auth.uid;
+        allow update: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid && soloCambia(['texto']);
+        allow delete: if estaAutenticado() && resource.data.fisioterapeutaId == request.auth.uid;
       }
     }
   }

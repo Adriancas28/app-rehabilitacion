@@ -50,6 +50,8 @@ fun CampoTexto(
     lineasMinimas: Int = 1,
     habilitado: Boolean = true,
     mensajeError: String? = null,
+    // Límite de caracteres: recorta la entrada y muestra un contador "n/max".
+    maxCaracteres: Int? = null,
     imeAction: ImeAction = ImeAction.Default,
     alPresionarIme: (() -> Unit)? = null,
     forma: Shape = RoundedCornerShape(12.dp),
@@ -59,14 +61,24 @@ fun CampoTexto(
 
     OutlinedTextField(
         value = valor,
-        onValueChange = onValorCambiado,
+        onValueChange = { nuevo -> onValorCambiado(if (maxCaracteres != null) nuevo.take(maxCaracteres) else nuevo) },
         label = { Text(etiqueta) },
         shape = forma,
         singleLine = soloUnaLinea,
         minLines = lineasMinimas,
         enabled = habilitado,
         isError = mensajeError != null,
-        supportingText = mensajeError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
+        supportingText = when {
+            mensajeError != null -> ({ Text(mensajeError, color = MaterialTheme.colorScheme.error) })
+            maxCaracteres != null -> ({
+                Text(
+                    "${valor.length}/$maxCaracteres",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                )
+            })
+            else -> null
+        },
         leadingIcon = iconoInicial?.let { { Icon(it, contentDescription = null) } },
         trailingIcon = if (esPassword) {
             {

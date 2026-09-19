@@ -194,6 +194,7 @@ fun FisioResultadoSesionScreen(
                     CampoTexto(
                         valor = uiState.recomendacionTexto,
                         onValorCambiado = viewModel::onRecomendacionTextoCambiado,
+                        maxCaracteres = com.sanna.rehabapp.feature.comunicacion.LIMITE_RECOMENDACION,
                         etiqueta = "Escribe una recomendación según lo observado...",
                         soloUnaLinea = false,
                         lineasMinimas = 2,
@@ -311,11 +312,14 @@ private fun FilaRepeticionConError(detalle: DetalleRepeticion, total: Int) {
     }
 }
 
-// "Segundo 15 — ángulo incorrecto: 120° (esperado 90°)". Las sesiones
-// guardadas antes de registrar el segundo caen a "Articulación — ángulo
-// incorrecto: ...", y sin ángulos a "Articulación — tipo de error".
+// ERR-FIS-005: "Segundo 8 — Rodilla derecha — ángulo 81° (esperado 90°)": la
+// articulación se muestra siempre junto al segundo. Las sesiones guardadas
+// antes de registrar el segundo caen a "Articulación — ángulo incorrecto...",
+// y sin ángulos a "Articulación — tipo de error".
 private fun descripcionError(error: com.sanna.rehabapp.domain.model.ErrorDetectado): String {
-    val prefijo = error.segundo?.let { "Segundo $it" } ?: error.articulacion
+    val articulacion = com.sanna.rehabapp.domain.model.Articulacion.desdeFirestoreOrNull(error.articulacion)?.etiqueta
+        ?: error.articulacion
+    val prefijo = error.segundo?.let { "Segundo $it — $articulacion" } ?: articulacion
     val detectado = error.anguloDetectado
     val esperado = error.anguloEsperado
     return if (detectado != null && esperado != null) {

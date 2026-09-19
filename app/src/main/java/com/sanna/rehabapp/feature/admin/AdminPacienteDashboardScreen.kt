@@ -94,12 +94,20 @@ fun AdminPacienteDashboardScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(text = "Detalle por sesión", style = MaterialTheme.typography.titleMedium)
-                    BotonOutline(
-                        texto = if (uiState.mostrandoGrafico) "Mostrar lista" else "Mostrar gráfico",
-                        onClick = viewModel::onAlternarVista,
-                        icono = if (uiState.mostrandoGrafico) Icons.Rounded.ListIcon else Icons.Rounded.BarChart,
+                    // ERR-ADM-012: el título ocupa el espacio sobrante y el botón
+                    // tiene un ancho propio, para que no se peguen en pantallas estrechas.
+                    Text(
+                        text = "Detalle por sesión",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f).padding(end = Spacing.sm),
                     )
+                    androidx.compose.foundation.layout.Box(modifier = Modifier.width(184.dp)) {
+                        BotonOutline(
+                            texto = if (uiState.mostrandoGrafico) "Mostrar lista" else "Mostrar gráfico",
+                            onClick = viewModel::onAlternarVista,
+                            icono = if (uiState.mostrandoGrafico) Icons.Rounded.ListIcon else Icons.Rounded.BarChart,
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))

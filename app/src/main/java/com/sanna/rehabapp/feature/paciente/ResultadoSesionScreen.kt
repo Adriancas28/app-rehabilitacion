@@ -81,6 +81,9 @@ fun ResultadoSesionScreen(
                         Spacer(modifier = Modifier.height(Spacing.md))
                     }
 
+                    AclaracionCalculo()
+                    Spacer(modifier = Modifier.height(Spacing.md))
+
                     BotonPrimario(texto = "Ir a mi progreso", onClick = onIrAMiProgreso)
                 }
             }

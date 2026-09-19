@@ -59,7 +59,15 @@ class AdminFisioterapeutasViewModel @Inject constructor(
         viewModelScope.launch {
             adminRepository.eliminarUsuario(uid).fold(
                 onSuccess = { _uiState.update { it.copy(mensaje = "Se eliminó a $nombre.") } },
-                onFailure = { _uiState.update { it.copy(mensaje = "No se pudo eliminar a $nombre.") } },
+                onFailure = { error ->
+                    val mensaje = if (error is com.sanna.rehabapp.data.repository.FisioterapeutaConPacientesException) {
+                        "No se puede eliminar a $nombre: tiene ${error.cantidad} paciente(s) asignado(s). " +
+                            "Puedes desactivar su cuenta en su lugar."
+                    } else {
+                        "No se pudo eliminar a $nombre."
+                    }
+                    _uiState.update { it.copy(mensaje = mensaje) }
+                },
             )
         }
     }

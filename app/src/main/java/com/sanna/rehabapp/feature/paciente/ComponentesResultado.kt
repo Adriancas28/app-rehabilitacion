@@ -137,3 +137,13 @@ private fun colorDePrecision(porcentaje: Float) =
 
 internal fun formatearFechaCorta(fecha: Date): String =
     SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(fecha)
+
+// HU11-CA09 (ERR-PAC-015): aclaración del cálculo del porcentaje.
+@Composable
+internal fun AclaracionCalculo() {
+    Text(
+        text = "El porcentaje se calcula según las correcciones detectadas por MediaPipe y es referencial.",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}

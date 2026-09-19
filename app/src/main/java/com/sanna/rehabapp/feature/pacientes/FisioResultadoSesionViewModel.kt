@@ -71,7 +71,7 @@ class FisioResultadoSesionViewModel @Inject constructor(
     }
 
     fun onRecomendacionTextoCambiado(valor: String) =
-        _uiState.update { it.copy(recomendacionTexto = valor, recomendacionGuardada = false) }
+        _uiState.update { it.copy(recomendacionTexto = valor.take(com.sanna.rehabapp.feature.comunicacion.LIMITE_RECOMENDACION), recomendacionGuardada = false) }
 
     fun guardarRecomendacion() {
         val texto = _uiState.value.recomendacionTexto.trim()
