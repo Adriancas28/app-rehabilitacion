@@ -2,6 +2,7 @@ package com.sanna.rehabapp.feature.admin
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,12 +41,9 @@ import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 
 // Etapa 2A (dashboard Admin, mockup "Dashboard de progreso en el panel
 // Administrador") -- dashboard de UN paciente puntual, con dos vistas
-// intercambiables: lista de sesiones (por defecto) y gráfico (tendencia
-// de precisión, % completado por sesión, correctas vs errores). Los datos
-// de sesiones son estáticos por ahora (ver SESIONES_DEMO en el
-// ViewModel) -- no existe todavía una fuente real de datos para esta
-// vista concreta, distinta del resultado de sesión ya implementado en el
-// resto de la app.
+// intercambiables: lista de sesiones ejecutadas (por defecto) y gráfico
+// (tendencia de precisión y % completado por sesión). Todo sale de las
+// sesiones reales del paciente en Firestore.
 @Composable
 fun AdminPacienteDashboardScreen(
     onVolver: () -> Unit,
@@ -106,10 +104,14 @@ fun AdminPacienteDashboardScreen(
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
 
-                if (uiState.mostrandoGrafico) {
-                    VistaGrafico(uiState)
-                } else {
-                    VistaLista(uiState.sesiones)
+                when {
+                    uiState.sesiones.isEmpty() -> Text(
+                        text = "Este paciente todavía no ejecutó ninguna sesión.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    uiState.mostrandoGrafico -> VistaGrafico(uiState)
+                    else -> VistaLista(uiState.sesiones)
                 }
             }
         }
@@ -166,7 +168,7 @@ private fun VistaLista(sesiones: List<SesionDashboard>) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f).padding(end = Spacing.sm)) {
                         Text(
                             text = "Sesión ${sesion.numero} — ${sesion.ejercicio}",
                             style = MaterialTheme.typography.titleSmall,
@@ -177,7 +179,7 @@ private fun VistaLista(sesiones: List<SesionDashboard>) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Column(horizontalAlignment = Alignment.End) {
+                    Column(horizontalAlignment = Alignment.End, modifier = Modifier.width(IntrinsicSize.Max)) {
                         Text(
                             text = "${sesion.porcentajeCorrectas}% correctas",
                             style = MaterialTheme.typography.titleSmall,
@@ -197,7 +199,8 @@ private fun VistaLista(sesiones: List<SesionDashboard>) {
 
 @Composable
 private fun VistaGrafico(uiState: AdminPacienteDashboardUiState) {
-    val etiquetasSesion = uiState.sesiones.map { "Sesión ${it.numero}" }
+    // Con muchas sesiones "Sesión N" no cabe en su casilla: solo el número.
+    val etiquetasSesion = uiState.sesiones.map { if (uiState.sesiones.size <= 5) "Sesión ${it.numero}" else "${it.numero}" }
     Column {
         Text(text = "Tendencia de precisión", style = MaterialTheme.typography.titleSmall)
         Spacer(modifier = Modifier.height(Spacing.xs))

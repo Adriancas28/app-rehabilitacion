@@ -4,31 +4,30 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.domain.model.EstadoSesion
+import com.sanna.rehabapp.domain.repository.EjercicioRepository
+import com.sanna.rehabapp.domain.repository.SesionRepository
 import com.sanna.rehabapp.domain.repository.UsuarioRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// Dato estático de demostración -- por el momento no hay datos reales de
-// sesiones ejecutadas por el paciente en Firestore para este dashboard
-// (es distinto del resultado de sesión ya existente en el resto de la
-// app), así que se muestra igual para cualquier paciente seleccionado,
-// tal como el mockup, hasta que exista una fuente de datos real.
 data class SesionDashboard(
     val numero: Int,
     val ejercicio: String,
     val fecha: String,
+    // % de precisión de la sesión (porcentajeEjecucion del resultado).
     val porcentajeCorrectas: Int,
+    // Repeticiones completadas sobre las asignadas.
     val porcentajeCompletado: Int,
-)
-
-val SESIONES_DEMO = listOf(
-    SesionDashboard(1, "Flexión de rodilla", "12/05/2024", 80, 100),
-    SesionDashboard(2, "Flexión de rodilla", "14/05/2024", 88, 100),
-    SesionDashboard(3, "Sentadilla asistida", "17/05/2024", 65, 75),
 )
 
 data class AdminPacienteDashboardUiState(
@@ -36,39 +35,83 @@ data class AdminPacienteDashboardUiState(
     val subtitulo: String = "",
     val cargando: Boolean = true,
     val mostrandoGrafico: Boolean = false,
-    val sesiones: List<SesionDashboard> = SESIONES_DEMO,
+    // Solo sesiones ejecutadas (con resultado), la más antigua primero: las
+    // pendientes son planeadas, no ejecutadas.
+    val sesiones: List<SesionDashboard> = emptyList(),
 ) {
     val sesionesEjecutadas: Int get() = sesiones.size
     val precisionPromedio: Int get() =
-        if (sesiones.isEmpty()) 0 else sesiones.sumOf { it.porcentajeCorrectas } / sesiones.size
+        if (sesiones.isEmpty()) 0 else Math.round(sesiones.map { it.porcentajeCorrectas }.average()).toInt()
 }
 
+// Etapa 2A (dashboard Admin) — progreso de UN paciente a partir de sus
+// sesiones reales en Firestore (el admin puede leerlas por esAdmin() en las
+// Security Rules): cuántas ejecutó, precisión promedio (promedio de los % de
+// cada sesión) y el detalle por sesión.
 @HiltViewModel
 class AdminPacienteDashboardViewModel @Inject constructor(
     private val usuarioRepository: UsuarioRepository,
+    sesionRepository: SesionRepository,
+    ejercicioRepository: EjercicioRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private val pacienteId: String = checkNotNull(savedStateHandle[Rutas.ARG_ADMIN_PACIENTE_ID])
     private val nombreInicial: String = savedStateHandle[Rutas.ARG_ADMIN_PACIENTE_NOMBRE] ?: ""
 
-    private val _uiState = MutableStateFlow(AdminPacienteDashboardUiState(nombre = nombreInicial))
-    val uiState: StateFlow<AdminPacienteDashboardUiState> = _uiState.asStateFlow()
+    private val cabecera = MutableStateFlow(nombreInicial to "")
+    private val mostrandoGrafico = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
             val usuario = usuarioRepository.obtenerUsuario(pacienteId)
             val diagnostico = usuario?.diagnosticos?.firstOrNull()?.tipo?.etiqueta
             val estado = if (usuario?.activo != false) "Activo" else "Inactivo"
-            _uiState.value = _uiState.value.copy(
-                nombre = usuario?.nombre ?: nombreInicial,
-                subtitulo = listOfNotNull(diagnostico, estado).joinToString(" · "),
-                cargando = false,
-            )
+            cabecera.value = (usuario?.nombre ?: nombreInicial) to listOfNotNull(diagnostico, estado).joinToString(" · ")
         }
     }
 
+    val uiState: StateFlow<AdminPacienteDashboardUiState> = combine(
+        sesionRepository.observarSesionesDe(pacienteId),
+        ejercicioRepository.observarEjercicios(),
+        cabecera,
+        mostrandoGrafico,
+    ) { sesiones, ejercicios, (nombre, subtitulo), grafico ->
+        val nombres = ejercicios.associate { it.id to it.nombre }
+        val formato = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        val ejecutadas = sesiones
+            .filter { it.estado == EstadoSesion.COMPLETADA && it.resultado != null }
+            .sortedBy { it.fechaEjecucion ?: it.fechaAsignacion }
+            .mapIndexed { indice, sesion ->
+                val resultado = sesion.resultado!!
+                SesionDashboard(
+                    numero = indice + 1,
+                    ejercicio = nombres[sesion.ejercicioId] ?: "Ejercicio",
+                    fecha = (sesion.fechaEjecucion ?: sesion.fechaAsignacion)?.let(formato::format) ?: "—",
+                    porcentajeCorrectas = Math.round(resultado.porcentajeEjecucion),
+                    porcentajeCompletado = if (resultado.repeticionesAsignadas > 0) {
+                        Math.round(resultado.repeticionesCompletadas * 100f / resultado.repeticionesAsignadas)
+                    } else {
+                        0
+                    },
+                )
+            }
+        AdminPacienteDashboardUiState(
+            nombre = nombre,
+            subtitulo = subtitulo,
+            cargando = false,
+            mostrandoGrafico = grafico,
+            sesiones = ejecutadas,
+        )
+    }
+        .catch { emit(AdminPacienteDashboardUiState(nombre = nombreInicial, cargando = false)) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = AdminPacienteDashboardUiState(nombre = nombreInicial),
+        )
+
     fun onAlternarVista() {
-        _uiState.value = _uiState.value.copy(mostrandoGrafico = !_uiState.value.mostrandoGrafico)
+        mostrandoGrafico.value = !mostrandoGrafico.value
     }
 }
