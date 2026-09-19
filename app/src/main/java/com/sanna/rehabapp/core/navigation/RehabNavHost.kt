@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import com.google.firebase.auth.FirebaseAuth
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.feature.auth.ConsentimientoScreen
 import com.sanna.rehabapp.feature.auth.LoginScreen
@@ -31,6 +33,23 @@ fun RehabNavHost(navController: NavHostController = rememberNavController()) {
     // estado) — leer `.value` recién dentro de cada composable(ruta) {}
     // es lo que permite que esa pantalla se recomponga cuando cambia.
     val menuBarraLateralVisible = rememberSaveable { mutableStateOf(false) }
+
+    // Si Firebase cierra la sesión por su cuenta (token vencido o revocado)
+    // mientras se está en una pantalla con datos, todas sus consultas pasan
+    // a PERMISSION_DENIED y la pantalla queda vacía sin explicación: se
+    // vuelve al login.
+    DisposableEffect(navController) {
+        val oyente = FirebaseAuth.AuthStateListener { auth ->
+            val ruta = navController.currentDestination?.route
+            if (auth.currentUser == null && ruta != null && ruta != Rutas.LOGIN && ruta != Rutas.RAIZ) {
+                navController.navigate(Rutas.LOGIN) {
+                    popUpTo(navController.graph.findStartDestination().id) { inclusive = true }
+                }
+            }
+        }
+        FirebaseAuth.getInstance().addAuthStateListener(oyente)
+        onDispose { FirebaseAuth.getInstance().removeAuthStateListener(oyente) }
+    }
 
     NavHost(navController = navController, startDestination = Rutas.RAIZ) {
         composable(Rutas.RAIZ) {

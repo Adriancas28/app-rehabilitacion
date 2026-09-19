@@ -11,6 +11,7 @@ object Rutas {
     // HU18-CA01/CA03 (Sprint 5) — vista agregada de sesiones/resultados de
     // todos los pacientes del fisioterapeuta, con filtros.
     const val RESULTADOS = "fisioterapeuta/resultados"
+    const val RESULTADOS_PACIENTE = "fisioterapeuta/resultados/{pacienteId}"
 
     const val EJERCICIOS = "fisioterapeuta/ejercicios"
     const val EJERCICIO_FORMULARIO = "fisioterapeuta/ejercicios/formulario?ejercicioId={ejercicioId}"
@@ -59,6 +60,8 @@ object Rutas {
 
     fun adminDashboardPaciente(pacienteId: String, nombre: String): String =
         "admin/dashboard/$pacienteId?nombre=${java.net.URLEncoder.encode(nombre, "UTF-8")}"
+
+    fun resultadosPaciente(pacienteId: String): String = "fisioterapeuta/resultados/$pacienteId"
 
     fun pacienteDetalle(pacienteId: String): String = "fisioterapeuta/pacientes/$pacienteId"
 

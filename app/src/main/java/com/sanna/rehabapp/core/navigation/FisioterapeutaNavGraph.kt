@@ -15,6 +15,7 @@ import com.sanna.rehabapp.feature.pacientes.AsignarSesionScreen
 import com.sanna.rehabapp.feature.pacientes.FisioResultadoSesionScreen
 import com.sanna.rehabapp.feature.pacientes.PacienteDetalleScreen
 import com.sanna.rehabapp.feature.pacientes.PacientesListScreen
+import com.sanna.rehabapp.feature.pacientes.ResultadosPacienteScreen
 import com.sanna.rehabapp.feature.pacientes.ResultadosScreen
 import com.sanna.rehabapp.feature.perfil.PerfilFisioterapeutaScreen
 
@@ -136,9 +137,21 @@ fun NavGraphBuilder.fisioterapeutaDestinos(
             onNavegarAPerfil = {
                 navController.navigate(Rutas.PERFIL_FISIOTERAPEUTA) { launchSingleTop = true }
             },
+            onSeleccionarPaciente = { pacienteId ->
+                navController.navigate(Rutas.resultadosPaciente(pacienteId))
+            },
+        )
+    }
+    composable(
+        route = Rutas.RESULTADOS_PACIENTE,
+        arguments = listOf(navArgument(Rutas.ARG_PACIENTE_ID) { type = NavType.StringType }),
+    ) { entrada ->
+        ResultadosPacienteScreen(
+            onVolver = { navController.popBackStack() },
             onVerResultado = { pacienteId, sesionId ->
                 navController.navigate(Rutas.fisioResultadoSesion(pacienteId, sesionId))
             },
+            pacienteId = entrada.arguments?.getString(Rutas.ARG_PACIENTE_ID).orEmpty(),
         )
     }
     composable(Rutas.PERFIL_FISIOTERAPEUTA) {
