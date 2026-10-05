@@ -148,6 +148,18 @@ fun EjercicioFormScreen(
 
             Spacer(modifier = Modifier.height(Spacing.md))
 
+            SeccionAcciones(
+                acciones = uiState.acciones,
+                vistaCamara = uiState.vistaCamara,
+                onVistaCamaraCambiada = viewModel::onVistaCamaraCambiada,
+                onAgregar = viewModel::agregarAccion,
+                onEliminar = viewModel::eliminarAccion,
+                onMover = viewModel::moverAccion,
+                onCambiar = viewModel::onAccionCambiada,
+            )
+
+            Spacer(modifier = Modifier.height(Spacing.md))
+
             // HU03-CA05 (ampliación): diagnósticos para los que este
             // ejercicio se sugiere primero al asignar una sesión.
             SeccionFormulario(titulo = "Diagnósticos sugeridos (opcional)") {

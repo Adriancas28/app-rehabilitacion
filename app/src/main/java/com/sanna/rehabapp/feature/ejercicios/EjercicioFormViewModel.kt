@@ -41,6 +41,9 @@ data class EjercicioFormUiState(
     val duracionSegundos: String = "30",
     val repeticiones: String = "1",
     val patronesReferencia: List<PatronReferenciaFila> = emptyList(),
+    // Guia visual (HU02-CA15 a CA17): acciones de cada repeticion y vista de camara.
+    val acciones: List<AccionFila> = emptyList(),
+    val vistaCamara: VistaCamara = VistaCamara.FRONTAL,
     // HU03-CA05 (ampliación): diagnósticos para los que este ejercicio se
     // sugiere primero al asignar una sesión (opcional).
     val diagnosticosAplicables: Set<TipoDiagnostico> = emptySet(),
@@ -72,10 +75,6 @@ class EjercicioFormViewModel @Inject constructor(
 
     private var creadoPorOriginal: String? = null
     private var fechaCreacionOriginal: Date? = null
-    // Guia visual: este formulario aun no edita las acciones (etapa 1b); se
-    // conservan al guardar para no borrarlas al editar otros datos del ejercicio.
-    private var accionesOriginales: List<Accion> = emptyList()
-    private var vistaCamaraOriginal: VistaCamara = VistaCamara.FRONTAL
 
     private val _uiState = MutableStateFlow(EjercicioFormUiState())
     val uiState: StateFlow<EjercicioFormUiState> = _uiState
@@ -91,8 +90,6 @@ class EjercicioFormViewModel @Inject constructor(
             if (ejercicio != null) {
                 creadoPorOriginal = ejercicio.creadoPor
                 fechaCreacionOriginal = ejercicio.fechaCreacion
-                accionesOriginales = ejercicio.acciones
-                vistaCamaraOriginal = ejercicio.vistaCamara
                 _uiState.update {
                     it.copy(
                         nombre = ejercicio.nombre,
@@ -107,6 +104,8 @@ class EjercicioFormViewModel @Inject constructor(
                                 anguloMax = patron.anguloMax.toString(),
                             )
                         },
+                        acciones = ejercicio.acciones.sortedBy { a -> a.orden }.map { a -> a.aFila() },
+                        vistaCamara = ejercicio.vistaCamara,
                         materialUrlActual = ejercicio.materialUrl,
                         diagnosticosAplicables = ejercicio.diagnosticosAplicables.toSet(),
                         cargando = false,
@@ -184,6 +183,38 @@ class EjercicioFormViewModel @Inject constructor(
         }
     }
 
+    // HU02-CA15 a CA17: edicion de las acciones y de la vista de camara.
+    fun onVistaCamaraCambiada(valor: VistaCamara) = _uiState.update { it.copy(vistaCamara = valor, error = null) }
+
+    fun agregarAccion() {
+        _uiState.update { it.copy(acciones = it.acciones + AccionFila(), error = null) }
+    }
+
+    fun eliminarAccion(idFila: String) {
+        _uiState.update { it.copy(acciones = it.acciones.filterNot { fila -> fila.idFila == idFila }) }
+    }
+
+    // delta -1 sube la accion (se ejecuta antes), +1 la baja.
+    fun moverAccion(idFila: String, delta: Int) {
+        _uiState.update { estado ->
+            val lista = estado.acciones.toMutableList()
+            val indice = lista.indexOfFirst { it.idFila == idFila }
+            val destino = indice + delta
+            if (indice < 0 || destino !in lista.indices) return@update estado
+            lista.add(destino, lista.removeAt(indice))
+            estado.copy(acciones = lista)
+        }
+    }
+
+    fun onAccionCambiada(idFila: String, transformar: (AccionFila) -> AccionFila) {
+        _uiState.update { estado ->
+            estado.copy(
+                acciones = estado.acciones.map { fila -> if (fila.idFila == idFila) transformar(fila) else fila },
+                error = null,
+            )
+        }
+    }
+
     fun agregarArticulacion() {
         _uiState.update { it.copy(patronesReferencia = it.patronesReferencia + PatronReferenciaFila()) }
     }
@@ -254,6 +285,18 @@ class EjercicioFormViewModel @Inject constructor(
             patrones += PatronReferencia(articulacion = articulacion!!, anguloMin = min!!, anguloMax = max!!)
         }
 
+        // HU02-CA15/CA18: cada accion se valida; el orden es el de la lista.
+        val acciones = mutableListOf<Accion>()
+        for ((indice, fila) in estado.acciones.withIndex()) {
+            val resultado = fila.aAccion(orden = indice + 1)
+            val accion = resultado.getOrNull()
+            if (accion == null) {
+                _uiState.update { it.copy(error = resultado.exceptionOrNull()?.message ?: "Revisa las acciones.") }
+                return
+            }
+            acciones += accion
+        }
+
         val ejercicio = Ejercicio(
             id = ejercicioIdArg ?: "",
             nombre = estado.nombre.trim(),
@@ -263,8 +306,8 @@ class EjercicioFormViewModel @Inject constructor(
             duracionSegundos = duracion,
             repeticiones = repeticiones,
             patronesReferencia = patrones,
-            acciones = accionesOriginales,
-            vistaCamara = vistaCamaraOriginal,
+            acciones = acciones,
+            vistaCamara = estado.vistaCamara,
             diagnosticosAplicables = estado.diagnosticosAplicables.toList(),
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,
