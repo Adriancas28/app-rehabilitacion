@@ -79,13 +79,14 @@ Funcionalidad: cada ejercicio se compone de N repeticiones y cada repetición de
 
 | ID | HU base | Etapa | Descripción | Prioridad | Estado | Observaciones |
 |---|---|---|---|---|---|---|
-| PB-60 | HU06, HU07, HU10 | 0 | Análisis del código actual (pantalla de ejecución, CameraX + MediaPipe, cálculo de ángulos, modelos de ejercicio/sesión) y plan de implementación | Alta | Redactado, pendiente de aprobación | Sin código; entrega plan y riesgos |
+| PB-60 | HU06, HU07, HU10 | 0 | Análisis del código actual (pantalla de ejecución, CameraX + MediaPipe, cálculo de ángulos, modelos de ejercicio/sesión) y plan de implementación | Alta | Hecho (2026-10-05); espera confirmación de las decisiones | `docs/guia_visual/Etapa0_Analisis.md` |
 | PB-61 | HU02, HU06, HU09, HU17 | 1 | Modelo de datos genérico: `Accion`, `ResultadoAccion`, vista de cámara; compatibilidad con ejercicios sin acciones | Alta | Redactado, pendiente de aprobación | Ampliación fuera del diccionario de datos oficial; se documenta como las demás |
 | PB-62 | HU07 | 2 | Mapeo de coordenadas (landmark → pantalla, cámara frontal espejada) y suavizado (filtro One Euro); cuadros no confiables | Alta | Redactado, pendiente de aprobación | Probar en dispositivo real |
 | PB-63 | HU08, HU09 | 3 | Motor de cálculo genérico `PoseGuideCalculator` (ángulo, progreso, zona, estado) | Alta | Redactado, pendiente de aprobación | El ángulo actual (vértice de tres puntos) coincide con pivote–referencia–distal |
 | PB-64 | HU06 | 4 | Máquina de estados repetición → acción | Alta | Redactado, pendiente de aprobación | Reemplaza el avance por tiempo fijo de cada repetición |
 | PB-65 | HU10 | 5 | Overlay visual en Compose (recorrido, parte realizada, zona meta, segmento fantasma, segmento real, HUD) | Alta | Redactado, pendiente de aprobación | Cambia la decisión de Sprint 4 (ícono mínimo sin texto): requiere confirmación |
 | PB-66 | HU10 | 6 | Feedback háptico y voz con opción de activar o desactivar | Media | Redactado, pendiente de aprobación | No existe pantalla de ajustes: definir dónde va la opción |
+| PB-67b | HU02 | 1b | Formulario del fisioterapeuta para definir las acciones de cada ejercicio, su orden, la vista de cámara y las validaciones (HU02-CA15 a CA18) | Alta | Detectado en la Etapa 0, pendiente | No estaba en el plan original de etapas |
 | PB-67 | HU17, HU18 | 7 | Persistencia de `ResultadoAccion` por repetición y detalle por acciones en la vista del fisioterapeuta; prueba con los 12 ejercicios; documentación | Alta | Redactado, pendiente de aprobación | Incluye pruebas manuales: cámara frontal y trasera, ambos lados, poca luz, fuera de cuadro |
 
 Relación con pendientes ya registrados: PB-50 (sesión sin persona detectada) se resuelve en parte con los cuadros no confiables, pero queda abierto cómo evitar que la sesión se quede esperando indefinidamente.
