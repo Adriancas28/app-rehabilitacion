@@ -43,6 +43,8 @@ data class DetalleRepeticion(
     val numero: Int,
     val porcentajeEjecucion: Float,
     val errores: List<ErrorDetectado> = emptyList(),
+    // Guia visual en vivo (HU09/HU18): resultado de cada accion de esta repeticion.
+    val acciones: List<ResultadoAccion> = emptyList(),
 )
 
 // HU17-CA02 / RNF06-CA02: únicamente datos numéricos (ángulos, métricas).

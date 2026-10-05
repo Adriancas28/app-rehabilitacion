@@ -13,6 +13,11 @@ data class Ejercicio(
     // dentro de una misma sesión; no son sesiones separadas.
     val repeticiones: Int = 1,
     val patronesReferencia: List<PatronReferencia> = emptyList(),
+    // Guia visual en vivo (HU02): acciones que componen cada repeticion, en
+    // orden. Vacio en ejercicios anteriores: ver Ejercicio.accionesEfectivas().
+    val acciones: List<Accion> = emptyList(),
+    // Posicion del paciente frente a la camara requerida por el ejercicio.
+    val vistaCamara: VistaCamara = VistaCamara.FRONTAL,
     // HU03-CA05 (ampliación): diagnósticos para los que este ejercicio se
     // sugiere primero al asignar una sesión — no restringe la selección a
     // cualquier otro ejercicio del catálogo, solo lo resalta.

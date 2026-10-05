@@ -12,6 +12,7 @@ import com.sanna.rehabapp.domain.model.CategoriaEjercicio
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
+import com.sanna.rehabapp.domain.model.VistaCamara
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.awaitClose
@@ -75,6 +76,8 @@ class EjercicioRepositoryImpl @Inject constructor(
                 it.articulacion.aFirestore() to mapOf("min" to it.anguloMin, "max" to it.anguloMax)
             },
             "diagnosticosAplicables" to ejercicio.diagnosticosAplicables.map { it.aFirestore() },
+            "acciones" to ejercicio.acciones.sortedBy { it.orden }.map { it.aMapa() },
+            "vistaCamara" to ejercicio.vistaCamara.aFirestore(),
             "fisioterapeutaId" to ejercicio.creadoPor,
             "fechaCreacion" to (ejercicio.fechaCreacion ?: FieldValue.serverTimestamp()),
             "activo" to ejercicio.activo,
@@ -132,6 +135,8 @@ private fun DocumentSnapshot.toEjercicio(): Ejercicio? {
         duracionSegundos = (repeticiones?.get("duracionSeg") as? Number)?.toInt() ?: 30,
         repeticiones = (repeticiones?.get("cantidad") as? Number)?.toInt() ?: 1,
         patronesReferencia = patrones,
+        acciones = (get("acciones") as? List<*>).aAcciones(),
+        vistaCamara = VistaCamara.desdeFirestoreOrNull(getString("vistaCamara")) ?: VistaCamara.FRONTAL,
         diagnosticosAplicables = (get("diagnosticosAplicables") as? List<*>)
             ?.mapNotNull { TipoDiagnostico.desdeFirestoreOrNull(it as? String) }
             ?: emptyList(),

@@ -9,8 +9,10 @@ import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.core.posedetection.AnalizadorVideoReferencia
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.CategoriaEjercicio
+import com.sanna.rehabapp.domain.model.Accion
 import com.sanna.rehabapp.domain.model.Ejercicio
 import com.sanna.rehabapp.domain.model.PatronReferencia
+import com.sanna.rehabapp.domain.model.VistaCamara
 import com.sanna.rehabapp.domain.model.TipoDiagnostico
 import com.sanna.rehabapp.domain.repository.AuthRepository
 import com.sanna.rehabapp.domain.repository.EjercicioRepository
@@ -70,6 +72,10 @@ class EjercicioFormViewModel @Inject constructor(
 
     private var creadoPorOriginal: String? = null
     private var fechaCreacionOriginal: Date? = null
+    // Guia visual: este formulario aun no edita las acciones (etapa 1b); se
+    // conservan al guardar para no borrarlas al editar otros datos del ejercicio.
+    private var accionesOriginales: List<Accion> = emptyList()
+    private var vistaCamaraOriginal: VistaCamara = VistaCamara.FRONTAL
 
     private val _uiState = MutableStateFlow(EjercicioFormUiState())
     val uiState: StateFlow<EjercicioFormUiState> = _uiState
@@ -85,6 +91,8 @@ class EjercicioFormViewModel @Inject constructor(
             if (ejercicio != null) {
                 creadoPorOriginal = ejercicio.creadoPor
                 fechaCreacionOriginal = ejercicio.fechaCreacion
+                accionesOriginales = ejercicio.acciones
+                vistaCamaraOriginal = ejercicio.vistaCamara
                 _uiState.update {
                     it.copy(
                         nombre = ejercicio.nombre,
@@ -255,6 +263,8 @@ class EjercicioFormViewModel @Inject constructor(
             duracionSegundos = duracion,
             repeticiones = repeticiones,
             patronesReferencia = patrones,
+            acciones = accionesOriginales,
+            vistaCamara = vistaCamaraOriginal,
             diagnosticosAplicables = estado.diagnosticosAplicables.toList(),
             creadoPor = creadoPorOriginal ?: uid,
             fechaCreacion = fechaCreacionOriginal,
