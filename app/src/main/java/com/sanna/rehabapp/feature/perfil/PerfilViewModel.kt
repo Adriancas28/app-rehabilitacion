@@ -2,6 +2,7 @@ package com.sanna.rehabapp.feature.perfil
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sanna.rehabapp.core.feedback.AjustesRetroalimentacion
 import com.sanna.rehabapp.domain.model.Rol
 import com.sanna.rehabapp.domain.model.Usuario
 import com.sanna.rehabapp.domain.repository.AuthRepository
@@ -20,6 +21,9 @@ data class PerfilUiState(
     val nombre: String = "",
     val guardando: Boolean = false,
     val mensaje: String? = null,
+    // HU10: interruptores de voz y vibración, guardados en el dispositivo.
+    val vozActiva: Boolean = true,
+    val vibracionActiva: Boolean = true,
 )
 
 // HU22/HU23 — el paciente/fisioterapeuta consulta su propia cuenta y solo
@@ -31,6 +35,7 @@ data class PerfilUiState(
 class PerfilViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val usuarioRepository: UsuarioRepository,
+    private val ajustes: AjustesRetroalimentacion,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PerfilUiState())
@@ -38,6 +43,16 @@ class PerfilViewModel @Inject constructor(
 
     init {
         cargarPerfil()
+        viewModelScope.launch { ajustes.vozActiva.collect { v -> _uiState.update { it.copy(vozActiva = v) } } }
+        viewModelScope.launch { ajustes.vibracionActiva.collect { v -> _uiState.update { it.copy(vibracionActiva = v) } } }
+    }
+
+    fun cambiarVoz(activa: Boolean) {
+        viewModelScope.launch { ajustes.cambiarVoz(activa) }
+    }
+
+    fun cambiarVibracion(activa: Boolean) {
+        viewModelScope.launch { ajustes.cambiarVibracion(activa) }
     }
 
     private fun cargarPerfil() {

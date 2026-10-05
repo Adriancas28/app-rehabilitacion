@@ -147,7 +147,7 @@ fun EjecutarSesionScreen(
     // HU06 — al iniciar el monitoreo se leen en voz alta las instrucciones
     // del ejercicio (una sola vez, no en cada repetición).
     LaunchedEffect(uiState.sesionIniciada) {
-        if (uiState.sesionIniciada) {
+        if (uiState.sesionIniciada && uiState.vozActiva) {
             uiState.ejercicio?.descripcion?.takeIf { it.isNotBlank() }?.let(leerInstrucciones)
         }
     }

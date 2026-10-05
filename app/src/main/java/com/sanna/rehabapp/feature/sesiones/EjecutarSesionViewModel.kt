@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
+import com.sanna.rehabapp.core.feedback.AjustesRetroalimentacion
+import com.sanna.rehabapp.core.feedback.Vibrador
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.core.posedetection.EventoGuia
 import com.sanna.rehabapp.core.posedetection.FiltroLandmarks
@@ -85,6 +87,8 @@ data class EjecutarSesionUiState(
     // HU10 — indicador mínimo de corrección y evento de voz (ver EventoVoz).
     val enCorreccion: Boolean = false,
     val eventoVoz: EventoVoz? = null,
+    // HU10: interruptor de voz del dispositivo (Perfil).
+    val vozActiva: Boolean = true,
 ) {
     val totalRepeticiones: Int get() = repeticionesOverride ?: ejercicio?.repeticiones ?: 1
     val duracionRepeticionSegundos: Int get() = duracionAccionSegundos
@@ -102,6 +106,8 @@ class EjecutarSesionViewModel @Inject constructor(
     private val ejercicioRepository: EjercicioRepository,
     private val usuarioRepository: UsuarioRepository,
     private val subidorVideoSesion: com.sanna.rehabapp.core.camera.SubidorVideoSesion,
+    private val ajustes: AjustesRetroalimentacion,
+    private val vibrador: Vibrador,
 ) : ViewModel() {
 
     // No privado: la Screen lo necesita para navegar al resultado (HU11-CA01)
@@ -140,7 +146,11 @@ class EjecutarSesionViewModel @Inject constructor(
     private var numeroRepeticionInicial = 1
     private var resultadoPrevio: ResultadoSesion? = null
 
+    @Volatile private var vibracionActiva = true
+
     init {
+        viewModelScope.launch { ajustes.vozActiva.collect { activa -> _uiState.update { it.copy(vozActiva = activa) } } }
+        viewModelScope.launch { ajustes.vibracionActiva.collect { vibracionActiva = it } }
         cargarEjercicio()
     }
 
@@ -265,10 +275,14 @@ class EjecutarSesionViewModel @Inject constructor(
 
     private fun manejarEvento(evento: EventoGuia) {
         when (evento) {
-            is EventoGuia.AccionTerminada -> ultimoSigno = null
+            is EventoGuia.AccionTerminada -> {
+                ultimoSigno = null
+                if (vibracionActiva) vibrador.pulsoAccion()
+            }
             is EventoGuia.RepeticionCompletada -> {
                 val total = _uiState.value.totalRepeticiones
                 _uiState.update { it.copy(repeticionesCompletadas = evento.numero) }
+                if (vibracionActiva) vibrador.pulsoRepeticion()
                 if (evento.numero < total) iniciarDescanso(evento.numero)
             }
             EventoGuia.SesionTerminada -> finalizarSesion()
@@ -288,7 +302,7 @@ class EjecutarSesionViewModel @Inject constructor(
                 delay(1_000)
                 val restante = _uiState.value.segundosDescanso - 1
                 _uiState.update { it.copy(segundosDescanso = restante) }
-                if (restante == SEGUNDOS_AVISO_SIGUIENTE_REPETICION) {
+                if (restante == SEGUNDOS_AVISO_SIGUIENTE_REPETICION && _uiState.value.vozActiva) {
                     _uiState.update {
                         it.copy(eventoVoz = EventoVoz("Prepárate, sigue la repetición ${repeticionTerminada + 1}.", System.currentTimeMillis()))
                     }
@@ -302,6 +316,7 @@ class EjecutarSesionViewModel @Inject constructor(
 
     // HU10-CA06: voz según el mensaje de la guía, sin repetir el mismo antes de INTERVALO_REPETIR_VOZ_MS.
     private fun decirMensaje(ui: GuideUiState, ahora: Long) {
+        if (!_uiState.value.vozActiva) return
         val mensaje = ui.mensaje ?: return
         if (mensaje != mensajeActual) {
             mensajeActual = mensaje

@@ -1,6 +1,9 @@
 package com.sanna.rehabapp.feature.perfil
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,7 +18,10 @@ import androidx.compose.material.icons.rounded.FitnessCenter
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.People
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,6 +84,8 @@ fun PerfilPacienteScreen(
                 uiState = uiState,
                 onNombreCambiado = viewModel::onNombreCambiado,
                 onGuardarNombre = viewModel::guardarNombre,
+                onCambiarVoz = viewModel::cambiarVoz,
+                onCambiarVibracion = viewModel::cambiarVibracion,
                 onCerrarSesion = {
                     viewModel.cerrarSesion()
                     onCerrarSesion()
@@ -131,6 +139,8 @@ fun PerfilFisioterapeutaScreen(
                 uiState = uiState,
                 onNombreCambiado = viewModel::onNombreCambiado,
                 onGuardarNombre = viewModel::guardarNombre,
+                onCambiarVoz = viewModel::cambiarVoz,
+                onCambiarVibracion = viewModel::cambiarVibracion,
                 onCerrarSesion = {
                     viewModel.cerrarSesion()
                     onCerrarSesion()
@@ -148,6 +158,8 @@ private fun ContenidoPerfil(
     uiState: PerfilUiState,
     onNombreCambiado: (String) -> Unit,
     onGuardarNombre: () -> Unit,
+    onCambiarVoz: (Boolean) -> Unit,
+    onCambiarVibracion: (Boolean) -> Unit,
     onCerrarSesion: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -213,6 +225,13 @@ private fun ContenidoPerfil(
                         valor = uiState.nombreFisioterapeuta ?: "Sin asignar",
                     )
                 }
+                // HU10: voz y vibración durante la guía visual; se guardan en este dispositivo.
+                Spacer(modifier = Modifier.height(Spacing.md))
+                SeccionFormulario(titulo = "Guía durante el ejercicio") {
+                    FilaInterruptor("Indicaciones por voz", uiState.vozActiva, onCambiarVoz)
+                    Spacer(modifier = Modifier.height(Spacing.sm))
+                    FilaInterruptor("Vibración", uiState.vibracionActiva, onCambiarVibracion)
+                }
             } else if (usuario.rol == Rol.FISIOTERAPEUTA) {
                 Spacer(modifier = Modifier.height(Spacing.md))
                 SeccionFormulario(titulo = "Información de contacto") {
@@ -258,5 +277,17 @@ private fun ContenidoPerfil(
             },
             onCancelar = { confirmandoCierre = false },
         )
+    }
+}
+
+@Composable
+private fun FilaInterruptor(texto: String, activo: Boolean, onCambio: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(text = texto, style = MaterialTheme.typography.bodyMedium)
+        Switch(checked = activo, onCheckedChange = onCambio)
     }
 }
