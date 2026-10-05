@@ -48,7 +48,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.pointerInput
+import com.sanna.rehabapp.core.designsystem.PoseDebugOverlay
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -98,6 +101,8 @@ fun EjecutarSesionScreen(
     val uiState by viewModel.uiState.collectAsState()
     val contexto = LocalContext.current
     val leerInstrucciones = rememberLectorInstrucciones()
+    val esBuildDepurable = (contexto.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+    var modoDepuracion by remember { mutableStateOf(false) }
 
     var permisoConcedido by remember {
         mutableStateOf(
@@ -283,13 +288,23 @@ fun EjecutarSesionScreen(
                                 },
                                 onVideoGrabado = viewModel::onVideoGrabado,
                             )
+                            if (modoDepuracion) {
+                                val cuadro by viewModel.cuadroPose.collectAsState()
+                                PoseDebugOverlay(frame = cuadro)
+                            }
                             BadgeEstado(
                                 texto = "Cámara en vivo",
                                 tipo = TipoBadge.EXITO,
                                 mostrarPunto = true,
                                 modifier = Modifier
                                     .align(Alignment.TopStart)
-                                    .padding(Spacing.sm),
+                                    .padding(Spacing.sm)
+                                    // Solo en builds de depuracion: mantener presionado para ver el esqueleto.
+                                    .pointerInput(esBuildDepurable) {
+                                        if (esBuildDepurable) {
+                                            detectTapGestures(onLongPress = { modoDepuracion = !modoDepuracion })
+                                        }
+                                    },
                             )
                             // HU10-CA01/CA02: ícono mínimo, sin texto — la
                             // corrección en sí la lleva la voz (CA06). El

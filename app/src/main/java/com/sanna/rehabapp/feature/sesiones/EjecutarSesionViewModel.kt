@@ -5,9 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 import com.sanna.rehabapp.core.navigation.Rutas
+import com.sanna.rehabapp.core.posedetection.FiltroLandmarks
+import com.sanna.rehabapp.core.posedetection.LandmarksFrame
 import com.sanna.rehabapp.core.posedetection.MedicionArticulacion
 import com.sanna.rehabapp.core.posedetection.ProcesadorMovimiento
 import com.sanna.rehabapp.core.posedetection.fraseCorrectiva
+import com.sanna.rehabapp.core.posedetection.aFrame
 import com.sanna.rehabapp.core.posedetection.mergearResultados
 import com.sanna.rehabapp.domain.model.Articulacion
 import com.sanna.rehabapp.domain.model.Ejercicio
@@ -101,6 +104,12 @@ class EjecutarSesionViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(EjecutarSesionUiState())
     val uiState: StateFlow<EjecutarSesionUiState> = _uiState
+
+    // Guia visual: ultimo cuadro de pose, suavizado con el filtro One Euro, para
+    // el modo de depuracion y (etapa 5) el overlay. Se actualiza en cada cuadro.
+    private val filtroLandmarks = FiltroLandmarks()
+    private val _cuadroPose = MutableStateFlow<LandmarksFrame?>(null)
+    val cuadroPose: StateFlow<LandmarksFrame?> = _cuadroPose
 
     private var procesadorMovimiento: ProcesadorMovimiento? = null
     private var jobCicloRepeticiones: Job? = null
@@ -232,7 +241,8 @@ class EjecutarSesionViewModel @Inject constructor(
     // HU07/HU08 — cada resultado de MediaPipe en vivo se mide contra el
     // patronesReferencia del ejercicio mientras la sesión está activa.
     // HU10 — con esa misma medición se decide la retroalimentación en vivo.
-    fun procesarResultadoPose(resultado: PoseLandmarkerResult) {
+    fun procesarResultadoPose(resultado: PoseLandmarkerResult, anchoImagen: Int, altoImagen: Int) {
+        _cuadroPose.value = resultado.aFrame(anchoImagen, altoImagen)?.let { filtroLandmarks.aplicar(it) }
         val estado = _uiState.value
         // En preparación o en descanso entre repeticiones no se mide: el
         // paciente todavía no está ejecutando el ejercicio en ese momento.
