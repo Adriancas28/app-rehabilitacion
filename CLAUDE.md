@@ -209,6 +209,20 @@ reabrir estas decisiones sin querer durante el rediseño):**
   pantalla ya construida (cámara + panel lateral simultáneos), no dos
   pantallas separadas — no se cambia el flujo de navegación de HU06/HU07.
 
+### Guía visual en vivo (2026-10, rama `guia-visual-en-vivo`)
+
+Flujo genérico Ejercicio → N repeticiones → ACCIONES ordenadas definidas como datos
+(`ejercicios.acciones[]`, `Accion` en `domain/model`); ningún ejercicio tiene código propio.
+Pipeline en `core/posedetection/`: `CamaraConDeteccionPose` (bitmap rotado+espejado) →
+MediaPipe → `EjecutarSesionViewModel.procesarResultadoPose` → `FiltroLandmarks` (One Euro) →
+`PoseGuideCalculator` (ángulo, progreso, estado verde/ámbar/rojo, geometría) →
+`GuideStateMachine` (mantener, tiempo máximo, no confiable, ausencia 20 s/60 s; devuelve
+`EventoGuia`) → `construirResultadoPorAcciones` (resultado de sesión). La UI pinta con
+`PoseGuideOverlay` + `HudGuia` usando `LandmarkMapper` (mismo recorte FILL_CENTER del
+PreviewView). Voz (3 s sin repetir el mismo mensaje) y vibración (`core/feedback/Vibrador`)
+se activan/desactivan en Perfil (`AjustesRetroalimentacion`, DataStore del dispositivo).
+Detalle y pruebas: `docs/guia_visual/Etapa0_Analisis.md` y `docs/guia_visual/Pruebas_manuales.md`.
+
 ---
 
 ## 4. Stack tecnológico
