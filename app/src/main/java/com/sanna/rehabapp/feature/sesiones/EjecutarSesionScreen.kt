@@ -52,6 +52,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import com.sanna.rehabapp.core.designsystem.PoseDebugOverlay
+import com.sanna.rehabapp.core.designsystem.PoseGuideOverlay
+import com.sanna.rehabapp.core.posedetection.GuideUiState
+import com.sanna.rehabapp.core.posedetection.fraseDeGuia
+import com.sanna.rehabapp.domain.model.VistaCamara
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -215,7 +219,10 @@ fun EjecutarSesionScreen(
                 }
 
                 uiState.sesionCompletada -> EstadoCentrado {
-                    MensajeConIcono(Icons.Rounded.CheckCircle, "Sesión completada")
+                    MensajeConIcono(
+                        Icons.Rounded.CheckCircle,
+                        if (uiState.finalizadaPorAusencia) "Sesión finalizada: no te detectamos frente a la cámara. Se guardó lo medido." else "Sesión completada",
+                    )
                     Spacer(modifier = Modifier.height(Spacing.lg - 4.dp))
                     BotonPrimario(
                         texto = "Ver resultado",
@@ -224,128 +231,137 @@ fun EjecutarSesionScreen(
                     )
                 }
 
-                // El botón NO va superpuesto sobre la cámara: PreviewView
-                // (AndroidView/CameraX) intercepta el toque antes de que
-                // llegue a un clickable de Compose dibujado encima -- mismo
-                // problema ya visto con PlayerView en TarjetaEjercicio. Se
-                // resuelve igual que el estado "en curso" de abajo: cámara y
-                // botón en zonas separadas, sin superposición.
-                !uiState.sesionIniciada -> Column(modifier = Modifier.fillMaxSize()) {
-                    // Altura fija por fracción (no weight()): con weight(1f)
-                    // la cámara reclamaba casi toda la altura disponible y el
-                    // botón quedaba comprimido a unos pocos píxeles al fondo
-                    // de la pantalla, fuera del área visible/táctil real.
+                // Una sola instancia de cámara para antes y durante la sesión (la
+                // grabación de video empieza con ella; si el paciente sale sin
+                // completar, el ViewModel descarta el archivo). La cámara ocupa casi
+                // toda la pantalla; el panel inferior mide solo lo que necesita y NO se
+                // superpone: PreviewView intercepta el toque de cualquier clickable
+                // dibujado encima.
+                else -> Column(modifier = Modifier.fillMaxSize()) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(0.8f),
+                            .weight(1f)
+                            .fillMaxWidth(),
                     ) {
                         CamaraConDeteccionPose(
                             modifier = Modifier.fillMaxSize(),
                             onResultado = viewModel::procesarResultadoPose,
                             onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
+                            archivoVideo = remember(viewModel.sesionId) {
+                                File(contexto.cacheDir, "sesion_${viewModel.sesionId}.mp4")
+                            },
+                            onVideoGrabado = viewModel::onVideoGrabado,
                         )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .background(MaterialTheme.colorScheme.surface)
-                            .padding(Spacing.md),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        BotonPrimario(
-                            texto = "Iniciar sesión",
-                            onClick = viewModel::iniciarSesion,
-                            icono = Icons.Rounded.PlayArrow,
-                            modifier = Modifier.width(220.dp),
-                        )
-                    }
-                }
-
-                // Fiel al mockup original (HU06): video + instrucciones lado a
-                // lado en la mitad superior, repetición/temporizador/botón
-                // "Finalizar ejercicio" a todo el ancho debajo.
-                else -> Column(modifier = Modifier.fillMaxSize()) {
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(Spacing.md),
-                    ) {
-                        Box(
+                        val guiaUi by viewModel.guiaUi.collectAsState()
+                        if (uiState.sesionIniciada && !uiState.enPreparacion && !uiState.enDescanso) {
+                            PoseGuideOverlay(estado = guiaUi)
+                        }
+                        if (modoDepuracion) {
+                            val cuadro by viewModel.cuadroPose.collectAsState()
+                            PoseDebugOverlay(frame = cuadro)
+                        }
+                        BadgeEstado(
+                            texto = "Cámara en vivo",
+                            tipo = TipoBadge.EXITO,
+                            mostrarPunto = true,
                             modifier = Modifier
-                                .weight(1.3f)
-                                .fillMaxHeight()
-                                .clip(MaterialTheme.shapes.large),
-                        ) {
-                            CamaraConDeteccionPose(
-                                modifier = Modifier.fillMaxSize(),
-                                onResultado = viewModel::procesarResultadoPose,
-                                onError = { error -> viewModel.onErrorCamara(error.message ?: "Error de cámara") },
-                                archivoVideo = remember(viewModel.sesionId) {
-                                    File(contexto.cacheDir, "sesion_${viewModel.sesionId}.mp4")
+                                .align(Alignment.TopStart)
+                                .padding(Spacing.sm)
+                                // Solo en builds de depuracion: mantener presionado para ver el esqueleto.
+                                .pointerInput(esBuildDepurable) {
+                                    if (esBuildDepurable) {
+                                        detectTapGestures(onLongPress = { modoDepuracion = !modoDepuracion })
+                                    }
                                 },
-                                onVideoGrabado = viewModel::onVideoGrabado,
-                            )
-                            if (modoDepuracion) {
-                                val cuadro by viewModel.cuadroPose.collectAsState()
-                                PoseDebugOverlay(frame = cuadro)
-                            }
-                            BadgeEstado(
-                                texto = "Cámara en vivo",
-                                tipo = TipoBadge.EXITO,
-                                mostrarPunto = true,
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(Spacing.sm)
-                                    // Solo en builds de depuracion: mantener presionado para ver el esqueleto.
-                                    .pointerInput(esBuildDepurable) {
-                                        if (esBuildDepurable) {
-                                            detectTapGestures(onLongPress = { modoDepuracion = !modoDepuracion })
-                                        }
-                                    },
-                            )
-                            // HU10-CA01/CA02: ícono mínimo, sin texto — la
-                            // corrección en sí la lleva la voz (CA06). El
-                            // paciente no puede leer la pantalla mientras se mueve.
+                        )
+                        if (uiState.sesionIniciada && !uiState.enPreparacion && !uiState.enDescanso) {
                             IconoEstadoCorreccion(
                                 enCorreccion = uiState.enCorreccion,
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .padding(Spacing.sm),
                             )
+                            HudGuia(
+                                estado = guiaUi,
+                                vista = uiState.ejercicio?.vistaCamara ?: VistaCamara.FRONTAL,
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(Spacing.sm),
+                            )
                         }
-                        Spacer(modifier = Modifier.width(Spacing.md))
+                    }
+                    if (!uiState.sesionIniciada) {
                         Column(
                             modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .verticalScroll(rememberScrollState()),
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(Spacing.md),
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            Text(text = "Instrucciones", style = MaterialTheme.typography.titleSmall)
-                            Spacer(modifier = Modifier.height(Spacing.sm))
                             Text(
                                 text = uiState.ejercicio?.descripcion.orEmpty(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 3,
+                            )
+                            Spacer(modifier = Modifier.height(Spacing.sm))
+                            BotonPrimario(
+                                texto = "Iniciar sesión",
+                                onClick = viewModel::iniciarSesion,
+                                icono = Icons.Rounded.PlayArrow,
+                                modifier = Modifier.width(220.dp),
                             )
                         }
+                    } else {
+                        PanelProgreso(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface),
+                            enPreparacion = uiState.enPreparacion,
+                            segundosPreparacion = uiState.segundosPreparacion,
+                            repeticionActual = uiState.repeticionActual,
+                            totalRepeticiones = uiState.totalRepeticiones,
+                            segundosRestantes = uiState.segundosRestantes,
+                            duracionRepeticionSegundos = uiState.duracionRepeticionSegundos,
+                            enDescanso = uiState.enDescanso,
+                            segundosDescanso = uiState.segundosDescanso,
+                            onFinalizar = viewModel::finalizarAntesDeTiempo,
+                        )
                     }
-                    PanelProgreso(
-                        modifier = Modifier.fillMaxWidth(),
-                        enPreparacion = uiState.enPreparacion,
-                        segundosPreparacion = uiState.segundosPreparacion,
-                        repeticionActual = uiState.repeticionActual,
-                        totalRepeticiones = uiState.totalRepeticiones,
-                        segundosRestantes = uiState.segundosRestantes,
-                        duracionRepeticionSegundos = uiState.duracionRepeticionSegundos,
-                        enDescanso = uiState.enDescanso,
-                        segundosDescanso = uiState.segundosDescanso,
-                        onFinalizar = viewModel::finalizarAntesDeTiempo,
-                    )
                 }
             }
+        }
+    }
+}
+
+// HUD de la guía (HU10): repetición, acción, mensaje y contador de mantener. Usa
+// los tokens del Design System; el fondo oscuro translúcido garantiza contraste
+// sobre cualquier imagen de cámara.
+@Composable
+private fun HudGuia(estado: GuideUiState, vista: VistaCamara, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(MaterialTheme.shapes.large)
+            .background(Color.Black.copy(alpha = 0.55f))
+            .padding(horizontal = Spacing.md, vertical = Spacing.sm),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        val nombre = estado.accion?.nombre.orEmpty()
+        Text(
+            text = "Repetición ${estado.repeticion}/${estado.totalRepeticiones} · Acción ${estado.numeroAccion}/${estado.totalAcciones}",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.85f),
+        )
+        Text(text = nombre, style = MaterialTheme.typography.titleMedium, color = Color.White)
+        estado.segundosMantener?.let {
+            Text(text = "Mantén $it s", style = MaterialTheme.typography.headlineSmall, color = Color.White)
+        }
+        estado.mensaje?.let { mensaje ->
+            Text(
+                text = fraseDeGuia(mensaje, estado.accion, vista),
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White,
+            )
         }
     }
 }
@@ -422,8 +438,8 @@ private fun PanelProgreso(
             Spacer(modifier = Modifier.height(Spacing.sm + 4.dp))
             ProgresoCircular(
                 porcentaje = 1f - (segundosPreparacion.toFloat() / SEGUNDOS_PREPARACION_INICIAL),
-                tamano = 120.dp,
-                grosor = 8.dp,
+                tamano = 72.dp,
+                grosor = 6.dp,
                 texto = "$segundosPreparacion s",
                 estiloTexto = MaterialTheme.typography.titleLarge,
             )
@@ -455,8 +471,8 @@ private fun PanelProgreso(
         }
         ProgresoCircular(
             porcentaje = porcentaje,
-            tamano = 120.dp,
-            grosor = 8.dp,
+            tamano = 72.dp,
+            grosor = 6.dp,
             texto = if (enDescanso) "$segundosDescanso s" else "$segundosRestantes s",
             estiloTexto = MaterialTheme.typography.titleLarge,
         )
