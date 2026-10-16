@@ -1,0 +1,6 @@
+F|F08n_ejercicios.png|F08 (actualizada) — Ejercicios del catálogo|Lista de los 12 ejercicios en cuadrícula con miniatura de video y menú de tres puntos.
+F|F10n_ejercicio_menu.png|F10 (actualizada) — Menú de un ejercicio|Opciones Ver video, Editar, Desactivar y Eliminar.
+F|F09n_formulario_a.png|F09 (nueva) — Editar ejercicio: datos generales|Inicio del formulario del ejercicio (nombre, descripción, categoría, repeticiones, vista de cámara).
+F|F09n_formulario_b.png|F09 (nueva) — Editar ejercicio: acciones (1)|Sección de acciones: cada ejercicio se compone de acciones ordenadas que definen la guía visual en vivo.
+F|F09n_formulario_c.png|F09 (nueva) — Editar ejercicio: configurar una acción|Por acción: nombre, puntos de referencia/pivote/distal, lado, ángulo de inicio, meta, tolerancia, tiempo de mantener, tiempo máximo y sentido de giro; botones para subir, bajar o quitar la acción.
+F|F09n_formulario_d.png|F09 (nueva) — Editar ejercicio: fin del formulario|Última acción y botón para guardar los cambios.
