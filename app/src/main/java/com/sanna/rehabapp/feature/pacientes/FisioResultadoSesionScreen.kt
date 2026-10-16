@@ -46,6 +46,7 @@ import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.designsystem.TarjetaCifra
+import com.sanna.rehabapp.domain.model.formatearDuracion
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.ErrorColor
 import com.sanna.rehabapp.core.theme.RojoErrorContenedor
@@ -114,6 +115,13 @@ fun FisioResultadoSesionScreen(
                             colorValor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                         )
+                        if (resultado.duracionMedidaSegundos > 0) {
+                            TarjetaCifra(
+                                etiqueta = "Duración medida",
+                                valor = formatearDuracion(resultado.duracionMedidaSegundos),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(Spacing.md))
 

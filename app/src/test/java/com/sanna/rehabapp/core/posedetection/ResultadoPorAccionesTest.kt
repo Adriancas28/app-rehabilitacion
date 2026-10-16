@@ -2,6 +2,7 @@ package com.sanna.rehabapp.core.posedetection
 
 import com.sanna.rehabapp.domain.model.Accion
 import com.sanna.rehabapp.domain.model.ResultadoAccion
+import com.sanna.rehabapp.domain.model.formatearDuracion
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -62,5 +63,17 @@ class ResultadoPorAccionesTest {
         val mala = listOf(ResultadoAccion(1, 15f, false, 8f, 65f), ResultadoAccion(2, 90f, false, 8f, 60f))
         val r = construirResultadoPorAcciones(listOf(subir, bajar), listOf(listOf(ok(1), ok(2)), mala), 2, 2)
         assertEquals(50f, r.porcentajeEjecucion, 0.5f)
+    }
+
+    @Test
+    fun `la duracion medida suma el tiempo real de todas las acciones`() {
+        val r = construirResultadoPorAcciones(
+            listOf(subir, bajar),
+            listOf(listOf(ok(1), ok(2)), listOf(ResultadoAccion(1, 50f, false, 8f, 40f), ok(2))),
+            2, 2,
+        )
+        assertEquals(17, r.duracionMedidaSegundos) // 3 + 3 + 8 + 3
+        assertEquals("17 s", formatearDuracion(17))
+        assertEquals("1 min 5 s", formatearDuracion(65))
     }
 }

@@ -62,4 +62,13 @@ data class ResultadoSesion(
     val repeticionesAsignadas: Int = 0,
     val repeticionesCorrectas: Int = 0,
     val detallePorRepeticion: List<DetalleRepeticion> = emptyList(),
-)
+) {
+    // Duración medida de la ejecución: suma del tiempo real (tiempoSeg) que cada
+    // acción de cada repetición estuvo en monitoreo. Se deriva de datos ya guardados;
+    // no incluye cuenta regresiva ni descansos.
+    val duracionMedidaSegundos: Int
+        get() = detallePorRepeticion.sumOf { rep -> rep.acciones.sumOf { it.tiempoSeg.toDouble() } }.toInt()
+}
+
+fun formatearDuracion(segundos: Int): String =
+    if (segundos < 60) "$segundos s" else "${segundos / 60} min ${segundos % 60} s"
