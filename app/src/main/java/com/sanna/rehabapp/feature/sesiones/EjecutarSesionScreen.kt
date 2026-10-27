@@ -478,7 +478,7 @@ private fun PanelProgreso(
         )
         Spacer(modifier = Modifier.height(Spacing.sm))
         Text(
-            text = if (enDescanso) "Descansa, viene la repetición ${repeticionActual + 1}…" else "Monitoreando…",
+            text = if (enDescanso) "Descansa, viene la repetición $repeticionActual…" else "Monitoreando…",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
