@@ -180,7 +180,10 @@ class EjecutarSesionViewModel @Inject constructor(
             // lado que el administrador indicó como afectado para este paciente.
             val ladoAfectado = usuarioRepository.obtenerUsuario(idPaciente)?.ladoAfectado ?: LadoAfectado.DERECHO
             val acciones = aplicarAnguloPersonalizado(
-                ejercicio.accionesEfectivas().map { it.paraLado(ladoAfectado) },
+                // La imagen que ve MediaPipe esta espejada (camara frontal): el modelo etiqueta como
+                // "izquierdo" el brazo que el paciente ve a la derecha de la pantalla. Se aplica el
+                // espejo para que la guia siga el brazo del lado real del paciente.
+                ejercicio.accionesEfectivas().map { it.paraLado(ladoAfectado).espejo() },
                 sesion.anguloMinOverride,
                 sesion.anguloMaxOverride,
             )
