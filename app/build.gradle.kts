@@ -21,7 +21,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Pruebas locales: solo se activa con -PusarEmuladorFirebase=true y solo en debug.
+            // Por defecto es false (la app de debug tambien usa el Firebase real).
+            val usarEmulador = (project.findProperty("usarEmuladorFirebase")?.toString() == "true")
+            buildConfigField("boolean", "USAR_EMULADOR_FIREBASE", usarEmulador.toString())
+        }
         release {
+            // Constante: el emulador nunca se puede activar en release.
+            buildConfigField("boolean", "USAR_EMULADOR_FIREBASE", "false")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -38,6 +46,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
