@@ -16,7 +16,9 @@ private const val MODELO_ASSET = "pose_landmarker_lite.task"
 // el encuadre, el modelo prioriza la más prominente) sin lógica adicional.
 class PoseLandmarkerHelper(
     context: Context,
-    private val alEncontrarResultado: (PoseLandmarkerResult) -> Unit,
+    // Ademas del resultado se entrega el tamano de la imagen analizada (ya
+    // rotada y espejada), necesario para mapear los landmarks a la pantalla.
+    private val alEncontrarResultado: (PoseLandmarkerResult, Int, Int) -> Unit,
     private val alFallar: (Exception) -> Unit,
 ) {
     private var poseLandmarker: PoseLandmarker? = null
@@ -32,7 +34,7 @@ class PoseLandmarkerHelper(
             .setMinPoseDetectionConfidence(0.5f)
             .setMinTrackingConfidence(0.5f)
             .setMinPosePresenceConfidence(0.5f)
-            .setResultListener { resultado, _ -> alEncontrarResultado(resultado) }
+            .setResultListener { resultado, imagen -> alEncontrarResultado(resultado, imagen.width, imagen.height) }
             .setErrorListener { error -> alFallar(error) }
             .build()
         poseLandmarker = PoseLandmarker.createFromOptions(context, opciones)

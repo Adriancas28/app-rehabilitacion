@@ -57,6 +57,7 @@ class SesionRepositoryImpl @Inject constructor(
                     "desviacionAngular" to (if (desviaciones.isEmpty()) 0f else desviaciones.average().toFloat()),
                     "error" to principal?.tipo,
                     "articulacion" to principal?.articulacion,
+                    "acciones" to detalle.acciones.map { it.aMapa() },
                     "errores" to detalle.errores.map {
                         mapOf(
                             "articulacion" to it.articulacion,
@@ -249,5 +250,6 @@ private fun Map<*, *>.toDetalleRepeticion(): DetalleRepeticion? {
         numero = numero,
         porcentajeEjecucion = (this["porcentaje"] as? Number)?.toFloat() ?: 0f,
         errores = errores,
+        acciones = (this["acciones"] as? List<*>).aResultadosAccion(),
     )
 }

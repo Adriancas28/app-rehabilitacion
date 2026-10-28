@@ -29,6 +29,7 @@ import com.sanna.rehabapp.core.theme.VerdeExitoTexto
 import com.sanna.rehabapp.domain.model.DetalleRepeticion
 import com.sanna.rehabapp.domain.model.Recomendacion
 import com.sanna.rehabapp.domain.model.ResultadoSesion
+import com.sanna.rehabapp.domain.model.formatearDuracion
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -53,6 +54,13 @@ internal fun TarjetasResumenSesion(resultado: ResultadoSesion) {
             colorValor = MaterialTheme.colorScheme.primary,
             modifier = Modifier.weight(1f),
         )
+        if (resultado.duracionMedidaSegundos > 0) {
+            TarjetaCifra(
+                etiqueta = "Duración medida",
+                valor = formatearDuracion(resultado.duracionMedidaSegundos),
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 

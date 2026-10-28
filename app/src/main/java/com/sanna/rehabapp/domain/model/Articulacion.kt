@@ -43,6 +43,23 @@ enum class Articulacion(
 
     fun aFirestore(): String = name
 
+    // Guia visual: de los dos extremos de la tripleta, cual es la referencia
+    // (fija en el espacio) y cual el distal (el que se mueve). El angulo no
+    // cambia, pero la guia necesita saber que segmento dibujar girando. Solo
+    // el hombro esta invertido: su puntoInicial es el codo (distal) y el
+    // puntoFinal la cadera (referencia).
+    data class Roles(val referencia: Int, val distal: Int)
+
+    fun roles(): Roles = when (this) {
+        HOMBRO_IZQUIERDO, HOMBRO_DERECHO -> Roles(referencia = puntoFinal, distal = puntoInicial)
+        else -> Roles(referencia = puntoInicial, distal = puntoFinal)
+    }
+
+    // Lado del cuerpo de esta articulacion; las que no tienen lado (cuello,
+    // tronco) se consideran con la convencion de autoria: derecho.
+    fun lado(): LadoCuerpo =
+        if (name.endsWith("IZQUIERDA") || name.endsWith("IZQUIERDO")) LadoCuerpo.IZQUIERDO else LadoCuerpo.DERECHO
+
     // HU20 (ampliación): devuelve la articulación equivalente del lado
     // opuesto (ej. HOMBRO_DERECHO -> HOMBRO_IZQUIERDO), usada para medir el
     // lado afectado real del paciente (Usuario.ladoAfectado) en vez del

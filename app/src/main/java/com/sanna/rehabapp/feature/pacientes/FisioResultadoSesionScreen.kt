@@ -46,6 +46,7 @@ import com.sanna.rehabapp.core.designsystem.EstadoCargando
 import com.sanna.rehabapp.core.designsystem.GraficoBarras
 import com.sanna.rehabapp.core.designsystem.ReproductorVideo
 import com.sanna.rehabapp.core.designsystem.TarjetaCifra
+import com.sanna.rehabapp.domain.model.formatearDuracion
 import com.sanna.rehabapp.core.designsystem.TarjetaBase
 import com.sanna.rehabapp.core.theme.ErrorColor
 import com.sanna.rehabapp.core.theme.RojoErrorContenedor
@@ -114,6 +115,13 @@ fun FisioResultadoSesionScreen(
                             colorValor = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                         )
+                        if (resultado.duracionMedidaSegundos > 0) {
+                            TarjetaCifra(
+                                etiqueta = "Duración medida",
+                                valor = formatearDuracion(resultado.duracionMedidaSegundos),
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(Spacing.md))
 
@@ -309,6 +317,20 @@ private fun FilaRepeticionConError(detalle: DetalleRepeticion, total: Int) {
                 )
             }
         }
+        // Guía visual (HU18): resultado de cada acción de la repetición. Distingue
+        // una acción incompleta (no llegó a la meta) de una completada.
+        if (detalle.acciones.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(Spacing.xs))
+            detalle.acciones.sortedBy { it.ordenAccion }.forEach { accion ->
+                Text(
+                    text = "Acción ${accion.ordenAccion}: " +
+                        (if (accion.completada) "completada" else "incompleta") +
+                        " — ángulo máximo ${accion.anguloMaximo.toInt()}°",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (accion.completada) MaterialTheme.colorScheme.onSurfaceVariant else RojoErrorTexto,
+                )
+            }
+        }
     }
 }
 
@@ -322,7 +344,9 @@ private fun descripcionError(error: com.sanna.rehabapp.domain.model.ErrorDetecta
     val prefijo = error.segundo?.let { "Segundo $it — $articulacion" } ?: articulacion
     val detectado = error.anguloDetectado
     val esperado = error.anguloEsperado
-    return if (detectado != null && esperado != null) {
+    return if (error.tipo == "Mantenimiento incompleto" && detectado != null && esperado != null) {
+        "$prefijo — no se mantuvo la posición: llegó a ${detectado.toInt()}° (meta ${esperado.toInt()}°)"
+    } else if (detectado != null && esperado != null) {
         "$prefijo — ángulo incorrecto: ${detectado.toInt()}° (esperado ${esperado.toInt()}°)"
     } else {
         "$prefijo — ${error.tipo}"

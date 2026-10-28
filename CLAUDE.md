@@ -209,6 +209,20 @@ reabrir estas decisiones sin querer durante el rediseño):**
   pantalla ya construida (cámara + panel lateral simultáneos), no dos
   pantallas separadas — no se cambia el flujo de navegación de HU06/HU07.
 
+### Guía visual en vivo (2026-10, rama `guia-visual-en-vivo`)
+
+Flujo genérico Ejercicio → N repeticiones → ACCIONES ordenadas definidas como datos
+(`ejercicios.acciones[]`, `Accion` en `domain/model`); ningún ejercicio tiene código propio.
+Pipeline en `core/posedetection/`: `CamaraConDeteccionPose` (bitmap rotado+espejado) →
+MediaPipe → `EjecutarSesionViewModel.procesarResultadoPose` → `FiltroLandmarks` (One Euro) →
+`PoseGuideCalculator` (ángulo, progreso, estado verde/ámbar/rojo, geometría) →
+`GuideStateMachine` (mantener, tiempo máximo, no confiable, ausencia 20 s/60 s; devuelve
+`EventoGuia`) → `construirResultadoPorAcciones` (resultado de sesión). La UI pinta con
+`PoseGuideOverlay` + `HudGuia` usando `LandmarkMapper` (mismo recorte FILL_CENTER del
+PreviewView). Voz (3 s sin repetir el mismo mensaje) y vibración (`core/feedback/Vibrador`)
+se activan/desactivan en Perfil (`AjustesRetroalimentacion`, DataStore del dispositivo).
+Detalle y pruebas: `docs/guia_visual/Etapa0_Analisis.md` y `docs/guia_visual/Pruebas_manuales.md`.
+
 ---
 
 ## 4. Stack tecnológico
@@ -275,6 +289,7 @@ resolver como tarea aparte antes de dar por cerrado el modelo financiero.
 > - `ejercicios/{id}`: nombre, descripcion, fisioterapeutaId, categoria ("Movilidad"/"Control motor"), videoPath, angulosReferencia (mapa articulación → {min,max}), repeticiones ({cantidad, duracionSeg}), diagnosticosAplicables, activo, fechaCreacion.
 > - `sesiones/{id}` (colección de NIVEL SUPERIOR, ya no subcolección del paciente): pacienteId, ejercicioId, fisioterapeutaId, fechaAsignacion, fechaEjecucion, estado (`asignada`|`en curso`|`completada`), nota, repeticionesAsignadas, duracionEstimada, porcentajeEjecucion, desviacionPromedio, repeticiones[] ({numero, porcentaje, desviacionAngular, error, articulacion}), repeticionesCompletadas, repeticionesCorrectas; subcolección `observaciones/{id}` (fisioterapeutaId, texto, fecha) = las recomendaciones (HU15/HU16).
 > - **Atributos añadidos por la app (no están en el diccionario):** en `sesiones`: `duracionSegundos`, `anguloMinOverride`, `anguloMaxOverride` (HU03-CA06/CA08), `videoUrl` (enmienda 2026-09-18); en cada elemento de `repeticiones[]`: `errores` (lista con articulacion, tipo, anguloDetectado, anguloEsperado, segundo — HU18-CA05).
+> - **Guía visual en vivo (2026-10-05):** `ejercicios/{id}.acciones`: [{orden, nombre, puntoReferencia, pivote, puntoIntermedio?, puntoDistal, lado, anguloInicio, anguloMeta, tolerancia, mantenerSeg, tiempoMaxSeg, sentido}] (landmarks de MediaPipe como enteros) y `vistaCamara` ("Lateral"|"Frontal"|"Oblicua"); en cada elemento de `sesiones/{id}.repeticiones[]`, `acciones`: [{ordenAccion, anguloMaximo, completada, tiempoSeg, desviacionAngular}]. Ampliaciones fuera del diccionario oficial. Un ejercicio sin acciones se trata como de una sola acción derivada de su rango (`Ejercicio.accionesEfectivas()`). Los 12 ejercicios del catálogo se siembran con `backend/seed/sembrar-acciones-ejercicios.ts` (valores de borrador a validar por el fisioterapeuta).
 > - **Desviaciones:** `ejercicios.videoPath` guarda la URL de descarga de Storage (no una ruta); los agregados `angulosDetectados`/`erroresDetectados` ya no se guardan (se derivan del detalle por repetición).
 > - Consultas de sesiones por `whereEqualTo("pacienteId"|"fisioterapeutaId")` ordenadas en memoria (sin índices compuestos). Reglas en `backend/firestore.rules`; migración desde el modelo anterior en `backend/seed/_migrar_modelo.js`.
 
@@ -857,43 +872,114 @@ y priorizados en 5 sprints.
   desacondicionamiento general).
 
 #### HU02 — Gestionar ejercicios terapéuticos
-**Rol:** Fisioterapeuta
-**Deseo:** Registrar y administrar ejercicios terapéuticos
-**Propósito:** Asignar actividades terapéuticas a los pacientes.
-- CA01: Dado que desea registrar un ejercicio, cuando seleccione "Registrar ejercicio", entonces el sistema muestra el formulario.
-- CA02: Dado que completa los datos requeridos, cuando los envíe, entonces el sistema almacena la información.
-- CA03: Dado que desea asociar material terapéutico, cuando seleccione contenido audiovisual, entonces el sistema lo almacena correctamente.
-- CA04: Dado que existen ejercicios registrados, cuando acceda al módulo, entonces el sistema muestra la lista disponible.
-- CA05: Dado que desea modificar un ejercicio, cuando actualice la información, entonces el sistema guarda los cambios.
-- CA06: Dado que desea eliminar un ejercicio, cuando confirme la acción, entonces el sistema lo elimina.
-- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que asocie un video como material terapéutico y haya seleccionado
-  al menos una articulación de referencia, cuando solicite el cálculo
-  automático de rango, entonces el sistema analiza el video en el propio
-  dispositivo (MediaPipe, sin subirlo a ningún servicio externo — RNF06) y
-  calcula el ángulo mínimo y máximo observado para cada articulación, sin
-  que el fisioterapeuta deba escribirlos a mano. El fisioterapeuta puede
-  seguir editando esos valores manualmente después si lo considera
-  necesario.
-- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que registre un ejercicio, cuando indique el número de
-  repeticiones, entonces el sistema lo guarda junto con la duración de
-  cada repetición (`duracionSegundos`, CA02). Este número es el que usa
-  HU06 para repetir el ciclo de monitoreo esa cantidad de veces dentro
-  de una misma sesión.
-- CA09 *(ampliación acordada, no en la versión original de la tesis)*: Dado
-  que registre o edite un ejercicio, cuando elija su categoría, entonces el
-  sistema restringe la opción a un catálogo cerrado de 2 valores (Movilidad
-  / Control motor — sección 7), no texto libre. Opcionalmente puede además
-  marcar uno o más diagnósticos para los que este ejercicio se sugiere
-  primero al asignar una sesión (`diagnosticosAplicables`, ver HU03-CA07).
-- CA10 *(actualización del modelo de datos, no en la versión original de la
-  tesis)*: Dado que un ejercicio ya no deba usarse para nuevas asignaciones
-  pero tenga sesiones históricas asociadas, cuando el fisioterapeuta lo
-  desactive en lugar de eliminarlo, entonces el sistema lo oculta del
-  listado de asignación (HU03) pero conserva su historial en las sesiones
-  ya registradas. Un ejercicio desactivado puede reactivarse en cualquier
-  momento.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO FISIOTERAPEUTA
+
+**Deseo**
+QUIERO REGISTRAR Y ADMINISTRAR EJERCICIOS TERAPÉUTICOS, DEFINIENDO LAS ACCIONES QUE COMPONEN CADA REPETICIÓN
+
+**Propósito**
+CON EL OBJETIVO DE ASIGNAR ACTIVIDADES TERAPÉUTICAS A LOS PACIENTES CON UNA GUÍA DE MOVIMIENTO ADECUADA A CADA EJERCICIO
+
+**Criterios de Aceptación**
+
+CA01
+Dado que desee registrar un ejercicio,
+Cuando seleccione "Registrar ejercicio",
+Entonces el sistema muestra el formulario.
+
+CA02
+Dado que complete los datos requeridos,
+Cuando los envíe,
+Entonces el sistema almacena la información.
+
+CA03
+Dado que desee asociar material terapéutico,
+Cuando seleccione contenido audiovisual,
+Entonces el sistema lo almacena correctamente.
+
+CA04
+Dado que existan ejercicios registrados,
+Cuando acceda al módulo,
+Entonces el sistema muestra la lista disponible.
+
+CA05
+Dado que desee modificar un ejercicio,
+Cuando actualice la información,
+Entonces el sistema guarda los cambios.
+
+CA06
+Dado que desee eliminar un ejercicio,
+Cuando confirme la acción,
+Entonces el sistema lo elimina.
+
+CA07
+Dado que asocie un video como material terapéutico y haya seleccionado al menos una articulación de referencia,
+Cuando solicite el cálculo automático de rango,
+Entonces el sistema analiza el video en el propio dispositivo y completa el ángulo mínimo y máximo observado para cada articulación.
+
+CA08
+Dado que el sistema haya calculado el rango automáticamente,
+Cuando el fisioterapeuta edite esos valores,
+Entonces el sistema guarda los valores editados.
+
+CA09
+Dado que registre un ejercicio,
+Cuando indique el número de repeticiones,
+Entonces el sistema lo guarda como las veces que se repite la secuencia de acciones dentro de una sesión.
+
+CA10
+Dado que registre un ejercicio,
+Cuando indique la duración,
+Entonces el sistema la guarda junto con el número de repeticiones.
+
+CA11
+Dado que registre o edite un ejercicio,
+Cuando elija su categoría,
+Entonces el sistema restringe la opción a un catálogo cerrado de 2 valores: Movilidad o Control motor.
+
+CA12
+Dado que registre o edite un ejercicio,
+Cuando marque uno o más diagnósticos,
+Entonces el sistema los guarda para sugerir ese ejercicio primero al asignar sesiones.
+
+CA13
+Dado que un ejercicio ya no deba usarse para nuevas asignaciones pero tenga sesiones históricas,
+Cuando el fisioterapeuta lo desactive,
+Entonces el sistema lo oculta del listado de asignación y conserva su historial.
+
+CA14
+Dado que un ejercicio esté desactivado,
+Cuando el fisioterapeuta lo reactive,
+Entonces el sistema lo muestra nuevamente en el listado de asignación.
+
+CA15
+Dado que registre o edite un ejercicio,
+Cuando agregue una acción,
+Entonces el sistema permite definir su nombre, su orden, el segmento corporal a medir (punto de referencia, pivote, punto intermedio opcional y punto distal), el lado, el ángulo de inicio, el ángulo meta, la tolerancia, el tiempo de mantenimiento y el tiempo máximo.
+
+CA16
+Dado que un ejercicio tenga varias acciones,
+Cuando el fisioterapeuta defina su orden,
+Entonces el sistema las guarda y las presenta al paciente en ese orden.
+
+CA17
+Dado que registre o edite un ejercicio,
+Cuando seleccione la vista de cámara requerida (lateral, frontal u oblicua),
+Entonces el sistema la guarda como la posición en que el paciente debe ubicarse frente a la cámara.
+
+CA18
+Dado que defina una acción,
+Cuando ingrese una tolerancia o un tiempo máximo menor o igual a cero, o un ángulo fuera del rango de 0° a 180°,
+Entonces el sistema rechaza el dato e indica cuál es incorrecto.
+
+CA19
+Dado que exista un ejercicio sin acciones definidas,
+Cuando el sistema lo use en una sesión,
+Entonces lo trata como un ejercicio de una única acción generada a partir de su rango de referencia.
 
 #### HU03 — Asignar sesiones terapéuticas
 **Rol:** Fisioterapeuta
@@ -1007,125 +1093,402 @@ Entonces el sistema muestra la nota del fisioterapeuta.
 
 ### ÉPICA 02: Monitorear ejecución de ejercicios terapéuticos
 
+> **Ampliación acordada, 2026-10-05 (guía visual en vivo — HU redactadas, pendientes de aprobación):** cada ejercicio se
+> compone de N repeticiones y cada repetición de varias *acciones* definidas como datos por el fisioterapeuta (segmento a
+> medir, ángulo de inicio, ángulo meta, tolerancia, tiempo de mantenimiento y tiempo máximo). La app pinta sobre la cámara el
+> recorrido de la acción actual, anclado al cuerpo del paciente, y avanza sola de acción en acción. Es un refinamiento técnico
+> de HU02, HU06, HU07, HU08, HU09, HU10, HU17 y HU18, sin sprint nuevo. Plan por etapas en
+> `docs/guia_visual/prompts_guia_visual_en_vivo.md`; backlog en `docs/analisis/03_Product_Backlog.md` (sección 3.5).
+
 #### HU06 — Ejecutar sesión terapéutica
-**Rol:** Paciente
-**Deseo:** Ejecutar una sesión terapéutica
-**Propósito:** Realizar los ejercicios asignados por el fisioterapeuta.
-- CA01: Dado que selecciona una sesión asignada, entonces el sistema muestra el ejercicio correspondiente.
-- CA02: Dado que inicia la sesión, cuando seleccione "Iniciar sesión", entonces el sistema habilita la ejecución. *(Ampliación acordada, no en la versión original: antes de empezar a medir la primera repetición, el sistema muestra una cuenta regresiva de preparación de 10 segundos — durante ese lapso la cámara ya está encendida pero el movimiento no se mide, para que el paciente tenga tiempo de acomodarse frente a ella.)*
-- CA03: Dado que ejecuta el ejercicio, cuando la cámara detecte movimiento, entonces el sistema inicia el monitoreo.
-- CA04: Dado que finaliza el tiempo establecido, entonces el sistema concluye la sesión.
-- CA05: Dado que completa la sesión, entonces el sistema la registra.
-- CA06 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que el ejercicio tenga más de una repetición asignada (HU02-CA08)
-  y termine el tiempo de la repetición actual, cuando todavía falten
-  repeticiones por completar, entonces el sistema anuncia el inicio de
-  la siguiente repetición tras una breve pausa, en vez de concluir la
-  sesión — CA04/CA05 solo aplican una vez completadas todas las
-  repeticiones asignadas. Todas las repeticiones de una misma sesión se
-  registran juntas como un único resultado consolidado (HU08-CA04), no
-  como sesiones separadas. *(Ampliación posterior: durante esa pausa, al
-  quedar 3 segundos restantes el sistema avisa una sola vez por voz — "Prepárate,
-  sigue la repetición N" — para que el paciente sepa que se acerca la
-  siguiente repetición sin tener que mirar la pantalla; el número
-  regresivo en sí se sigue mostrando visualmente, esto solo agrega el
-  aviso hablado.)*
-- CA07 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que la sesión esté en ejecución, cuando el paciente seleccione
-  "Finalizar ejercicio" antes de completar el tiempo o las repeticiones
-  asignadas, entonces el sistema concluye la sesión igualmente y registra
-  el resultado con lo medido hasta ese momento (mejor un resultado
-  parcial que perder por completo la ejecución ya realizada). Distinto
-  de "Salir", que abandona la pantalla sin registrar nada.
-- CA08 *(ampliación acordada, Sprint 3, no en la versión original de la tesis)*:
-  Dado que el paciente inicie el monitoreo de una sesión, entonces el
-  sistema lee en voz alta (texto a voz nativo de Android, en el
-  dispositivo, sin conexión) la descripción/instrucción del ejercicio una
-  sola vez al empezar — no en cada repetición. Distinto de HU10-CA06
-  (Sprint 4): esto lee la instrucción estática del ejercicio
-  (`Ejercicio.descripcion`), no genera frases de corrección en tiempo real
-  según el error detectado.
-- CA09 *(ampliación acordada, Sprint 4, no en la versión original de la
-  tesis)*: Dado que una sesión se haya finalizado antes de tiempo
-  (CA07) sin completar todas las repeticiones asignadas, entonces el
-  sistema la muestra en "Mis ejercicios" como **reanudable** (tarjeta
-  "Reanudar sesión" con "X/Y repeticiones completadas"), distinta de una
-  sesión pendiente nueva. Al reanudarla, el monitoreo continúa desde la
-  repetición siguiente a la última completada — no repite lo ya medido —
-  y el resultado final combina lo guardado antes con lo nuevo medido
-  (repeticiones correctas se suman, el detalle por repetición se
-  concatena con la numeración real, y los promedios/porcentajes globales
-  se recalculan ponderados por cuántas repeticiones aportó cada tramo).
-  Una sesión deja de ser reanudable en cuanto completa todas sus
-  repeticiones asignadas (`repeticionesCompletadas == repeticionesAsignadas`).
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO EJECUTAR UNA SESIÓN TERAPÉUTICA SIGUIENDO, ACCIÓN POR ACCIÓN, EL MOVIMIENTO DE CADA REPETICIÓN
+
+**Propósito**
+CON EL OBJETIVO DE REALIZAR LOS EJERCICIOS ASIGNADOS POR EL FISIOTERAPEUTA CORRIGIENDO MI MOVIMIENTO HASTA CUMPLIR CADA ACCIÓN
+
+**Criterios de Aceptación**
+
+CA01
+Dado que seleccione una sesión asignada,
+Cuando acceda a ella,
+Entonces el sistema muestra el ejercicio correspondiente.
+
+CA02
+Dado que inicie la sesión,
+Cuando seleccione "Iniciar sesión",
+Entonces el sistema enciende la cámara y muestra una cuenta regresiva de preparación de 10 segundos sin medir el movimiento.
+
+CA03
+Dado que termine la cuenta regresiva,
+Cuando el paciente esté frente a la cámara,
+Entonces el sistema inicia el monitoreo de la primera acción de la primera repetición.
+
+CA04
+Dado que el ejercicio tenga acciones definidas,
+Cuando inicie una repetición,
+Entonces el sistema presenta la primera acción en el orden definido.
+
+CA05
+Dado que el paciente mantenga el segmento corporal dentro de la zona meta durante el tiempo de mantenimiento de la acción,
+Cuando complete ese tiempo de forma continua,
+Entonces el sistema registra la acción como completada y presenta la siguiente.
+
+CA06
+Dado que el paciente salga de la zona meta antes de completar el tiempo de mantenimiento,
+Cuando abandone la zona,
+Entonces el sistema reinicia el contador de mantenimiento.
+
+CA07
+Dado que la acción actual no se haya cumplido y no se haya agotado su tiempo máximo,
+Cuando el paciente continúe ejecutando,
+Entonces el sistema sigue corrigiendo dentro de la misma acción.
+
+CA08
+Dado que el paciente no cumpla la acción actual,
+Cuando se agote su tiempo máximo,
+Entonces el sistema la registra como no completada con el ángulo máximo alcanzado y presenta la siguiente acción.
+
+CA09
+Dado que el paciente complete o agote la última acción de una repetición,
+Cuando esa acción concluya,
+Entonces el sistema cuenta la repetición y reinicia la secuencia desde la primera acción.
+
+CA10
+Dado que el ejercicio tenga más repeticiones asignadas por completar,
+Cuando termine una repetición,
+Entonces el sistema anuncia la siguiente tras una breve pausa.
+
+CA11
+Dado que falten 3 segundos para iniciar la siguiente repetición,
+Cuando el sistema esté en pausa,
+Entonces el sistema avisa una sola vez por voz que se acerca la siguiente repetición.
+
+CA12
+Dado que el paciente complete todas las repeticiones asignadas,
+Cuando termine la última,
+Entonces el sistema concluye la sesión y la registra.
+
+CA13
+Dado que el sistema concluya la sesión,
+Cuando la registre,
+Entonces el resultado de todas las repeticiones queda consolidado en un único registro.
+
+CA14
+Dado que la sesión esté en ejecución,
+Cuando el paciente seleccione "Finalizar ejercicio" antes de completar las repeticiones asignadas,
+Entonces el sistema concluye la sesión y registra el resultado con lo medido hasta ese momento.
+
+CA15
+Dado que la sesión esté en ejecución,
+Cuando el paciente seleccione "Salir",
+Entonces el sistema abandona la pantalla sin registrar resultado.
+
+CA16
+Dado que el paciente inicie el monitoreo de una sesión,
+Cuando comience la primera acción,
+Entonces el sistema lee en voz alta la instrucción del ejercicio una sola vez.
+
+CA17
+Dado que una sesión se haya finalizado antes de completar todas las repeticiones asignadas,
+Cuando el paciente consulte "Mis ejercicios",
+Entonces el sistema la muestra como reanudable con las repeticiones completadas sobre las asignadas.
+
+CA18
+Dado que el paciente reanude una sesión,
+Cuando inicie el monitoreo,
+Entonces el sistema continúa desde la repetición siguiente a la última completada sin repetir lo ya medido.
+
+CA19
+Dado que el paciente complete una sesión reanudada,
+Cuando el sistema registre el resultado,
+Entonces combina lo guardado antes con lo nuevo medido, sumando las repeticiones correctas, concatenando el detalle con su numeración real y ponderando los promedios por las repeticiones de cada tramo.
+
+CA20
+Dado que una sesión complete todas sus repeticiones asignadas,
+Cuando el paciente consulte "Mis ejercicios",
+Entonces el sistema deja de mostrarla como reanudable.
 
 #### HU07 — Monitorear movimiento corporal
-**Rol:** Sistema
-**Deseo:** Monitorear el movimiento corporal del paciente mediante la cámara
-**Propósito:** Identificar los puntos anatómicos necesarios para el análisis de la ejecución terapéutica.
-> Nota: se retiraron los CA de estabilidad/consistencia (duplicaban RNF05). Esta HU se enfoca en la detección; RNF05 concentra la estabilidad ante condiciones adversas.
-- CA01: Dado que la cámara esté habilitada, entonces el sistema detecta el movimiento corporal mediante estimación de pose (MediaPipe).
-- CA02: Dado que realiza el monitoreo, cuando el paciente ejecute movimientos, entonces el sistema identifica los landmarks correspondientes.
-- CA03: Dado que detecte más de una persona u objetos en el encuadre, entonces el sistema prioriza el cuerpo del paciente.
-- CA04: Dado que el monitoreo esté activo, entonces el sistema procesa correctamente la información detectada para su análisis posterior.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO SISTEMA
+
+**Deseo**
+QUIERO MONITOREAR EL MOVIMIENTO CORPORAL DEL PACIENTE MEDIANTE LA CÁMARA
+
+**Propósito**
+CON EL OBJETIVO DE IDENTIFICAR, DE FORMA CONFIABLE Y ESTABLE, LOS PUNTOS ANATÓMICOS NECESARIOS PARA EL ANÁLISIS DE LA EJECUCIÓN TERAPÉUTICA
+
+**Criterios de Aceptación**
+
+CA01
+Dado que la cámara esté habilitada,
+Cuando el paciente se ubique frente a ella,
+Entonces el sistema detecta el movimiento corporal mediante estimación de pose.
+
+CA02
+Dado que realice el monitoreo,
+Cuando el paciente ejecute movimientos,
+Entonces el sistema identifica los landmarks correspondientes.
+
+CA03
+Dado que detecte más de una persona u objetos en el encuadre,
+Cuando procese la imagen,
+Entonces el sistema prioriza el cuerpo del paciente.
+
+CA04
+Dado que el monitoreo esté activo,
+Cuando el sistema reciba los landmarks,
+Entonces los procesa para su análisis posterior.
+
+CA05
+Dado que el sistema reciba los landmarks de la acción actual,
+Cuando los prepare para el análisis,
+Entonces aplica un suavizado que estabiliza su posición entre cuadros.
+
+CA06
+Dado que el sistema obtenga los landmarks sobre la imagen analizada,
+Cuando los presente sobre la cámara en pantalla,
+Entonces los ubica sobre el cuerpo del paciente aun con la cámara frontal espejada.
+
+CA07
+Dado que algún landmark requerido por la acción actual tenga una visibilidad menor a 0,5,
+Cuando el sistema evalúe el cuadro,
+Entonces lo marca como no confiable.
+
+CA08
+Dado que el sistema marque un cuadro como no confiable,
+Cuando procese la acción actual,
+Entonces no avanza ni penaliza la acción y solicita al paciente reubicarse.
+
+> Nota: los CA de estabilidad/consistencia ante condiciones adversas del entorno se concentran en RNF05; esta HU se enfoca en la detección.
 
 #### HU08 — Procesar movimiento corporal
-**Rol:** Sistema
-**Deseo:** Procesar los puntos anatómicos detectados y calcular los ángulos articulares
-**Propósito:** Obtener métricas biomecánicas objetivas de la ejecución del paciente.
-- CA01: Dado que detecte los landmarks, cuando el paciente ejecute el ejercicio, entonces el sistema calcula los ángulos articulares correspondientes.
-- CA02: Dado que calcule ángulos articulares, cuando compare con el ROM esperado, entonces determina si la ejecución está dentro del margen aceptable.
-- CA03: Dado que ocurra una oclusión temporal de un punto anatómico, entonces el sistema continúa el procesamiento sin interrumpirse.
-- CA04: Dado que finalice la sesión, entonces el sistema genera un resumen de ángulos y desviaciones posturales.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO SISTEMA
+
+**Deseo**
+QUIERO PROCESAR LOS PUNTOS ANATÓMICOS DETECTADOS Y CALCULAR LOS ÁNGULOS ARTICULARES DE CADA ACCIÓN
+
+**Propósito**
+CON EL OBJETIVO DE OBTENER MÉTRICAS BIOMECÁNICAS OBJETIVAS DE LA EJECUCIÓN DEL PACIENTE
+
+**Criterios de Aceptación**
+
+CA01
+Dado que detecte los landmarks,
+Cuando el paciente ejecute el ejercicio,
+Entonces el sistema calcula los ángulos articulares correspondientes.
+
+CA02
+Dado que calcule ángulos articulares,
+Cuando compare con el rango esperado,
+Entonces determina si la ejecución está dentro del margen aceptable.
+
+CA03
+Dado que ocurra una oclusión temporal de un punto anatómico,
+Cuando el sistema procese el movimiento,
+Entonces continúa el procesamiento sin interrumpirse.
+
+CA04
+Dado que finalice la sesión,
+Cuando el sistema consolide el procesamiento,
+Entonces genera un resumen de ángulos y desviaciones posturales.
+
+CA05
+Dado que el sistema procese la acción actual,
+Cuando calcule el ángulo,
+Entonces lo obtiene entre el segmento pivote–distal y la línea pivote–referencia.
+
+CA06
+Dado que el sistema conozca el ángulo actual, el ángulo de inicio y el ángulo meta de la acción,
+Cuando calcule el progreso,
+Entonces lo expresa entre 0 y 1, tanto si la meta es mayor como si es menor que el inicio.
+
+CA07
+Dado que el sistema conozca el ángulo actual y el ángulo meta,
+Cuando evalúe la acción,
+Entonces determina que el paciente está en zona cuando la diferencia es menor o igual a la tolerancia.
+
+CA08
+Dado que el sistema conozca la distancia a la meta,
+Cuando evalúe el desempeño,
+Entonces lo clasifica en tres niveles (verde, ámbar y rojo) según umbrales configurables.
+
+CA09
+Dado que la acción se defina para un lado del cuerpo,
+Cuando el sistema calcule el ángulo,
+Entonces considera el lado medido y el espejo de la cámara frontal para el sentido de giro.
+
+CA10
+Dado que el sistema calcule la posición de la meta,
+Cuando prepare la guía de la acción,
+Entonces obtiene el punto donde debe ubicarse el extremo del segmento al alcanzar el ángulo meta, anclado al pivote.
 
 #### HU09 — Analizar ejecución terapéutica
-**Rol:** Sistema
-**Deseo:** Analizar la ejecución terapéutica del paciente
-**Propósito:** Generar un resultado referencial sobre la calidad del ejercicio realizado.
-- CA01: Dado que reciba los ángulos calculados, entonces el sistema compara la ejecución con el patrón de referencia del ejercicio.
-- CA02: Dado que detecte una desviación relevante, entonces el sistema clasifica el tipo de error (rango incompleto, desviación angular, etc.).
-- CA03: Dado que el análisis concluya, entonces el sistema genera un resultado consolidado (% de acierto o desviación promedio).
 
-> Nota (Sprint 4): esta HU **ya se cumple desde Sprint 3**, sin código
-> nuevo — `MedicionArticulacion.tipoDeError` ya clasifica "Rango
-> incompleto"/"Desviación angular" (CA02), `medirArticulacion` ya compara
-> contra `patronReferencia` (CA01), y `porcentajeEjecucion`/
-> `desviacionPromedio` ya son el resultado consolidado (CA03). Se deja
-> constancia aquí para no repetir trabajo ya hecho.
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO SISTEMA
+
+**Deseo**
+QUIERO ANALIZAR LA EJECUCIÓN TERAPÉUTICA DEL PACIENTE ACCIÓN POR ACCIÓN
+
+**Propósito**
+CON EL OBJETIVO DE GENERAR UN RESULTADO REFERENCIAL SOBRE LA CALIDAD DEL EJERCICIO REALIZADO
+
+**Criterios de Aceptación**
+
+CA01
+Dado que reciba los ángulos calculados,
+Cuando analice la ejecución,
+Entonces compara la ejecución con el patrón de referencia del ejercicio.
+
+CA02
+Dado que detecte una desviación relevante,
+Cuando analice la ejecución,
+Entonces clasifica el tipo de error entre rango incompleto, desviación angular y movimiento simultáneo.
+
+CA03
+Dado que el análisis concluya,
+Cuando el sistema consolide el resultado,
+Entonces genera un resultado consolidado con el porcentaje de acierto y la desviación promedio.
+
+CA04
+Dado que concluya una repetición,
+Cuando el sistema consolide su análisis,
+Entonces genera por cada acción si fue completada, el ángulo máximo alcanzado, el tiempo empleado y la desviación angular.
+
+> Nota: CA01 a CA03 se cumplen desde Sprint 3 (`MedicionArticulacion.tipoDeError`, `medirArticulacion`, `porcentajeEjecucion`/`desviacionPromedio`). CA04 es la ampliación de la guía visual en vivo y está pendiente de implementación.
 
 ---
 
 ### ÉPICA 03: Generar retroalimentación terapéutica
 
 #### HU10 — Generar retroalimentación inmediata
-**Rol:** Paciente
-**Deseo:** Recibir retroalimentación visual inmediata durante los ejercicios
-**Propósito:** Corregir mi ejecución terapéutica mientras la realizo.
-- CA01: Dado que el sistema detecte una desviación, entonces muestra retroalimentación visual con la corrección sugerida.
-- CA02: Dado que no se detecten desviaciones relevantes, entonces el sistema indica visualmente que la ejecución es correcta.
-  > Nota (Sprint 4, confirmado con el usuario): el paciente no puede leer
-  > texto en pantalla mientras se mueve, así que "retroalimentación
-  > visual" se resuelve con un **ícono mínimo** (check verde / alerta
-  > ámbar), sin texto de corrección en pantalla — la corrección en sí la
-  > lleva la voz (CA06). No se construye el esqueleto con checks por
-  > articulación del mockup de referencia (decisión explícita).
-- CA03: Dado que continúe ejecutando el ejercicio, entonces la retroalimentación se actualiza de forma continua.
-- CA04: Dado que el sistema procese el movimiento, entonces el tiempo de respuesta no debe superar los **500 ms**.
-- CA05: Dado que finalice el ejercicio, entonces el sistema detiene la retroalimentación inmediata.
-- CA06 *(ampliación acordada, no en la versión original de la tesis)*: Dado
-  que el sistema detecte una desviación, entonces además de la señal visual
-  reproduce una indicación por voz (texto a voz nativo de Android, en el
-  dispositivo, sin conexión) describiendo la corrección — ej. "levanta más
-  el brazo derecho" — usando frases plantilla mapeadas al tipo de error
-  detectado, nunca un texto generado en el momento ni un servicio de voz en
-  la nube (para no romper RNF01 y RNF06).
-- CA07 *(ampliación acordada)*: Dado que un mismo tipo de error se repita
-  varias veces durante la ejecución, entonces el sistema lo acumula como
-  parte del resultado consolidado de la sesión (ver `erroresDetectados` en
-  la sección 5), para que el fisioterapeuta lo vea como evidencia en HU01/
-  HU18 y decida qué indicarle al paciente (por sesión guardada o, más
-  adelante, por un canal de comunicación aparte — HU de chat aún sin
-  definir, fuera del alcance de las 19 HU actuales).
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO PACIENTE
+
+**Deseo**
+QUIERO RECIBIR RETROALIMENTACIÓN VISUAL, SONORA Y HÁPTICA INMEDIATA, CON UNA GUÍA PINTADA SOBRE LA CÁMARA, DURANTE LOS EJERCICIOS
+
+**Propósito**
+CON EL OBJETIVO DE CORREGIR MI EJECUCIÓN TERAPÉUTICA MIENTRAS LA REALIZO
+
+**Criterios de Aceptación**
+
+CA01
+Dado que el paciente ejecute una acción,
+Cuando inicie la acción,
+Entonces el sistema dibuja sobre la cámara, anclado a su cuerpo, el recorrido que debe seguir el segmento corporal desde la posición inicial hasta la meta.
+
+CA02
+Dado que el paciente avance en la acción,
+Cuando el segmento recorra parte del trayecto,
+Entonces el sistema rellena con el color de estado la parte del recorrido ya realizada.
+
+CA03
+Dado que la acción tenga una meta y una tolerancia,
+Cuando el sistema muestre la guía,
+Entonces resalta la zona meta como un sector translúcido de meta más o menos tolerancia.
+
+CA04
+Dado que la acción tenga una meta,
+Cuando el sistema muestre la guía,
+Entonces dibuja un segmento fantasma translúcido en la posición final con un marcador en el extremo.
+
+CA05
+Dado que el sistema detecte el segmento corporal del paciente,
+Cuando el paciente se mueva,
+Entonces lo dibuja con el color del desempeño: rojo, ámbar o verde.
+
+CA06
+Dado que el paciente ejecute el ejercicio,
+Cuando visualice la pantalla,
+Entonces el sistema muestra la repetición actual sobre el total, la acción actual sobre el total y su nombre.
+
+CA07
+Dado que el sistema detecte una desviación,
+Cuando el paciente continúe la acción,
+Entonces muestra un mensaje de corrección.
+
+CA08
+Dado que la acción exija mantener la posición en la zona meta,
+Cuando el paciente permanezca en ella,
+Entonces el sistema muestra los segundos restantes de mantenimiento.
+
+CA09
+Dado que el paciente complete una acción,
+Cuando el sistema pase a la siguiente,
+Entonces cambia automáticamente la guía al recorrido de la nueva acción.
+
+CA10
+Dado que el sistema marque un cuadro como no confiable,
+Cuando el paciente esté fuera de posición,
+Entonces oculta la guía y muestra un aviso para reubicarse según la vista de cámara del ejercicio.
+
+CA11
+Dado que el sistema procese el movimiento,
+Cuando actualice la retroalimentación,
+Entonces su tiempo de respuesta no supera los 500 ms.
+
+CA12
+Dado que el paciente continúe ejecutando el ejercicio,
+Cuando se modifique su movimiento,
+Entonces la retroalimentación se actualiza de forma continua.
+
+CA13
+Dado que finalice el ejercicio,
+Cuando el paciente concluya o finalice la sesión,
+Entonces el sistema detiene la retroalimentación inmediata.
+
+CA14
+Dado que el sistema detecte una desviación,
+Cuando genere la indicación sonora,
+Entonces reproduce por voz una frase plantilla según el tipo de error, en el dispositivo y sin conexión.
+
+CA15
+Dado que el sistema ya haya reproducido un mensaje por voz,
+Cuando deba repetir el mismo mensaje,
+Entonces no lo reproduce otra vez antes de 3 segundos.
+
+CA16
+Dado que el paciente complete una acción,
+Cuando el sistema la registre,
+Entonces emite una vibración corta.
+
+CA17
+Dado que el paciente complete una repetición,
+Cuando el sistema la cuente,
+Entonces emite una vibración más larga.
+
+CA18
+Dado que el paciente defina sus preferencias,
+Cuando active o desactive la voz o la vibración,
+Entonces el sistema respeta esa elección durante la ejecución.
+
+CA19
+Dado que un mismo tipo de error se repita varias veces durante la ejecución,
+Cuando el sistema consolide el resultado,
+Entonces lo acumula como parte del resultado de la sesión para que el fisioterapeuta lo vea como evidencia.
+
+> **Decisión de diseño que cambia (pendiente de confirmación explícita del usuario):** en Sprint 4 se acordó que la retroalimentación visual fuera un ícono mínimo (check/alerta) sin texto ni esqueleto sobre la cámara, y el Design System confirmó mantener el monitoreo minimalista. La guía visual en vivo (CA01 a CA10) reemplaza esa decisión: dibuja el recorrido sobre la cámara y muestra un HUD con texto. Hasta confirmarlo, se mantiene vigente el diseño anterior.
 
 #### HU11 — Visualizar resultados y porcentaje de ejecución
 
@@ -1433,12 +1796,44 @@ Entonces el sistema indica que no hay recomendaciones disponibles.
 ### ÉPICA 06: Gestionar almacenamiento terapéutico
 
 #### HU17 — Almacenar información terapéutica
-**Rol:** Sistema
-**Deseo:** Almacenar la información generada durante las sesiones terapéuticas
-**Propósito:** Mantener registrados los resultados de forma segura y respetando la privacidad del paciente.
-- CA01: Dado que finalice una sesión, entonces el sistema almacena resultados, métricas y fecha.
-- CA02: Dado que procese el movimiento corporal, entonces almacena datos numéricos (ángulos, métricas). *(Enmienda 2026-09-18: antes decía "nunca video o imágenes". Ahora, además, se guarda el video de la sesión — sin audio, calidad SD — en Firebase Storage (`sesiones/{pacienteId}/{sesionId}.mp4`) con su URL en `Sesion.videoUrl`, para que el fisioterapeuta lo revise y pueda dar una mejor respuesta. El análisis con MediaPipe sigue siendo local. Ver sección 11.)*
-- CA03: Dado que se registre una nueva sesión, entonces el sistema actualiza los datos del paciente sin sobrescribir sesiones anteriores.
+
+**Declaración de la Historia de Usuario**
+
+**Rol**
+YO COMO SISTEMA
+
+**Deseo**
+QUIERO ALMACENAR LA INFORMACIÓN GENERADA DURANTE LAS SESIONES TERAPÉUTICAS
+
+**Propósito**
+CON EL OBJETIVO DE MANTENER REGISTRADOS LOS RESULTADOS DE FORMA SEGURA Y RESPETANDO LA PRIVACIDAD DEL PACIENTE
+
+**Criterios de Aceptación**
+
+CA01
+Dado que finalice una sesión,
+Cuando el sistema la registre,
+Entonces almacena resultados, métricas y fecha.
+
+CA02
+Dado que el sistema procese el movimiento corporal,
+Cuando registre la sesión,
+Entonces almacena datos numéricos como ángulos y métricas.
+
+CA03
+Dado que finalice una sesión,
+Cuando el sistema la registre,
+Entonces almacena el video de la sesión, sin audio, para que el fisioterapeuta lo revise.
+
+CA04
+Dado que se registre una nueva sesión,
+Cuando el sistema actualice los datos del paciente,
+Entonces no sobrescribe las sesiones anteriores.
+
+CA05
+Dado que el paciente cierre una repetición,
+Cuando el sistema la registre,
+Entonces almacena el resultado de cada acción de esa repetición con su ángulo máximo, tiempo y desviación.
 
 #### HU18 — Gestionar sesiones y resultados terapéuticos registrados
 
@@ -1499,6 +1894,16 @@ CA09
 Dado que el paciente haya grabado la sesión,
 Cuando seleccione "Ver video de la sesión",
 Entonces el sistema reproduce la grabación del ejercicio realizado.
+
+CA10
+Dado que acceda al detalle de una repetición,
+Cuando visualice el desglose,
+Entonces el sistema muestra qué acciones se completaron y el ángulo máximo alcanzado en cada una.
+
+CA11
+Dado que una acción no se haya completado,
+Cuando el fisioterapeuta visualice el desglose de la repetición,
+Entonces el sistema la distingue visualmente de las acciones completadas.
 
 > **Nota de dependencia (resuelta en Sprint 4):** HU15 (registrar
 > recomendaciones) requiere que el fisioterapeuta pueda ver el resultado de

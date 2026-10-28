@@ -1,0 +1,10 @@
+F|F08n_ejercicios.png|F08 (actualizada) — Ejercicios del catálogo|Lista de los 12 ejercicios en cuadrícula con miniatura de video y menú de tres puntos.
+F|F10n_ejercicio_menu.png|F10 (actualizada) — Menú de un ejercicio|Opciones Ver video, Editar, Desactivar y Eliminar.
+F|F09n_formulario_a.png|F09 (nueva) — Editar ejercicio: datos generales|Inicio del formulario del ejercicio (nombre, descripción, categoría, repeticiones, vista de cámara).
+F|F09n_formulario_b.png|F09 (nueva) — Editar ejercicio: acciones (1)|Sección de acciones: cada ejercicio se compone de acciones ordenadas que definen la guía visual en vivo.
+F|F09n_formulario_c.png|F09 (nueva) — Editar ejercicio: configurar una acción|Por acción: nombre, puntos de referencia/pivote/distal, lado, ángulo de inicio, meta, tolerancia, tiempo de mantener, tiempo máximo y sentido de giro; botones para subir, bajar o quitar la acción.
+F|F09n_formulario_d.png|F09 (nueva) — Editar ejercicio: fin del formulario|Última acción y botón para guardar los cambios.
+P|P04m_mockup_previa.png|P04 (MOCKUP) — Ejecutar sesión: vista previa|Mockup de la pantalla nueva: cámara grande a casi toda la pantalla, instrucción breve y botón "Iniciar sesión" debajo, sin superponer controles sobre la cámara.
+P|P06m_mockup_guia_en_vivo.png|P06 (MOCKUP) — Guía visual en vivo|Mockup de la guía pintada sobre la cámara: arco punteado del recorrido, zona meta verde, segmento fantasma con marcador, segmento del paciente en rojo/ámbar/verde, HUD con repetición, acción y mensaje, cronómetro y "Finalizar ejercicio".
+P|P13m_mockup_perfil.png|P13 (MOCKUP) — Perfil del paciente con ajustes|Mockup del Perfil con la nueva sección "Guía durante el ejercicio": interruptores de indicaciones por voz y vibración, guardados en el dispositivo.
+F|F13m_mockup_resultado_acciones.png|F13 (MOCKUP) — Resultado de sesión con acciones|Mockup del detalle por repetición para el fisioterapeuta: acciones completadas o incompletas, ángulo máximo y errores con ángulo detectado vs meta.

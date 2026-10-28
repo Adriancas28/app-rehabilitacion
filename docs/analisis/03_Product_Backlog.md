@@ -72,3 +72,29 @@ Prioridad y sprint: los del backlog de `CLAUDE.md` §10 (plan de 5 sprints). Est
 | PB-53 | Storage con custom claims | Restringir escritura de material a fisioterapeutas y lectura del video de sesión al fisio asignado | Media | Pendiente | ERR-SEG-007/008 |
 | PB-54 | Borrado completo de cuentas | Eliminar usuario de Auth y, si corresponde, sesiones/observaciones | Media | Pendiente | ERR-ADM-006/007 |
 | PB-55 | Confirmar la voz en teléfono real | El emulador no tiene motor TTS; se declaró `<queries>` en el manifiesto | Media | Por verificar | ERR-PAC-005 |
+
+## 3.5 Guía visual en vivo (refinamiento de HU existentes, redactado el 2026-10-05)
+
+Funcionalidad: cada ejercicio se compone de N repeticiones y cada repetición de varias acciones definidas como datos; la app pinta sobre la cámara el recorrido de la acción actual, anclado al cuerpo, y avanza sola de acción en acción. Es un refinamiento técnico de las HU indicadas, **sin sprint nuevo** (el plan de 5 sprints no cambia). Plan por etapas: `docs/guia_visual/prompts_guia_visual_en_vivo.md`. Las HU afectadas ya están reescritas en `CLAUDE.md` §10 (formato Gherkin) y esperan aprobación antes de implementar.
+
+| ID | HU base | Etapa | Descripción | Prioridad | Estado | Observaciones |
+|---|---|---|---|---|---|---|
+| PB-60 | HU06, HU07, HU10 | 0 | Análisis del código actual (pantalla de ejecución, CameraX + MediaPipe, cálculo de ángulos, modelos de ejercicio/sesión) y plan de implementación | Alta | Hecho (2026-10-05); espera confirmación de las decisiones | `docs/guia_visual/Etapa0_Analisis.md` |
+| PB-61 | HU02, HU06, HU09, HU17 | 1 | Modelo de datos genérico: `Accion`, `ResultadoAccion`, vista de cámara; compatibilidad con ejercicios sin acciones | Alta | Redactado, pendiente de aprobación | Ampliación fuera del diccionario de datos oficial; se documenta como las demás |
+| PB-62 | HU07 | 2 | Mapeo de coordenadas (landmark → pantalla, cámara frontal espejada) y suavizado (filtro One Euro); cuadros no confiables | Alta | Redactado, pendiente de aprobación | Probar en dispositivo real |
+| PB-63 | HU08, HU09 | 3 | Motor de cálculo genérico `PoseGuideCalculator` (ángulo, progreso, zona, estado) | Alta | Redactado, pendiente de aprobación | El ángulo actual (vértice de tres puntos) coincide con pivote–referencia–distal |
+| PB-64 | HU06 | 4 | Máquina de estados repetición → acción | Alta | Redactado, pendiente de aprobación | Reemplaza el avance por tiempo fijo de cada repetición |
+| PB-65 | HU10 | 5 | Overlay visual en Compose (recorrido, parte realizada, zona meta, segmento fantasma, segmento real, HUD) | Alta | Redactado, pendiente de aprobación | Cambia la decisión de Sprint 4 (ícono mínimo sin texto): requiere confirmación |
+| PB-66 | HU10 | 6 | Feedback háptico y voz con opción de activar o desactivar | Media | Redactado, pendiente de aprobación | No existe pantalla de ajustes: definir dónde va la opción |
+| PB-67b | HU02 | 1b | Formulario del fisioterapeuta para definir las acciones de cada ejercicio, su orden, la vista de cámara y las validaciones (HU02-CA15 a CA18) | Alta | Detectado en la Etapa 0, pendiente | No estaba en el plan original de etapas |
+| PB-67 | HU17, HU18 | 7 | Persistencia de `ResultadoAccion` por repetición y detalle por acciones en la vista del fisioterapeuta; prueba con los 12 ejercicios; documentación | Alta | Redactado, pendiente de aprobación | Incluye pruebas manuales: cámara frontal y trasera, ambos lados, poca luz, fuera de cuadro |
+
+Relación con pendientes ya registrados: PB-50 (sesión sin persona detectada) se resuelve en parte con los cuadros no confiables, pero queda abierto cómo evitar que la sesión se quede esperando indefinidamente.
+
+### Puntos por decidir antes de implementar
+1. Confirmar el cambio de la decisión de Sprint 4 sobre HU10 (monitoreo minimalista con ícono, sin texto ni esqueleto).
+2. Qué pasa con la duración por repetición, la duración estimada y el ángulo personalizado de HU03, ahora que la repetición termina por acciones y cada acción tiene su tiempo máximo.
+3. Regla para generar la acción por defecto de los 12 ejercicios actuales: tienen mínimo y máximo, pero no ángulo de inicio, tolerancia ni tiempo de mantenimiento.
+4. Tiempo límite global cuando el paciente no está en cuadro (los cuadros no confiables no avanzan ni penalizan).
+5. Si se conserva la pausa de 5 s entre repeticiones y el aviso por voz de la siguiente repetición.
+6. Dónde se activan o desactivan la voz y la vibración.

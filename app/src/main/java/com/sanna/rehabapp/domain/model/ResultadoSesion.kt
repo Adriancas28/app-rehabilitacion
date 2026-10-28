@@ -43,6 +43,8 @@ data class DetalleRepeticion(
     val numero: Int,
     val porcentajeEjecucion: Float,
     val errores: List<ErrorDetectado> = emptyList(),
+    // Guia visual en vivo (HU09/HU18): resultado de cada accion de esta repeticion.
+    val acciones: List<ResultadoAccion> = emptyList(),
 )
 
 // HU17-CA02 / RNF06-CA02: únicamente datos numéricos (ángulos, métricas).
@@ -60,4 +62,13 @@ data class ResultadoSesion(
     val repeticionesAsignadas: Int = 0,
     val repeticionesCorrectas: Int = 0,
     val detallePorRepeticion: List<DetalleRepeticion> = emptyList(),
-)
+) {
+    // Duración medida de la ejecución: suma del tiempo real (tiempoSeg) que cada
+    // acción de cada repetición estuvo en monitoreo. Se deriva de datos ya guardados;
+    // no incluye cuenta regresiva ni descansos.
+    val duracionMedidaSegundos: Int
+        get() = detallePorRepeticion.sumOf { rep -> rep.acciones.sumOf { it.tiempoSeg.toDouble() } }.toInt()
+}
+
+fun formatearDuracion(segundos: Int): String =
+    if (segundos < 60) "$segundos s" else "${segundos / 60} min ${segundos % 60} s"

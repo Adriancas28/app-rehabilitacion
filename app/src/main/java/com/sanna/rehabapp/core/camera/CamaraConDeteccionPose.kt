@@ -50,7 +50,7 @@ import java.util.concurrent.Executors
 @Composable
 fun CamaraConDeteccionPose(
     modifier: Modifier = Modifier,
-    onResultado: (PoseLandmarkerResult) -> Unit,
+    onResultado: (PoseLandmarkerResult, Int, Int) -> Unit,
     onError: (Exception) -> Unit,
     archivoVideo: File? = null,
     onVideoGrabado: (File) -> Unit = {},
@@ -68,7 +68,7 @@ fun CamaraConDeteccionPose(
     val poseLandmarkerHelper = remember {
         PoseLandmarkerHelper(
             context = contexto,
-            alEncontrarResultado = { onResultadoActualizado(it) },
+            alEncontrarResultado = { resultado, ancho, alto -> onResultadoActualizado(resultado, ancho, alto) },
             alFallar = { onErrorActualizado(it) },
         )
     }
