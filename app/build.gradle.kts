@@ -20,16 +20,25 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Mediciones de validacion (EDT 1.8.6): registra tiempos en logcat con la etiqueta MEDICION.
+    // Por defecto esta desactivado; se activa con -PmedirRendimiento=true.
+    val medirRendimiento = (project.findProperty("medirRendimiento")?.toString() == "true")
+
     buildTypes {
         debug {
             // Pruebas locales: solo se activa con -PusarEmuladorFirebase=true y solo en debug.
             // Por defecto es false (la app de debug tambien usa el Firebase real).
             val usarEmulador = (project.findProperty("usarEmuladorFirebase")?.toString() == "true")
             buildConfigField("boolean", "USAR_EMULADOR_FIREBASE", usarEmulador.toString())
+            buildConfigField("boolean", "MEDICION_ACTIVA", medirRendimiento.toString())
         }
         release {
             // Constante: el emulador nunca se puede activar en release.
             buildConfigField("boolean", "USAR_EMULADOR_FIREBASE", "false")
+            buildConfigField("boolean", "MEDICION_ACTIVA", medirRendimiento.toString())
+            // Solo para medir en un build no depurable: se firma con la clave de debug para poder
+            // instalarlo. Sin -PmedirRendimiento=true el release queda como estaba.
+            if (medirRendimiento) signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

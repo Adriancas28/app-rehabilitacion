@@ -69,6 +69,7 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.sanna.rehabapp.core.camera.CamaraConDeteccionPose
 import com.sanna.rehabapp.core.camera.tieneCamaraDisponible
+import com.sanna.rehabapp.core.medicion.IndicadorAnguloMedicion
 import com.sanna.rehabapp.core.designsystem.BadgeEstado
 import com.sanna.rehabapp.core.designsystem.BarraSuperior
 import com.sanna.rehabapp.core.designsystem.BotonOutline
@@ -259,6 +260,12 @@ fun EjecutarSesionScreen(
                         if (modoDepuracion) {
                             val cuadro by viewModel.cuadroPose.collectAsState()
                             PoseDebugOverlay(frame = cuadro)
+                        }
+                        if (uiState.sesionIniciada && !uiState.enPreparacion && !uiState.enDescanso) {
+                            IndicadorAnguloMedicion(
+                                guia = guiaUi.guia,
+                                modifier = Modifier.align(Alignment.TopCenter).padding(top = 48.dp),
+                            )
                         }
                         BadgeEstado(
                             texto = "Cámara en vivo",

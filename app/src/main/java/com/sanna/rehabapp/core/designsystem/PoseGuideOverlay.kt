@@ -37,6 +37,7 @@ fun PoseGuideOverlay(estado: GuideUiState, modifier: Modifier = Modifier) {
     if (guia == null || accion == null || !estado.confiable) return
     Canvas(modifier = modifier.fillMaxSize()) {
         dibujarGuia(guia, accion)
+        com.sanna.rehabapp.core.medicion.Medicion.dibujo(estado)
     }
 }
 
