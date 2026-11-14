@@ -1,6 +1,6 @@
 # 2. Historias de Usuario actualizadas (según la implementación real)
 
-Base: HU/RNF de `CLAUDE.md` §10 contrastadas con el código (`feature/*`, `core/*`) de la rama `mejora-videos`. Solo se listan criterios que el sistema realmente cumple; lo documentado que no existe va en **Diferencias**. "Estado" es el estado según código; el resultado de las pruebas está en `05_Pruebas_y_Errores.md`.
+Base: HU/RNF de `CLAUDE.md` §10 contrastadas con el código (`feature/*`, `core/*`) de la rama `master` (actualizado el 2026-10-29, incluye la guía visual en vivo). Solo se listan criterios que el sistema realmente cumple; lo documentado que no existe va en **Diferencias**. "Estado" es el estado según código; el resultado de las pruebas está en `05_Pruebas_y_Errores.md`.
 
 Leyenda de estado: **Implementada** · **Implementada con diferencias** · **Implementada por plataforma** (la cumple Firestore/Android sin código propio) · **No verificable en emulador**.
 Pantallas: ver códigos en `01_Pantallas_y_Capturas.md`.
@@ -24,7 +24,11 @@ Como fisioterapeuta quiero registrar y administrar ejercicios para asignarlos a 
 - CA07 "Calcular rango automáticamente" analiza el video seleccionado en el dispositivo y completa mín./máx. por articulación (editable después).
 - CA08 Guarda repeticiones y duración por repetición. CA09 Categoría restringida a Movilidad / Control motor; diagnósticos aplicables opcionales.
 - CA10 Desactivar/Activar un ejercicio sin perder el historial (menú "⋮").
-- **Estado:** Implementada. **Pantallas:** F08, F09, F10.
+- **Guía visual en vivo (2026-10):** CA11 a CA14 = categoría cerrada, diagnósticos aplicables, desactivar y reactivar (antes CA09 y CA10).
+- CA15 Cada ejercicio se compone de **acciones** ordenadas; por acción se define: nombre, orden, segmento corporal a medir (punto de referencia, pivote, punto intermedio opcional y punto distal), lado, ángulo de inicio, ángulo meta, tolerancia, tiempo de mantenimiento y tiempo máximo (formulario de acciones en el ejercicio).
+- CA16 El fisioterapeuta define el orden de las acciones y se presentan al paciente en ese orden. CA17 Se elige la vista de cámara requerida (lateral, frontal u oblicua). CA18 Se rechazan tolerancia o tiempo máximo ≤ 0 y ángulos fuera de 0°–180°, indicando cuál es incorrecto. CA19 Un ejercicio sin acciones se trata como de una sola acción derivada de su rango de referencia.
+- Los 12 ejercicios del catálogo tienen acciones sembradas (`backend/seed/sembrar-acciones-ejercicios.ts`): son **valores de borrador** que el fisioterapeuta debe validar.
+- **Estado:** Implementada.
 
 ### HU03 — Asignar sesiones terapéuticas · Fisioterapeuta
 Como fisioterapeuta quiero asignar sesiones a mis pacientes para indicar los ejercicios que deben realizar.
@@ -51,36 +55,53 @@ Como paciente quiero consultar el material de apoyo para prepararme antes de la 
 ## Épica 02 — Monitorear la ejecución
 
 ### HU06 — Ejecutar sesión terapéutica · Paciente
-Como paciente quiero ejecutar la sesión asignada frente a la cámara para realizar mis ejercicios con monitoreo.
-- CA01 Muestra el ejercicio. CA02 "Iniciar sesión" activa la cámara y una cuenta regresiva de 10 s. CA03 Al terminar la cuenta regresiva inicia el monitoreo. CA04/CA05 Al completar todas las repeticiones se concluye y se registra el resultado.
-- CA06 Con más de una repetición, pausa breve y aviso por voz 3 s antes de la siguiente. CA07 "Finalizar ejercicio" registra lo medido hasta ese momento; "Salir" no registra. CA08 Lee en voz alta la instrucción una sola vez. CA09 Una sesión finalizada antes de tiempo se ofrece como "Reanudar sesión" (X/Y) y continúa desde la repetición siguiente, combinando resultados.
-- Pide permiso de cámara; sin cámara muestra "Este dispositivo no tiene cámara disponible…".
-- **Estado:** Implementada. **No verificable en emulador:** el monitoreo con una persona real (la cámara virtual del emulador no tiene persona). **Pantallas:** P04–P07, P01.
+Como paciente quiero ejecutar una sesión siguiendo, acción por acción, el movimiento de cada repetición para realizar mis ejercicios corrigiendo mi movimiento hasta cumplir cada acción.
+- CA01 Muestra el ejercicio. CA02 "Iniciar sesión" enciende la cámara y muestra una cuenta regresiva de 10 s sin medir. CA03 Al terminar la cuenta regresiva inicia el monitoreo de la primera acción de la primera repetición.
+- CA04 Cada repetición presenta sus acciones en el orden definido. CA05 Una acción se completa al mantener el segmento en la zona meta durante el tiempo de mantenimiento, de forma continua. CA06 Si el paciente sale de la zona, el contador de mantenimiento se reinicia. CA07 Si no se cumple, el sistema sigue corrigiendo hasta agotar el tiempo máximo. CA08 Al agotarse, la acción queda no completada con el ángulo máximo alcanzado y pasa a la siguiente.
+- CA09 Al terminar la última acción se cuenta la repetición y se reinicia la secuencia. CA10 Entre repeticiones hay una pausa de 5 s; CA11 a los 3 s restantes se avisa una vez por voz que viene la siguiente.
+- CA12/CA13 Al completar todas las repeticiones se concluye la sesión y se registra un único resultado consolidado. CA14 "Finalizar ejercicio" registra lo medido hasta ese momento. CA15 "Salir" abandona sin registrar. CA16 Lee en voz alta la instrucción del ejercicio una sola vez.
+- CA17 Una sesión finalizada antes de tiempo aparece como reanudable ("X/Y repeticiones"). CA18 Al reanudar, continúa desde la repetición siguiente sin repetir lo medido. CA19 El resultado final combina lo guardado con lo nuevo (correctas se suman, detalle se concatena con numeración real, promedios ponderados). CA20 Deja de ser reanudable al completar todas las repeticiones.
+- Sin persona en el cuadro: la acción se da por no completada a los 20 s y la sesión termina a los 60 s con el aviso "no te detectamos frente a la cámara" (se guarda lo medido). Pide permiso de cámara; sin cámara muestra el mensaje de dispositivo sin cámara. La cámara ocupa casi toda la pantalla y el botón queda debajo, sin superponerse.
+- **Diferencias:** la repetición ya no termina por un tiempo fijo, sino cuando se cumplen sus acciones o se agota su tiempo máximo; la duración por repetición de la sesión (HU03-CA06) deja de ser el cronómetro y el ángulo personalizado (HU03-CA08) sustituye la meta de la primera acción.
+- **Estado:** Implementada. Verificada con una persona real frente a la webcam en el emulador (2026-10-28); pendiente en teléfono físico. **Pantallas:** P04–P07, P01.
 
 ### HU07 — Monitorear movimiento corporal · Sistema
+Como sistema quiero monitorear el movimiento del paciente mediante la cámara para identificar, de forma confiable y estable, los puntos anatómicos necesarios.
 - CA01 Detecta pose con MediaPipe en el dispositivo. CA02 Identifica landmarks. CA03 Con varias personas usa una sola pose (`numPoses = 1`). CA04 Procesa la información para el análisis.
-- **Estado:** Implementada (código); **no verificable en emulador** con persona. Pruebas unitarias: `AnguloCalculatorTest`, `MedicionArticulacionTest`.
+- CA05 Aplica un suavizado (filtro One Euro) que estabiliza los landmarks entre cuadros. CA06 Los landmarks se ubican sobre el cuerpo en pantalla aun con la cámara frontal espejada (mapeo propio del recorte FILL_CENTER de la vista).
+- CA07 Si algún landmark requerido por la acción tiene visibilidad < 0,5, el cuadro se marca **no confiable**. CA08 Un cuadro no confiable no avanza ni penaliza la acción (el reloj de la acción se congela) y se pide reubicarse.
+- Modo de depuración (solo builds debug): mantener presionada la insignia "Cámara en vivo" muestra los 33 puntos y el esqueleto.
+- **Estado:** Implementada; verificada con persona real en el emulador con webcam. Pruebas unitarias: `AnguloCalculatorTest`, `OneEuroFilterTest`, `LandmarkMapperTest`, `ConfiabilidadPoseTest`. Pendiente en teléfono físico.
 
 ### HU08 — Procesar movimiento corporal · Sistema
-- CA01 Calcula ángulos articulares. CA02 Compara con el ROM esperado (o el personalizado). CA03 Continúa ante oclusiones. CA04 Genera resumen de ángulos y desviaciones al finalizar.
-- **Estado:** Implementada (código + pruebas unitarias); no verificable en emulador con persona.
+Como sistema quiero procesar los puntos anatómicos y calcular los ángulos articulares de cada acción para obtener métricas biomecánicas objetivas.
+- CA01 Calcula ángulos articulares. CA02 Compara con el rango esperado (o el personalizado). CA03 Continúa ante oclusiones. CA04 Genera resumen de ángulos y desviaciones al finalizar.
+- CA05 El ángulo se obtiene entre el segmento pivote–distal y la línea pivote–referencia (en píxeles de la imagen, para no deformarlo). CA06 El progreso se expresa entre 0 y 1, tanto si la meta es mayor como menor que el inicio. CA07 Está en zona cuando |ángulo − meta| ≤ tolerancia. CA08 Se clasifica en verde / ámbar / rojo (ámbar hasta 3 veces la tolerancia). CA09 Considera el lado medido y el espejo de la cámara frontal para el sentido de giro. CA10 Calcula dónde debe quedar el extremo del segmento al alcanzar la meta (anclado al pivote).
+- **Diferencia (2026-10-27):** la cámara frontal entrega la imagen espejada y MediaPipe etiqueta al revés el lado; la app aplica el espejo para que la guía siga el brazo del lado real del paciente.
+- **Estado:** Implementada (código + `PoseGuideCalculatorTest`). Verificada con persona real en el emulador.
 
 ### HU09 — Analizar ejecución terapéutica · Sistema
-- CA01 Compara con el patrón de referencia. CA02 Clasifica el error (Rango incompleto, Desviación angular, Movimiento simultáneo para lado AMBOS). CA03 Genera % de ejecución y desviación promedio.
-- **Estado:** Implementada (código + `MedicionArticulacionTest`).
+Como sistema quiero analizar la ejecución acción por acción para generar un resultado referencial de la calidad del ejercicio.
+- CA01 Compara con el patrón de referencia. CA02 Clasifica el error (Rango incompleto, Mantenimiento incompleto; Movimiento simultáneo para lado AMBOS en el modelo anterior). CA03 Genera % de ejecución y desviación promedio.
+- CA04 Por cada acción de cada repetición se genera: si se completó, ángulo máximo alcanzado, tiempo empleado y desviación angular. El % de una acción es 100 si se completó o su cercanía a la meta si no; el de la repetición es el promedio de sus acciones; el de la sesión, el de sus repeticiones.
+- **Estado:** Implementada (código + `GuideStateMachineTest`, `ResultadoPorAccionesTest`).
 
 ## Épica 03 — Retroalimentación
 
 ### HU10 — Retroalimentación inmediata · Paciente
-- CA01/CA02 Ícono visual mínimo: correcto (check) o corregir (alerta); sin texto de corrección en pantalla (decisión de diseño). CA03 Se actualiza de forma continua. CA05 Se detiene al finalizar.
-- CA06 Indicación por voz (TextToSpeech nativo) con frases plantilla por tipo de error. CA07 Los errores repetidos se acumulan por repetición en el resultado (visible para el fisioterapeuta).
-- CA04 (latencia ≤ 500 ms): **no medida** (no hay instrumentación ni prueba de latencia en el código).
-- **Estado:** Implementada (código + `FrasesCorrectivasTest`); latencia no verificada.
+Como paciente quiero recibir retroalimentación visual, sonora y háptica inmediata, con una guía pintada sobre la cámara, para corregir mi ejecución mientras la realizo. **Reemplaza la decisión de Sprint 4** (ícono mínimo sin texto), aprobada el 2026-10-05.
+- CA01 Dibuja sobre la cámara, anclado al cuerpo, el recorrido del segmento desde la posición inicial hasta la meta (arco punteado). CA02 Rellena con el color de estado la parte ya recorrida. CA03 Resalta la zona meta como sector translúcido (meta ± tolerancia). CA04 Dibuja un segmento fantasma con un marcador en el extremo. CA05 Dibuja el segmento del paciente en rojo, ámbar o verde según su cercanía a la meta.
+- CA06 HUD: "Repetición X/N · Acción Y/M" y el nombre de la acción. CA07 Mensaje de corrección ("Sigue: …", "Te pasaste, regresa un poco", "Mantén la posición", "Muy bien"). CA08 Contador de segundos restantes de mantenimiento. CA09 Al completar una acción cambia a la guía de la siguiente.
+- CA10 Con cuadro no confiable oculta la guía y avisa cómo reubicarse según la vista de cámara. CA12 La retroalimentación se actualiza de forma continua. CA13 Se detiene al finalizar. Se conserva el ícono mínimo de postura (check/alerta) en la esquina.
+- CA14 Voz con frases plantilla (TextToSpeech nativo, en el dispositivo, sin conexión); CA15 el mismo mensaje no se repite antes de 3 s. CA16 Vibración corta al completar una acción; CA17 más larga al completar una repetición. CA18 Los interruptores de voz y vibración están en Perfil → "Guía durante el ejercicio" (guardados en el dispositivo, activados por defecto). CA19 Los errores repetidos se acumulan en el resultado (visible para el fisioterapeuta).
+- CA11 (latencia ≤ 500 ms): **no medida**.
+- **Estado:** Implementada (código + `FrasesCorrectivasTest`, `GuideStateMachineTest`). Guía verificada en vivo con una persona real en el emulador (2026-10-28); **voz y vibración no verificadas en teléfono real**; latencia y fotogramas por segundo sin medir. **Pantallas:** P06, P13.
 
 ### HU11 — Visualizar resultados y % de ejecución · Paciente
 - CA01 Al terminar, "Ver resultado" abre "¡Ejercicio completado!". CA02 Repeticiones completadas/asignadas. CA03 Promedio. CA04 Lista de todas las repeticiones con su %. CA05/CA06 Verde ≥ 75 %, ámbar < 75 %. CA07 Sesión parcial: muestra X/Y reales. CA08 "Ir a mi progreso" → "Mis resultados". CA09 Aclaración de que el cálculo (MediaPipe) es referencial.
 - **Diferencia:** ya no existe el modo "solo lectura" ni el desglose "Correctas/Errores" de la versión original.
 - CA09 (aclaración del cálculo referencial): corregido el 2026-09-20 tras la prueba QA (ERR-PAC-015); ahora se muestra en el resultado y en el detalle de la sesión.
+- CA10 (añadido 2026-10): el resumen muestra la **Duración medida** de la ejecución (suma del tiempo empleado en cada acción), también en el detalle de la sesión en "Mis resultados".
 - **Estado:** Implementada con diferencias. **Pantalla:** P08.
 
 ## Épica 04 — Seguimiento
@@ -112,10 +133,12 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 
 ### HU17 — Almacenar información terapéutica · Sistema
 - CA01 Al finalizar se guardan resultados, métricas y fecha. CA02 Se guardan datos numéricos y, además, el video de la sesión (sin audio) en Firebase Storage para revisión del fisioterapeuta (enmienda 2026-09-18). CA03 Cada sesión es un documento propio: no se sobrescriben sesiones anteriores.
+- CA05 (guía visual): por cada repetición se guarda el resultado de cada acción (ángulo máximo, tiempo y desviación), campo `repeticiones[].acciones[]` de la sesión; se guarda además la duración medida.
 - **Estado:** Implementada. Limitación conocida: al reanudar, el video del tramo nuevo reemplaza al anterior.
 
 ### HU18 — Gestionar sesiones y resultados registrados · Fisioterapeuta
 - CA01 "Resultados" lista los pacientes asignados. CA02 Al seleccionar uno, todas sus sesiones con estado (Completada/Incompleta/Por hacer). CA03/CA04 Filtros por período y por ejercicio. CA05 Detalle: repeticiones completas y promedio. CA06 Detalle por repetición en lista o gráfico. CA07 Errores con segundo, articulación, ángulo detectado y esperado. CA08 "Ver más repeticiones". CA09 "Ver video de la sesión".
+- CA10 Al abrir el detalle de una sesión se ve, por repetición, qué acciones se completaron y su ángulo máximo; CA11 las acciones incompletas se distinguen visualmente; los errores de "Mantenimiento incompleto" muestran el ángulo alcanzado frente a la meta. CA12 (añadido 2026-10) el detalle muestra la **Duración medida** de la ejecución.
 - **Estado:** Implementada. **Pantallas:** F11–F16.
 
 ### HU19 — Sincronizar información · Sistema
@@ -141,6 +164,7 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 
 ### HU22 / HU23 — Perfil (Paciente / Fisioterapeuta)
 - CA01 Muestra datos de la cuenta. CA02 Solo el nombre es editable. CA03 Correo, DNI/edad/género/contacto, diagnóstico(s), fisioterapeuta asignado (paciente) o especialidad/colegiatura (fisio) en solo lectura. CA04/CA05 "Cerrar sesión" con diálogo de confirmación y regreso al login. CA06 "Perfil" es el único lugar de cierre de sesión para estos roles.
+- **Ajustes de la guía (HU10-CA18, 2026-10):** el Perfil del paciente incluye "Guía durante el ejercicio" con los interruptores "Indicaciones por voz" y "Vibración" (guardados en el dispositivo).
 - **Estado:** Implementada. **Pantallas:** P13, F20.
 
 ## Requisitos no funcionales
@@ -153,6 +177,13 @@ Como paciente quiero ejecutar la sesión asignada frente a la cámara para reali
 | RNF04 | Integridad | Escrituras atómicas por documento; lectura tolerante a campos ausentes | Ver pruebas CP-INT |
 | RNF05 | Consistencia del monitoreo (iluminación, oclusión, distancia) | Implementada parcialmente en código (tolerancia a oclusión); **no verificable** con persona real en emulador | Requiere prueba en dispositivo físico |
 | RNF06 | Privacidad / Edge AI | Análisis local; consentimiento informado antes de usar; video de sesión subido con consentimiento (enmienda 2026-09-18) | Los videos de ejercicios son públicos; los de sesión usan URL con token |
+
+## Cambios de la guía visual en vivo (resumen)
+
+- Modelo: `ejercicios.acciones[]` y `vistaCamara`; `sesiones.repeticiones[].acciones[]`; ampliaciones fuera del diccionario oficial (ver `CLAUDE.md` §5).
+- Código: `core/posedetection` (filtro One Euro, mapeo de coordenadas, calculador de guía, máquina de estados, resultado por acciones, frases), `core/designsystem/PoseGuideOverlay`, `core/feedback` (vibración y ajustes), formulario de acciones en `feature/ejercicios`.
+- Pruebas: 125 pruebas unitarias en verde; verificación manual con persona real en el emulador; lista de casos pendientes en `docs/guia_visual/Pruebas_manuales.md`.
+- Entorno de pruebas aislado con emuladores locales de Firebase: `backend/emuladores/README.md`.
 
 ## Funcionalidades implementadas sin HU propia (faltan en la documentación de HU)
 
