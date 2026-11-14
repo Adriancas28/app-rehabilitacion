@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
 import com.sanna.rehabapp.core.feedback.AjustesRetroalimentacion
 import com.sanna.rehabapp.core.feedback.Vibrador
+import com.sanna.rehabapp.core.medicion.Medicion
 import com.sanna.rehabapp.core.navigation.Rutas
 import com.sanna.rehabapp.core.posedetection.EventoGuia
 import com.sanna.rehabapp.core.posedetection.FiltroLandmarks
@@ -231,6 +232,8 @@ class EjecutarSesionViewModel @Inject constructor(
     fun iniciarSesion() {
         if (_uiState.value.sesionIniciada) return
         _uiState.update { it.copy(sesionIniciada = true) }
+        Medicion.sesion(_uiState.value.ejercicio?.nombre, _uiState.value.totalRepeticiones)
+        Medicion.fase("preparacion")
         jobCicloSesion = viewModelScope.launch {
             _uiState.update { it.copy(enPreparacion = true, segundosPreparacion = SEGUNDOS_PREPARACION_INICIAL) }
             while (_uiState.value.segundosPreparacion > 0) {
@@ -239,6 +242,7 @@ class EjecutarSesionViewModel @Inject constructor(
             }
             synchronized(candado) { maquina?.reanudar(ahoraMs()) }
             _uiState.update { it.copy(enPreparacion = false) }
+            Medicion.fase("monitoreo")
         }
     }
 
@@ -263,7 +267,9 @@ class EjecutarSesionViewModel @Inject constructor(
             eventos = m.procesar(guia, ahora)
             ui = m.estado
         }
+        Medicion.publicado(ui, resultado.timestampMs())
         _guiaUi.value = ui
+        Medicion.angulo(ui.guia?.anguloActual)
         _uiState.update {
             it.copy(
                 repeticionActual = ui.repeticion,
@@ -285,6 +291,7 @@ class EjecutarSesionViewModel @Inject constructor(
             is EventoGuia.RepeticionCompletada -> {
                 val total = _uiState.value.totalRepeticiones
                 _uiState.update { it.copy(repeticionesCompletadas = evento.numero) }
+                Medicion.repeticion(evento.numero)
                 if (vibracionActiva) vibrador.pulsoRepeticion()
                 if (evento.numero < total) iniciarDescanso(evento.numero)
             }
@@ -299,6 +306,7 @@ class EjecutarSesionViewModel @Inject constructor(
     // HU06-CA06: pausa breve entre repeticiones, con aviso por voz de la siguiente.
     private fun iniciarDescanso(repeticionTerminada: Int) {
         synchronized(candado) { maquina?.pausar() }
+        Medicion.fase("descanso")
         jobCicloSesion = viewModelScope.launch {
             _uiState.update { it.copy(enDescanso = true, segundosDescanso = SEGUNDOS_DESCANSO_ENTRE_REPETICIONES) }
             while (_uiState.value.segundosDescanso > 0) {
@@ -314,6 +322,7 @@ class EjecutarSesionViewModel @Inject constructor(
             synchronized(candado) { maquina?.reanudar(ahoraMs()) }
             ultimoSigno = null
             _uiState.update { it.copy(enDescanso = false) }
+            Medicion.fase("monitoreo")
         }
     }
 
@@ -370,6 +379,7 @@ class EjecutarSesionViewModel @Inject constructor(
     private fun finalizarSesion() {
         val idPaciente = pacienteId ?: return
         if (_uiState.value.sesionCompletada) return
+        Medicion.fase("fin")
         val cerradas = synchronized(candado) {
             maquina?.pausar()
             maquina?.repeticionesCerradas

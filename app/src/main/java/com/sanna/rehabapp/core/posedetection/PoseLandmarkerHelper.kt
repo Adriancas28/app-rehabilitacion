@@ -34,7 +34,10 @@ class PoseLandmarkerHelper(
             .setMinPoseDetectionConfidence(0.5f)
             .setMinTrackingConfidence(0.5f)
             .setMinPosePresenceConfidence(0.5f)
-            .setResultListener { resultado, imagen -> alEncontrarResultado(resultado, imagen.width, imagen.height) }
+            .setResultListener { resultado, imagen ->
+                com.sanna.rehabapp.core.medicion.Medicion.resultado(resultado.timestampMs())
+                alEncontrarResultado(resultado, imagen.width, imagen.height)
+            }
             .setErrorListener { error -> alFallar(error) }
             .build()
         poseLandmarker = PoseLandmarker.createFromOptions(context, opciones)

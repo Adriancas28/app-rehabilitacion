@@ -192,7 +192,9 @@ private fun procesarFrame(
     esCamaraFrontal: Boolean,
     poseLandmarkerHelper: PoseLandmarkerHelper,
 ) {
+    val llegadaNs = com.sanna.rehabapp.core.medicion.Medicion.ahoraNs()
     val marcaDeTiempo = SystemClock.uptimeMillis()
+    com.sanna.rehabapp.core.medicion.Medicion.llegada(marcaDeTiempo, llegadaNs)
     val ancho = imageProxy.width
     val alto = imageProxy.height
     val rotacion = imageProxy.imageInfo.rotationDegrees.toFloat()
